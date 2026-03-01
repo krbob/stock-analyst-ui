@@ -13,21 +13,48 @@ const PERIODS: { label: string; value: Period }[] = [
   { label: 'Max', value: 'max' },
 ];
 
-function StockInfo({ symbol }: { symbol: string }) {
-  const { data, isLoading } = usePrice(symbol);
+function Spinner() {
+  return (
+    <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-600 border-t-blue-400" />
+  );
+}
 
-  if (!symbol || isLoading || !data) return null;
+function StockInfo({ symbol }: { symbol: string }) {
+  const { data, isLoading, error } = usePrice(symbol);
+
+  if (!symbol) return null;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-baseline gap-4">
+        <h2 className="text-2xl font-bold text-white">{symbol.toUpperCase()}</h2>
+        <Spinner />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-baseline gap-4">
+        <h2 className="text-2xl font-bold text-white">{symbol.toUpperCase()}</h2>
+        <span className="text-sm text-red-400">Not found</span>
+      </div>
+    );
+  }
+
+  if (!data) return null;
 
   const dailyChange = data.gain.daily;
-  const isPositive = dailyChange >= 0;
 
   return (
     <div className="flex items-baseline gap-4">
       <h2 className="text-2xl font-bold text-white">{data.name}</h2>
       <span className="text-xl text-gray-300">{data.lastPrice.toFixed(2)}</span>
-      <span className={`text-lg font-medium ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
-        {isPositive ? '+' : ''}{dailyChange.toFixed(2)}%
-      </span>
+      {dailyChange != null && (
+        <span className={`text-lg font-medium ${dailyChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+          {dailyChange >= 0 ? '+' : ''}{dailyChange.toFixed(2)}%
+        </span>
+      )}
     </div>
   );
 }
@@ -40,21 +67,24 @@ export default function App() {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     const trimmed = input.trim();
-    if (trimmed) setSymbol(trimmed);
+    if (trimmed) {
+      setSymbol(trimmed);
+      setPeriod('1y');
+    }
   };
 
   return (
     <div className="min-h-screen bg-[#0f0f1a] text-white">
-      <header className="border-b border-gray-800 px-6 py-4">
-        <div className="mx-auto flex max-w-6xl items-center justify-between">
-          <h1 className="text-xl font-bold tracking-tight">Stock Analyst</h1>
+      <header className="border-b border-gray-800 px-4 py-3 sm:px-6 sm:py-4">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
+          <h1 className="text-lg font-bold tracking-tight sm:text-xl">Stock Analyst</h1>
           <form onSubmit={handleSubmit} className="flex gap-2">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ticker (e.g. AAPL)"
-              className="rounded-md border border-gray-700 bg-gray-900 px-3 py-1.5 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+              placeholder="Ticker"
+              className="w-24 rounded-md border border-gray-700 bg-gray-900 px-3 py-1.5 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none sm:w-auto sm:placeholder:before:content-['(e.g._AAPL)']"
             />
             <button
               type="submit"
@@ -66,17 +96,17 @@ export default function App() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6 py-6">
+      <main className="mx-auto max-w-6xl px-4 py-4 sm:px-6 sm:py-6">
         {symbol ? (
           <>
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <StockInfo symbol={symbol} />
               <div className="flex gap-1">
                 {PERIODS.map((p) => (
                   <button
                     key={p.value}
                     onClick={() => setPeriod(p.value)}
-                    className={`rounded-md px-3 py-1 text-sm font-medium transition-colors ${
+                    className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors sm:px-3 sm:text-sm ${
                       period === p.value
                         ? 'bg-blue-600 text-white'
                         : 'text-gray-400 hover:text-white hover:bg-gray-800'
@@ -90,7 +120,7 @@ export default function App() {
             <PriceChart symbol={symbol} period={period} />
           </>
         ) : (
-          <div className="flex h-[500px] items-center justify-center text-gray-500">
+          <div className="flex h-[500px] items-center justify-center text-gray-500 px-4 text-center">
             Enter a stock ticker to view the chart
           </div>
         )}

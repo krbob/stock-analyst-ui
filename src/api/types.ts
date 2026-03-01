@@ -1,34 +1,34 @@
 export interface Gain {
-  daily: number;
-  weekly: number;
-  monthly: number;
-  quarterly: number;
-  yearly: number;
+  daily: number | null;
+  weekly: number | null;
+  monthly: number | null;
+  quarterly: number | null;
+  yearly: number | null;
 }
 
 export interface Rsi {
-  daily: number;
-  weekly: number;
-  monthly: number;
+  daily: number | null;
+  weekly: number | null;
+  monthly: number | null;
 }
 
 export interface Macd {
-  macd: number;
-  signal: number;
-  histogram: number;
+  macd: number | null;
+  signal: number | null;
+  histogram: number | null;
 }
 
 export interface BollingerBands {
-  upper: number;
-  middle: number;
-  lower: number;
+  upper: number | null;
+  middle: number | null;
+  lower: number | null;
 }
 
 export interface MovingAverages {
-  sma50: number;
-  sma200: number;
-  ema50: number;
-  ema200: number;
+  sma50: number | null;
+  sma200: number | null;
+  ema50: number | null;
+  ema200: number | null;
 }
 
 export interface Analysis {
@@ -42,8 +42,8 @@ export interface Analysis {
   macd: Macd;
   bollingerBands: BollingerBands;
   movingAverages: MovingAverages;
-  atr: number;
-  dividendYield: number;
+  atr: number | null;
+  dividendYield: number | null;
   dividendGrowth: number | null;
   peRatio: number | null;
   pbRatio: number | null;
