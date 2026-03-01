@@ -1,0 +1,62 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t stock-analyst-ui:test .
+
+      - name: Smoke test
+        run: |
+          docker run -d --name ui -p 3000:80 \
+            -e API_URL=http://localhost:8080 \
+            stock-analyst-ui:test
+
+          for i in $(seq 1 15); do
+            if curl -sf http://localhost:3000 > /dev/null 2>&1; then
+              echo "Container is serving traffic"
+              break
+            fi
+            sleep 1
+          done
+
+          curl -sf http://localhost:3000 | grep -q "Stock Analyst"
+          echo "Smoke test passed"
+
+          docker rm -f ui
+
+  publish:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        run: |
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE="ghcr.io/${OWNER}/stock-analyst-ui"
+          SHA_TAG="sha-$(git rev-parse --short HEAD)"
+
+          docker build -t "${IMAGE}:${SHA_TAG}" -t "${IMAGE}:latest" .
+          docker push "${IMAGE}:${SHA_TAG}"
+          docker push "${IMAGE}:latest"
