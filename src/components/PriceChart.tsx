@@ -12,7 +12,7 @@ export default function PriceChart({ symbol, period = '1y' }: PriceChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
-  const { data, isLoading, error } = useStockHistory(symbol, period);
+  const { data, isFetching, error } = useStockHistory(symbol, period);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -27,7 +27,7 @@ export default function PriceChart({ symbol, period = '1y' }: PriceChartProps) {
         horzLines: { color: '#2a2a3e' },
       },
       width: containerRef.current.clientWidth,
-      height: 500,
+      height: window.innerWidth < 640 ? 350 : 500,
       timeScale: {
         borderColor: '#3a3a4e',
       },
@@ -83,13 +83,13 @@ export default function PriceChart({ symbol, period = '1y' }: PriceChartProps) {
   return (
     <div className="relative">
       <div ref={containerRef} className="w-full" />
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center text-gray-400 bg-[#1a1a2e]/80">
-          Loading chart data...
+      {isFetching && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#1a1a2e]/80">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-600 border-t-blue-400" />
         </div>
       )}
       {error && (
-        <div className="absolute inset-0 flex items-center justify-center text-red-400 bg-[#1a1a2e]/80">
+        <div className="absolute inset-0 z-10 flex items-center justify-center text-red-400 bg-[#1a1a2e]/80">
           {error instanceof Error ? error.message : 'Failed to load chart data'}
         </div>
       )}

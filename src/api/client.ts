@@ -6,7 +6,14 @@ async function fetchApi<T>(path: string): Promise<T> {
   const response = await fetch(`${API_URL}${path}`);
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(text || `${response.status} ${response.statusText}`);
+    let message = `${response.status} ${response.statusText}`;
+    try {
+      const json = JSON.parse(text);
+      if (json.error) message = json.error;
+    } catch {
+      if (text) message = text;
+    }
+    throw new Error(message);
   }
   return response.json();
 }
