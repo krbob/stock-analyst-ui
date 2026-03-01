@@ -1,6 +1,6 @@
 import type { Analysis, DividendHistory, Period, Price, StockHistory } from './types';
 
-const API_URL = import.meta.env.VITE_API_URL ?? '/api';
+const API_URL = '/api';
 
 async function fetchApi<T>(path: string): Promise<T> {
   const response = await fetch(`${API_URL}${path}`);
