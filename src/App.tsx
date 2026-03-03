@@ -1,7 +1,9 @@
 import { useState, type FormEvent } from 'react';
 import PriceChart from './components/PriceChart';
-import { usePrice } from './api/queries';
+import { usePrice, useStockHistory } from './api/queries';
 import type { Period } from './api/types';
+
+const fmtPct = (n: number) => (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
 
 const PERIODS: { label: string; value: Period }[] = [
   { label: '1M', value: '1mo' },
@@ -19,7 +21,28 @@ function Spinner() {
   );
 }
 
-function StockInfo({ symbol }: { symbol: string }) {
+const PERIOD_LABELS: Record<Period, string> = {
+  '1d': '1D', '5d': '5D', '1mo': '1M', '3mo': '3M', '6mo': '6M',
+  '1y': '1Y', '2y': '2Y', '5y': '5Y', '10y': '10Y', 'ytd': 'YTD', 'max': 'Max',
+};
+
+function PeriodChange({ symbol, period }: { symbol: string; period: Period }) {
+  const { data } = useStockHistory(symbol, period);
+
+  if (!data || data.prices.length < 2) return null;
+
+  const first = data.prices[0].close;
+  const last = data.prices[data.prices.length - 1].close;
+  const change = ((last - first) / first) * 100;
+
+  return (
+    <span className={`text-sm ${change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+      {fmtPct(change)} ({PERIOD_LABELS[period]})
+    </span>
+  );
+}
+
+function StockInfo({ symbol, period }: { symbol: string; period: Period }) {
   const { data, isLoading, error } = usePrice(symbol);
 
   if (!symbol) return null;
@@ -52,9 +75,10 @@ function StockInfo({ symbol }: { symbol: string }) {
       <span className="text-xl text-gray-300">{data.lastPrice.toFixed(2)}</span>
       {dailyChange != null && (
         <span className={`text-lg font-medium ${dailyChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-          {dailyChange >= 0 ? '+' : ''}{dailyChange.toFixed(2)}%
+          {fmtPct(dailyChange)}
         </span>
       )}
+      <PeriodChange symbol={symbol} period={period} />
     </div>
   );
 }
@@ -104,7 +128,7 @@ export default function App() {
         {symbol ? (
           <>
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <StockInfo symbol={symbol} />
+              <StockInfo symbol={symbol} period={period} />
               <div className="flex gap-1">
                 {PERIODS.map((p) => (
                   <button
