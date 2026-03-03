@@ -84,6 +84,10 @@ export default function App() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ticker"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
               className="w-24 rounded-md border border-gray-700 bg-gray-900 px-3 py-1.5 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none sm:w-auto sm:placeholder:before:content-['(e.g._AAPL)']"
             />
             <button
