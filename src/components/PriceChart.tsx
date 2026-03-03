@@ -75,6 +75,7 @@ export default function PriceChart({ symbol, period = '1y' }: PriceChartProps) {
     }));
 
     seriesRef.current.setData(candlestickData);
+    chartRef.current?.priceScale('right').applyOptions({ autoScale: true });
     chartRef.current?.timeScale().fitContent();
   }, [data]);
 
