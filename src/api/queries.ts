@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { getHistory, getAnalysis, getPrice, getDividends, compareStocks } from './client';
 import type { Period } from './types';
 
@@ -7,6 +7,7 @@ export function useStockHistory(symbol: string, period: Period = '1y') {
     queryKey: ['history', symbol, period],
     queryFn: () => getHistory(symbol, period),
     enabled: symbol.length > 0,
+    placeholderData: keepPreviousData,
   });
 }
 
