@@ -61,6 +61,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
   const [legend, setLegend] = useState<HistoricalPrice | null>(null);
 
   const { data, isFetching, error } = useStockHistory(symbol, period, interval);
+  const prevDataRef = useRef(data);
 
   // ---- Chart creation (once) ----
   useEffect(() => {
@@ -145,7 +146,12 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
     cleanups.push(() => chart.removeSeries(volumeSeries));
 
     chart.priceScale('right').applyOptions({ autoScale: true });
-    chart.timeScale().fitContent();
+
+    const dataChanged = prevDataRef.current !== data;
+    prevDataRef.current = data;
+    if (dataChanged) {
+      chart.timeScale().fitContent();
+    }
 
     return () => cleanups.forEach((fn) => fn());
   }, [data, lineChart]);
