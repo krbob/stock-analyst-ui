@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import PriceChart from './components/PriceChart';
+import StockDetails from './components/StockDetails';
 import { usePrice, useStockHistory } from './api/queries';
 import type { Interval, Period } from './api/types';
 
@@ -186,6 +187,7 @@ export default function App() {
               </div>
             </div>
             <PriceChart symbol={symbol} period={period} interval={interval} lineChart={lineChart} logScale={logScale} />
+            <StockDetails symbol={symbol} />
           </>
         ) : (
           <div className="flex h-[500px] items-center justify-center text-gray-500 px-4 text-center">
