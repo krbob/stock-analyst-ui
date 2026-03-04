@@ -68,7 +68,7 @@ function StockInfo({ symbol }: { symbol: string }) {
         )}
       </div>
       <p className="h-5 text-sm text-gray-500">{data?.name ?? '\u00A0'}</p>
-      <div className="mt-1 flex h-5 flex-wrap gap-3">
+      <div className="mt-1 flex min-h-5 flex-wrap gap-3">
         {analysis && GAIN_PERIODS.map((p) => (
           <GainChip key={p.key} label={p.label} value={analysis.gain[p.key]} />
         ))}
@@ -129,9 +129,9 @@ export default function App() {
       <main className="mx-auto max-w-6xl px-4 py-4 sm:px-6 sm:py-6">
         {symbol ? (
           <>
-            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
               <StockInfo symbol={symbol} />
-              <div className="flex shrink-0 items-center gap-1">
+              <div className="flex shrink-0 flex-wrap items-center gap-1">
                 {PERIODS.map((p) => (
                   <button
                     key={p.value}
