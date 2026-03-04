@@ -98,6 +98,7 @@ export default function App() {
     if (trimmed) {
       setSymbol(trimmed);
       setPeriod('1y');
+      setInterval(undefined);
     }
   };
 
