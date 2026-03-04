@@ -114,7 +114,7 @@ export default function App() {
               autoCorrect="off"
               autoCapitalize="off"
               spellCheck={false}
-              className="w-24 rounded-md border border-gray-700 bg-gray-900 px-3 py-1.5 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none sm:w-auto sm:placeholder:before:content-['(e.g._AAPL)']"
+              className="w-24 rounded-md border border-gray-700 bg-gray-900 px-3 py-1.5 text-base text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none sm:w-auto sm:text-sm sm:placeholder:before:content-['(e.g._AAPL)']"
             />
             <button
               type="submit"
