@@ -52,7 +52,7 @@ function StockInfo({ symbol }: { symbol: string }) {
 
   return (
     <div className="min-w-0">
-      <div className="flex items-baseline gap-3">
+      <div className="flex h-8 items-baseline gap-3">
         <h2 className="text-2xl font-bold text-white">{symbol.toUpperCase()}</h2>
         {isLoading && <Spinner />}
         {error && <span className="text-sm text-red-400">Not found</span>}
@@ -67,16 +67,12 @@ function StockInfo({ symbol }: { symbol: string }) {
           </>
         )}
       </div>
-      {data?.name && (
-        <p className="text-sm text-gray-500">{data.name}</p>
-      )}
-      {analysis && (
-        <div className="mt-1 flex flex-wrap gap-3">
-          {GAIN_PERIODS.map((p) => (
-            <GainChip key={p.key} label={p.label} value={analysis.gain[p.key]} />
-          ))}
-        </div>
-      )}
+      <p className="h-5 text-sm text-gray-500">{data?.name ?? '\u00A0'}</p>
+      <div className="mt-1 flex h-5 flex-wrap gap-3">
+        {analysis && GAIN_PERIODS.map((p) => (
+          <GainChip key={p.key} label={p.label} value={analysis.gain[p.key]} />
+        ))}
+      </div>
     </div>
   );
 }
