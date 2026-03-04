@@ -18,14 +18,14 @@ function fmtNum(n: number | null, decimals = 2): string {
 function Item({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-2 py-1">
-      <span className="text-gray-500">{label}</span>
-      <span className="text-white">{value}</span>
+      <span className="shrink-0 text-gray-500">{label}</span>
+      <span className="truncate text-white">{value}</span>
     </div>
   );
 }
 
 function Recommendation({ value, count }: { value: string | null; count: number | null }) {
-  if (!value) return <Item label="Recommendation" value="—" />;
+  if (!value) return <Item label="Rating" value="—" />;
   const colors: Record<string, string> = {
     strong_buy: 'text-green-400',
     buy: 'text-green-400',
@@ -44,7 +44,7 @@ function Recommendation({ value, count }: { value: string | null; count: number 
   const countStr = count != null ? ` (${count})` : '';
   return (
     <div className="flex justify-between gap-2 py-1">
-      <span className="text-gray-500">Recommendation</span>
+      <span className="text-gray-500">Rating</span>
       <span className={colors[value] ?? 'text-white'}>{display}{countStr}</span>
     </div>
   );
@@ -74,8 +74,8 @@ export default function StockDetails({ symbol }: { symbol: string }) {
           <Item label="EPS" value={fmtNum(data.eps)} />
           <Item label="P/B" value={fmtNum(data.pbRatio)} />
           <Item label="Mkt Cap" value={data.marketCap != null ? fmtMktCap(data.marketCap) : '—'} />
-          <Item label="Div Yield" value={data.dividendYield != null ? fmtPct(data.dividendYield) : '—'} />
-          <Item label="Div Growth" value={data.dividendGrowth != null ? fmtPct(data.dividendGrowth) : '—'} />
+          <Item label="Yield" value={data.dividendYield != null ? fmtPct(data.dividendYield) : '—'} />
+          <Item label="Div Grw" value={data.dividendGrowth != null ? fmtPct(data.dividendGrowth) : '—'} />
           <Item label="ROE" value={data.roe != null ? fmtPct(data.roe) : '—'} />
           <Item label="Beta" value={fmtNum(data.beta)} />
           <Item label="52W High" value={fmtNum(data.fiftyTwoWeekHigh)} />
