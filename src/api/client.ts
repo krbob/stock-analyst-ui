@@ -1,4 +1,4 @@
-import type { Analysis, DividendHistory, Period, Price, StockHistory } from './types';
+import type { Analysis, DividendHistory, Interval, Period, Price, StockHistory } from './types';
 
 const API_URL = '/api';
 
@@ -18,8 +18,10 @@ async function fetchApi<T>(path: string): Promise<T> {
   return response.json();
 }
 
-export function getHistory(symbol: string, period: Period = '1y'): Promise<StockHistory> {
-  return fetchApi(`/history/${encodeURIComponent(symbol)}?period=${period}`);
+export function getHistory(symbol: string, period: Period = '1y', interval?: Interval): Promise<StockHistory> {
+  let url = `/history/${encodeURIComponent(symbol)}?period=${period}`;
+  if (interval) url += `&interval=${interval}`;
+  return fetchApi(url);
 }
 
 export function getAnalysis(symbol: string): Promise<Analysis> {
