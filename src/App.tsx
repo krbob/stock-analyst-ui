@@ -9,9 +9,11 @@ const PERIODS: { label: string; value: Period }[] = [
   { label: '1M', value: '1mo' },
   { label: '3M', value: '3mo' },
   { label: '6M', value: '6mo' },
+  { label: 'YTD', value: 'ytd' },
   { label: '1Y', value: '1y' },
   { label: '2Y', value: '2y' },
   { label: '5Y', value: '5y' },
+  { label: '10Y', value: '10y' },
   { label: 'Max', value: 'max' },
 ];
 
@@ -145,7 +147,7 @@ export default function App() {
                 ))}
               </div>
             </div>
-            <PriceChart symbol={symbol} period={period} />
+            <PriceChart symbol={symbol} period={period} onPeriodChange={setPeriod} />
           </>
         ) : (
           <div className="flex h-[500px] items-center justify-center text-gray-500 px-4 text-center">
