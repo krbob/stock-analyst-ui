@@ -83,6 +83,7 @@ export interface StockHistory {
   symbol: string;
   name: string;
   period: string;
+  interval: Interval;
   prices: HistoricalPrice[];
 }
 

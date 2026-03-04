@@ -88,6 +88,10 @@ export default function App() {
   const [lineChart, setLineChart] = useState(false);
   const [logScale, setLogScale] = useState(false);
 
+  // Shares the TanStack Query cache with PriceChart (same query key) — no extra fetch.
+  const { data: historyData } = useStockHistory(symbol, period, interval);
+  const activeInterval = historyData?.interval;
+
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     const trimmed = input.trim();
@@ -133,7 +137,7 @@ export default function App() {
                 {PERIODS.map((p) => (
                   <button
                     key={p.value}
-                    onClick={() => setPeriod(p.value)}
+                    onClick={() => { setPeriod(p.value); setInterval(undefined); }}
                     className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors sm:px-3 sm:text-sm ${
                       period === p.value
                         ? 'bg-blue-600 text-white'
@@ -147,9 +151,9 @@ export default function App() {
                 {INTERVALS.map((i) => (
                   <button
                     key={i.value}
-                    onClick={() => setInterval(interval === i.value ? undefined : i.value)}
+                    onClick={() => setInterval(i.value)}
                     className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors sm:px-3 sm:text-sm ${
-                      interval === i.value
+                      activeInterval === i.value
                         ? 'bg-blue-600 text-white'
                         : 'text-gray-400 hover:text-white hover:bg-gray-800'
                     }`}
