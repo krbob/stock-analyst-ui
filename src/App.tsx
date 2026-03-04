@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import PriceChart from './components/PriceChart';
 import { usePrice, useStockHistory } from './api/queries';
-import type { Period } from './api/types';
+import type { Interval, Period } from './api/types';
 
 const fmtPct = (n: number) => (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
 
@@ -15,6 +15,12 @@ const PERIODS: { label: string; value: Period }[] = [
   { label: '5Y', value: '5y' },
   { label: '10Y', value: '10y' },
   { label: 'Max', value: 'max' },
+];
+
+const INTERVALS: { label: string; value: Interval }[] = [
+  { label: '1D', value: '1d' },
+  { label: '1W', value: '1wk' },
+  { label: '1M', value: '1mo' },
 ];
 
 function Spinner() {
@@ -89,6 +95,7 @@ export default function App() {
   const [input, setInput] = useState('');
   const [symbol, setSymbol] = useState('');
   const [period, setPeriod] = useState<Period>('1y');
+  const [interval, setInterval] = useState<Interval | undefined>();
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -131,7 +138,7 @@ export default function App() {
           <>
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <StockInfo symbol={symbol} period={period} />
-              <div className="flex gap-1">
+              <div className="flex items-center gap-1">
                 {PERIODS.map((p) => (
                   <button
                     key={p.value}
@@ -145,9 +152,23 @@ export default function App() {
                     {p.label}
                   </button>
                 ))}
+                <div className="mx-1 h-5 w-px bg-gray-700" />
+                {INTERVALS.map((i) => (
+                  <button
+                    key={i.value}
+                    onClick={() => setInterval(interval === i.value ? undefined : i.value)}
+                    className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors sm:px-3 sm:text-sm ${
+                      interval === i.value
+                        ? 'bg-blue-600 text-white'
+                        : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                    }`}
+                  >
+                    {i.label}
+                  </button>
+                ))}
               </div>
             </div>
-            <PriceChart symbol={symbol} period={period} onPeriodChange={setPeriod} />
+            <PriceChart symbol={symbol} period={period} interval={interval} />
           </>
         ) : (
           <div className="flex h-[500px] items-center justify-center text-gray-500 px-4 text-center">
