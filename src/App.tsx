@@ -55,38 +55,27 @@ function StockInfo({ symbol, period }: { symbol: string; period: Period }) {
 
   if (!symbol) return null;
 
-  if (isLoading) {
-    return (
-      <div className="flex items-baseline gap-4">
-        <h2 className="text-2xl font-bold text-white">{symbol.toUpperCase()}</h2>
-        <Spinner />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-baseline gap-4">
-        <h2 className="text-2xl font-bold text-white">{symbol.toUpperCase()}</h2>
-        <span className="text-sm text-red-400">Not found</span>
-      </div>
-    );
-  }
-
-  if (!data) return null;
-
-  const dailyChange = data.gain.daily;
-
   return (
-    <div className="flex items-baseline gap-4">
-      <h2 className="text-2xl font-bold text-white">{data.name}</h2>
-      <span className="text-xl text-gray-300">{data.lastPrice.toFixed(2)}</span>
-      {dailyChange != null && (
-        <span className={`text-lg font-medium ${dailyChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-          {fmtPct(dailyChange)}
-        </span>
+    <div className="min-w-0">
+      <div className="flex items-baseline gap-3">
+        <h2 className="text-2xl font-bold text-white">{symbol.toUpperCase()}</h2>
+        {isLoading && <Spinner />}
+        {error && <span className="text-sm text-red-400">Not found</span>}
+        {data && (
+          <>
+            <span className="text-xl text-gray-300">{data.lastPrice.toFixed(2)}</span>
+            {data.gain.daily != null && (
+              <span className={`text-lg font-medium ${data.gain.daily >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {fmtPct(data.gain.daily)}
+              </span>
+            )}
+            <PeriodChange symbol={symbol} period={period} />
+          </>
+        )}
+      </div>
+      {data?.name && (
+        <p className="text-sm text-gray-500">{data.name}</p>
       )}
-      <PeriodChange symbol={symbol} period={period} />
     </div>
   );
 }
@@ -136,9 +125,9 @@ export default function App() {
       <main className="mx-auto max-w-6xl px-4 py-4 sm:px-6 sm:py-6">
         {symbol ? (
           <>
-            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <StockInfo symbol={symbol} period={period} />
-              <div className="flex items-center gap-1">
+              <div className="flex shrink-0 items-center gap-1">
                 {PERIODS.map((p) => (
                   <button
                     key={p.value}
