@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { createChart, CandlestickSeries, ColorType, type IChartApi, type ISeriesApi } from 'lightweight-charts';
+import { createChart, CandlestickSeries, LineSeries, ColorType, PriceScaleMode, type IChartApi } from 'lightweight-charts';
 import { useStockHistory } from '../api/queries';
 import type { Interval, Period } from '../api/types';
 
@@ -20,7 +20,7 @@ const CHART_OPTIONS = {
   rightPriceScale: { borderColor: '#3a3a4e' },
 } as const;
 
-const SERIES_OPTIONS = {
+const CANDLESTICK_OPTIONS = {
   upColor: '#22c55e',
   downColor: '#ef4444',
   borderDownColor: '#ef4444',
@@ -28,6 +28,11 @@ const SERIES_OPTIONS = {
   wickDownColor: '#ef4444',
   wickUpColor: '#22c55e',
 } as const;
+
+const LINE_OPTIONS = {
+  color: '#3b82f6',
+  lineWidth: 2 as const,
+};
 
 // ---------------------------------------------------------------------------
 // Component
@@ -37,12 +42,13 @@ interface PriceChartProps {
   symbol: string;
   period?: Period;
   interval?: Interval;
+  lineChart?: boolean;
+  logScale?: boolean;
 }
 
-export default function PriceChart({ symbol, period = '1y', interval }: PriceChartProps) {
+export default function PriceChart({ symbol, period = '1y', interval, lineChart, logScale }: PriceChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
 
   const { data, isFetching, error } = useStockHistory(symbol, period, interval);
 
@@ -56,10 +62,7 @@ export default function PriceChart({ symbol, period = '1y', interval }: PriceCha
       height: window.innerWidth < 640 ? 350 : 500,
     });
 
-    const series = chart.addSeries(CandlestickSeries, SERIES_OPTIONS);
-
     chartRef.current = chart;
-    seriesRef.current = series;
 
     const handleResize = () => {
       if (containerRef.current) {
@@ -72,27 +75,46 @@ export default function PriceChart({ symbol, period = '1y', interval }: PriceCha
       window.removeEventListener('resize', handleResize);
       chart.remove();
       chartRef.current = null;
-      seriesRef.current = null;
     };
   }, []);
 
-  // ---- Push new data into the chart ----
+  // ---- Series + data (recreated on type or data change) ----
   useEffect(() => {
-    if (!seriesRef.current || !data) return;
+    const chart = chartRef.current;
+    if (!chart || !data) return;
 
-    seriesRef.current.setData(
-      data.prices.map((p) => ({
-        time: p.date,
-        open: p.open,
-        high: p.high,
-        low: p.low,
-        close: p.close,
-      })),
-    );
-    // Reset Y-axis auto-scale (user may have manually zoomed the price axis).
-    chartRef.current?.priceScale('right').applyOptions({ autoScale: true });
-    chartRef.current?.timeScale().fitContent();
-  }, [data]);
+    let cleanup: () => void;
+
+    if (lineChart) {
+      const series = chart.addSeries(LineSeries, LINE_OPTIONS);
+      series.setData(data.prices.map((p) => ({ time: p.date, value: p.close })));
+      cleanup = () => chart.removeSeries(series);
+    } else {
+      const series = chart.addSeries(CandlestickSeries, CANDLESTICK_OPTIONS);
+      series.setData(
+        data.prices.map((p) => ({
+          time: p.date,
+          open: p.open,
+          high: p.high,
+          low: p.low,
+          close: p.close,
+        })),
+      );
+      cleanup = () => chart.removeSeries(series);
+    }
+
+    chart.priceScale('right').applyOptions({ autoScale: true });
+    chart.timeScale().fitContent();
+
+    return cleanup;
+  }, [data, lineChart]);
+
+  // ---- Log scale (independent of series) ----
+  useEffect(() => {
+    chartRef.current?.priceScale('right').applyOptions({
+      mode: logScale ? PriceScaleMode.Logarithmic : PriceScaleMode.Normal,
+    });
+  }, [logScale]);
 
   if (!symbol) return null;
 

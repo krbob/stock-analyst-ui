@@ -85,6 +85,8 @@ export default function App() {
   const [symbol, setSymbol] = useState('');
   const [period, setPeriod] = useState<Period>('1y');
   const [interval, setInterval] = useState<Interval | undefined>();
+  const [lineChart, setLineChart] = useState(false);
+  const [logScale, setLogScale] = useState(false);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -155,9 +157,30 @@ export default function App() {
                     {i.label}
                   </button>
                 ))}
+                <div className="mx-1 h-5 w-px bg-gray-700" />
+                <button
+                  onClick={() => setLineChart(!lineChart)}
+                  className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors sm:px-3 sm:text-sm ${
+                    lineChart
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                  }`}
+                >
+                  Line
+                </button>
+                <button
+                  onClick={() => setLogScale(!logScale)}
+                  className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors sm:px-3 sm:text-sm ${
+                    logScale
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                  }`}
+                >
+                  Log
+                </button>
               </div>
             </div>
-            <PriceChart symbol={symbol} period={period} interval={interval} />
+            <PriceChart symbol={symbol} period={period} interval={interval} lineChart={lineChart} logScale={logScale} />
           </>
         ) : (
           <div className="flex h-[500px] items-center justify-center text-gray-500 px-4 text-center">
