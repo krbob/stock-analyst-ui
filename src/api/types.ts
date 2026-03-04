@@ -3,7 +3,10 @@ export interface Gain {
   weekly: number | null;
   monthly: number | null;
   quarterly: number | null;
+  halfYearly: number | null;
+  ytd: number | null;
   yearly: number | null;
+  fiveYear: number | null;
 }
 
 export interface Rsi {

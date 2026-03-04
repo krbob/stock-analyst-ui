@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import PriceChart from './components/PriceChart';
 import StockDetails from './components/StockDetails';
-import { usePrice, useStockHistory } from './api/queries';
+import { useAnalysis, usePrice, useStockHistory } from './api/queries';
 import type { Interval, Period } from './api/types';
 
 const fmtPct = (n: number) => (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
@@ -30,29 +30,26 @@ function Spinner() {
   );
 }
 
-const PERIOD_LABELS: Record<Period, string> = {
-  '1d': '1D', '5d': '5D', '1mo': '1M', '3mo': '3M', '6mo': '6M',
-  '1y': '1Y', '2y': '2Y', '5y': '5Y', '10y': '10Y', 'ytd': 'YTD', 'max': 'Max',
-};
+const GAIN_PERIODS = [
+  { label: '1M', key: 'monthly' },
+  { label: 'YTD', key: 'ytd' },
+  { label: '1Y', key: 'yearly' },
+  { label: '5Y', key: 'fiveYear' },
+] as const;
 
-function PeriodChange({ symbol, period }: { symbol: string; period: Period }) {
-  const { data } = useStockHistory(symbol, period);
-
-  if (!data || data.prices.length < 2) return null;
-
-  const first = data.prices[0].close;
-  const last = data.prices[data.prices.length - 1].close;
-  const change = ((last - first) / first) * 100;
-
+function GainChip({ label, value }: { label: string; value: number | null }) {
+  if (value == null) return null;
+  const pct = value * 100;
   return (
-    <span className={`text-sm ${change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-      {fmtPct(change)} ({PERIOD_LABELS[period]})
+    <span className={`text-xs ${pct >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+      {fmtPct(pct)} ({label})
     </span>
   );
 }
 
-function StockInfo({ symbol, period }: { symbol: string; period: Period }) {
+function StockInfo({ symbol }: { symbol: string }) {
   const { data, isLoading, error } = usePrice(symbol);
+  const { data: analysis } = useAnalysis(symbol);
 
   if (!symbol) return null;
 
@@ -70,12 +67,18 @@ function StockInfo({ symbol, period }: { symbol: string; period: Period }) {
                 {fmtPct(data.gain.daily)}
               </span>
             )}
-            <PeriodChange symbol={symbol} period={period} />
           </>
         )}
       </div>
       {data?.name && (
         <p className="text-sm text-gray-500">{data.name}</p>
+      )}
+      {analysis && (
+        <div className="mt-1 flex flex-wrap gap-3">
+          {GAIN_PERIODS.map((p) => (
+            <GainChip key={p.key} label={p.label} value={analysis.gain[p.key]} />
+          ))}
+        </div>
       )}
     </div>
   );
@@ -134,7 +137,7 @@ export default function App() {
         {symbol ? (
           <>
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <StockInfo symbol={symbol} period={period} />
+              <StockInfo symbol={symbol} />
               <div className="flex shrink-0 items-center gap-1">
                 {PERIODS.map((p) => (
                   <button
