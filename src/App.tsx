@@ -153,7 +153,7 @@ export default function App() {
                 {INTERVALS.map((i) => (
                   <button
                     key={i.value}
-                    onClick={() => setInterval(i.value)}
+                    onClick={() => { if (activeInterval !== i.value) setInterval(i.value); }}
                     className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors sm:px-3 sm:text-sm ${
                       activeInterval === i.value
                         ? 'bg-blue-600 text-white'
