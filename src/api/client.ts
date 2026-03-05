@@ -18,9 +18,10 @@ async function fetchApi<T>(path: string): Promise<T> {
   return response.json();
 }
 
-export function getHistory(symbol: string, period: Period = '1y', interval?: Interval): Promise<StockHistory> {
+export function getHistory(symbol: string, period: Period = '1y', interval?: Interval, indicators?: string[]): Promise<StockHistory> {
   let url = `/history/${encodeURIComponent(symbol)}?period=${period}`;
   if (interval) url += `&interval=${interval}`;
+  if (indicators && indicators.length > 0) url += `&indicators=${indicators.join(',')}`;
   return fetchApi(url);
 }
 

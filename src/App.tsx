@@ -22,6 +22,16 @@ const INTERVALS: { label: string; value: Interval }[] = [
   { label: '1M', value: '1mo' },
 ];
 
+const INDICATORS = [
+  { label: 'SMA', keys: ['sma50', 'sma200'] },
+  { label: 'EMA', keys: ['ema50', 'ema200'] },
+  { label: 'BB', keys: ['bb'] },
+  { label: 'RSI', keys: ['rsi'] },
+  { label: 'MACD', keys: ['macd'] },
+];
+
+const ALL_INDICATOR_KEYS = ['bb', 'ema50', 'ema200', 'macd', 'rsi', 'sma50', 'sma200'];
+
 function Spinner() {
   return (
     <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-600 border-t-blue-400" />
@@ -84,20 +94,41 @@ export default function App() {
   const [interval, setInterval] = useState<Interval | undefined>();
   const [lineChart, setLineChart] = useState(false);
   const [logScale, setLogScale] = useState(false);
+  const [indicators, setIndicators] = useState<Set<string>>(new Set());
+
+  // Always fetch all indicators when any are active — avoids refetch on each toggle.
+  const indicatorArray = indicators.size > 0 ? ALL_INDICATOR_KEYS : undefined;
 
   // Shares the TanStack Query cache with PriceChart (same query key) — no extra fetch.
-  const { data: historyData } = useStockHistory(symbol, period, interval);
+  const { data: historyData } = useStockHistory(symbol, period, interval, indicatorArray);
   const activeInterval = interval ?? (
     historyData?.symbol.toLowerCase() === symbol.toLowerCase()
       ? historyData?.interval
       : undefined
   );
 
+  const toggleIndicatorGroup = (keys: string[]) => {
+    setIndicators((prev) => {
+      const next = new Set(prev);
+      const allActive = keys.every((k) => next.has(k));
+      for (const k of keys) {
+        if (allActive) next.delete(k);
+        else next.add(k);
+      }
+      return next;
+    });
+  };
+
   const handleSelect = (sym: string) => {
     setSymbol(sym);
     setPeriod('1y');
     setInterval(undefined);
   };
+
+  const btnClass = (active: boolean) =>
+    `rounded-md px-2.5 py-1 text-xs font-medium transition-colors sm:px-3 sm:text-sm ${
+      active ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'
+    }`;
 
   return (
     <div className="min-h-screen bg-[#0f0f1a] text-white">
@@ -118,11 +149,7 @@ export default function App() {
                   <button
                     key={p.value}
                     onClick={() => { setPeriod(p.value); setInterval(undefined); }}
-                    className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors sm:px-3 sm:text-sm ${
-                      period === p.value
-                        ? 'bg-blue-600 text-white'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                    }`}
+                    className={btnClass(period === p.value)}
                   >
                     {p.label}
                   </button>
@@ -132,39 +159,35 @@ export default function App() {
                   <button
                     key={i.value}
                     onClick={() => { if (activeInterval !== i.value) setInterval(i.value); }}
-                    className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors sm:px-3 sm:text-sm ${
-                      activeInterval === i.value
-                        ? 'bg-blue-600 text-white'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                    }`}
+                    className={btnClass(activeInterval === i.value)}
                   >
                     {i.label}
                   </button>
                 ))}
                 <div className="mx-1 h-5 w-px bg-gray-700" />
-                <button
-                  onClick={() => setLineChart(!lineChart)}
-                  className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors sm:px-3 sm:text-sm ${
-                    lineChart
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                  }`}
-                >
+                <button onClick={() => setLineChart(!lineChart)} className={btnClass(lineChart)}>
                   Line
                 </button>
-                <button
-                  onClick={() => setLogScale(!logScale)}
-                  className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors sm:px-3 sm:text-sm ${
-                    logScale
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                  }`}
-                >
+                <button onClick={() => setLogScale(!logScale)} className={btnClass(logScale)}>
                   Log
                 </button>
               </div>
             </div>
-            <PriceChart symbol={symbol} period={period} interval={interval} lineChart={lineChart} logScale={logScale} />
+            <div className="mb-2 flex flex-wrap items-center gap-1">
+              {INDICATORS.map((ind) => {
+                const active = ind.keys.every((k) => indicators.has(k));
+                return (
+                  <button
+                    key={ind.label}
+                    onClick={() => toggleIndicatorGroup(ind.keys)}
+                    className={btnClass(active)}
+                  >
+                    {ind.label}
+                  </button>
+                );
+              })}
+            </div>
+            <PriceChart symbol={symbol} period={period} interval={interval} lineChart={lineChart} logScale={logScale} indicators={indicatorArray} activeIndicators={indicators} />
             <StockDetails symbol={symbol} />
           </>
         ) : (
