@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import PriceChart from './components/PriceChart';
 import StockDetails from './components/StockDetails';
 import TickerSearch from './components/TickerSearch';
@@ -95,6 +95,8 @@ export default function App() {
   const [lineChart, setLineChart] = useState(false);
   const [logScale, setLogScale] = useState(false);
   const [indicators, setIndicators] = useState<Set<string>>(new Set());
+  const [chartZoomed, setChartZoomed] = useState(false);
+  const resetViewRef = useRef<(() => void) | null>(null);
 
   // Always fetch all indicators when any are active — avoids refetch on each toggle.
   const indicatorArray = indicators.size > 0 ? ALL_INDICATOR_KEYS : undefined;
@@ -186,8 +188,13 @@ export default function App() {
                   </button>
                 );
               })}
+              <div className={`ml-auto transition-opacity duration-200 ${chartZoomed ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                <button onClick={() => resetViewRef.current?.()} className={btnClass(false)}>
+                  Reset
+                </button>
+              </div>
             </div>
-            <PriceChart symbol={symbol} period={period} interval={interval} lineChart={lineChart} logScale={logScale} indicators={indicatorArray} activeIndicators={indicators} />
+            <PriceChart symbol={symbol} period={period} interval={interval} lineChart={lineChart} logScale={logScale} indicators={indicatorArray} activeIndicators={indicators} onZoomChange={setChartZoomed} resetRef={resetViewRef} />
             <StockDetails symbol={symbol} />
           </>
         ) : (
