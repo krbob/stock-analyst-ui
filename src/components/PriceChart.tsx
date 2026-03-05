@@ -1,8 +1,46 @@
 import { useEffect, useRef, useState } from 'react';
 import { createChart, CandlestickSeries, LineSeries, HistogramSeries, ColorType, PriceScaleMode, type IChartApi } from 'lightweight-charts';
-import type { HistoricalPrice } from '../api/types';
+import type { HistoricalPrice, Indicators } from '../api/types';
 import { useStockHistory } from '../api/queries';
 import type { Interval, Period } from '../api/types';
+
+// ---------------------------------------------------------------------------
+// Indicator legend lookup
+// ---------------------------------------------------------------------------
+
+interface IndicatorSnapshot {
+  sma50?: number;
+  sma200?: number;
+  ema50?: number;
+  ema200?: number;
+  bb?: { upper: number; middle: number; lower: number };
+  rsi?: number;
+  macd?: { macd: number; signal: number; histogram: number };
+}
+
+function buildIndicatorLookup(ind: Indicators, active: Set<string>): Map<string, IndicatorSnapshot> {
+  const lookup = new Map<string, IndicatorSnapshot>();
+  const getSnap = (date: string) => {
+    let s = lookup.get(date);
+    if (!s) { s = {}; lookup.set(date, s); }
+    return s;
+  };
+
+  for (const key of ['sma50', 'sma200', 'ema50', 'ema200'] as const) {
+    if (!active.has(key)) continue;
+    for (const v of ind[key] ?? []) getSnap(v.date)[key] = v.value;
+  }
+  if (active.has('bb')) {
+    for (const v of ind.bb ?? []) getSnap(v.date).bb = { upper: v.upper, middle: v.middle, lower: v.lower };
+  }
+  if (active.has('rsi')) {
+    for (const v of ind.rsi ?? []) getSnap(v.date).rsi = v.value;
+  }
+  if (active.has('macd')) {
+    for (const v of ind.macd ?? []) getSnap(v.date).macd = { macd: v.macd, signal: v.signal, histogram: v.histogram };
+  }
+  return lookup;
+}
 
 // ---------------------------------------------------------------------------
 // Chart styling
@@ -70,7 +108,9 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const pricesRef = useRef<Map<string, HistoricalPrice>>(new Map());
+  const indRef = useRef<Map<string, IndicatorSnapshot>>(new Map());
   const [legend, setLegend] = useState<HistoricalPrice | null>(null);
+  const [indLegend, setIndLegend] = useState<IndicatorSnapshot | null>(null);
 
   const { data, isFetching, error } = useStockHistory(symbol, period, interval, indicators);
   const prevDataRef = useRef(data);
@@ -92,10 +132,12 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
     chart.subscribeCrosshairMove((param) => {
       if (!param.time) {
         setLegend(null);
+        setIndLegend(null);
         return;
       }
-      const price = pricesRef.current.get(String(param.time));
-      setLegend(price ?? null);
+      const key = String(param.time);
+      setLegend(pricesRef.current.get(key) ?? null);
+      setIndLegend(indRef.current.get(key) ?? null);
     });
 
     const handleResize = () => {
@@ -120,7 +162,9 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
     const priceMap = new Map<string, HistoricalPrice>();
     for (const p of data.prices) priceMap.set(p.date, p);
     pricesRef.current = priceMap;
+    indRef.current = data.indicators ? buildIndicatorLookup(data.indicators, active) : new Map();
     setLegend(null);
+    setIndLegend(null);
 
     const cleanups: (() => void)[] = [];
 
@@ -297,6 +341,13 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
           <span>L <span className="text-white">{legend.low.toFixed(2)}</span></span>
           <span>C <span className={legend.close >= legend.open ? 'text-green-400' : 'text-red-400'}>{legend.close.toFixed(2)}</span></span>
           <span>V <span className="text-white">{fmtVol(legend.volume)}</span></span>
+          {indLegend?.sma50 != null && <span>SMA50 <span style={{ color: OVERLAY_COLORS.sma50 }}>{indLegend.sma50.toFixed(2)}</span></span>}
+          {indLegend?.sma200 != null && <span>SMA200 <span style={{ color: OVERLAY_COLORS.sma200 }}>{indLegend.sma200.toFixed(2)}</span></span>}
+          {indLegend?.ema50 != null && <span>EMA50 <span style={{ color: OVERLAY_COLORS.ema50 }}>{indLegend.ema50.toFixed(2)}</span></span>}
+          {indLegend?.ema200 != null && <span>EMA200 <span style={{ color: OVERLAY_COLORS.ema200 }}>{indLegend.ema200.toFixed(2)}</span></span>}
+          {indLegend?.bb != null && <span style={{ color: OVERLAY_COLORS.bb_middle }}>BB <span>{indLegend.bb.lower.toFixed(2)} / {indLegend.bb.middle.toFixed(2)} / {indLegend.bb.upper.toFixed(2)}</span></span>}
+          {indLegend?.rsi != null && <span>RSI <span style={{ color: '#eab308' }}>{indLegend.rsi.toFixed(0)}</span></span>}
+          {indLegend?.macd != null && <span style={{ color: '#3b82f6' }}>MACD <span>{indLegend.macd.macd.toFixed(2)} / {indLegend.macd.signal.toFixed(2)} / {indLegend.macd.histogram.toFixed(2)}</span></span>}
         </div>
       )}
       <div ref={containerRef} className="w-full" />
