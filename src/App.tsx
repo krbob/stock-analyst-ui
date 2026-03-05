@@ -87,7 +87,11 @@ export default function App() {
 
   // Shares the TanStack Query cache with PriceChart (same query key) — no extra fetch.
   const { data: historyData } = useStockHistory(symbol, period, interval);
-  const activeInterval = historyData?.interval;
+  const activeInterval = interval ?? (
+    historyData?.symbol.toLowerCase() === symbol.toLowerCase()
+      ? historyData?.interval
+      : undefined
+  );
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
