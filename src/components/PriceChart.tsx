@@ -178,7 +178,9 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
       )}
       <div ref={containerRef} className="w-full" />
       {isFetching && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#1a1a2e]/80">
+        <div className={`absolute inset-0 z-10 flex items-center justify-center ${
+          data?.symbol.toLowerCase() === symbol.toLowerCase() ? 'bg-[#1a1a2e]/80' : 'bg-[#1a1a2e]'
+        }`}>
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-600 border-t-blue-400" />
         </div>
       )}
