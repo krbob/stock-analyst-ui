@@ -102,15 +102,18 @@ interface PriceChartProps {
   logScale?: boolean;
   indicators?: string[];
   activeIndicators?: Set<string>;
+  onZoomChange?: (zoomed: boolean) => void;
+  resetRef?: React.MutableRefObject<(() => void) | null>;
 }
 
-export default function PriceChart({ symbol, period = '1y', interval, lineChart, logScale, indicators, activeIndicators }: PriceChartProps) {
+export default function PriceChart({ symbol, period = '1y', interval, lineChart, logScale, indicators, activeIndicators, onZoomChange, resetRef }: PriceChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const pricesRef = useRef<Map<string, HistoricalPrice>>(new Map());
   const indRef = useRef<Map<string, IndicatorSnapshot>>(new Map());
   const [legend, setLegend] = useState<HistoricalPrice | null>(null);
   const [indLegend, setIndLegend] = useState<IndicatorSnapshot | null>(null);
+  const fittingRef = useRef(false);
 
   const { data, isFetching, error } = useStockHistory(symbol, period, interval, indicators);
   const prevDataRef = useRef(data);
@@ -138,6 +141,10 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
       const key = String(param.time);
       setLegend(pricesRef.current.get(key) ?? null);
       setIndLegend(indRef.current.get(key) ?? null);
+    });
+
+    chart.timeScale().subscribeVisibleLogicalRangeChange(() => {
+      if (!fittingRef.current) onZoomChange?.(true);
     });
 
     const handleResize = () => {
@@ -314,11 +321,23 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
 
     chart.priceScale('right').applyOptions({ autoScale: true });
 
+    if (resetRef) {
+      resetRef.current = () => {
+        fittingRef.current = true;
+        chart.timeScale().fitContent();
+        requestAnimationFrame(() => { fittingRef.current = false; });
+        onZoomChange?.(false);
+      };
+    }
+
     const dataChanged = prevDataRef.current !== data;
     prevDataRef.current = data;
     if (dataChanged) {
+      fittingRef.current = true;
       chart.timeScale().fitContent();
+      requestAnimationFrame(() => { fittingRef.current = false; });
     }
+    onZoomChange?.(false);
 
     return () => cleanups.forEach((fn) => fn());
   }, [data, lineChart, activeIndicators]);
