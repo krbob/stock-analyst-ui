@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
 import PriceChart from './components/PriceChart';
 import StockDetails from './components/StockDetails';
+import TickerSearch from './components/TickerSearch';
 import { useAnalysis, usePrice, useStockHistory } from './api/queries';
 import type { Interval, Period } from './api/types';
 
@@ -78,7 +79,6 @@ function StockInfo({ symbol }: { symbol: string }) {
 }
 
 export default function App() {
-  const [input, setInput] = useState('');
   const [symbol, setSymbol] = useState('');
   const [period, setPeriod] = useState<Period>('1y');
   const [interval, setInterval] = useState<Interval | undefined>();
@@ -93,14 +93,10 @@ export default function App() {
       : undefined
   );
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    const trimmed = input.trim();
-    if (trimmed) {
-      setSymbol(trimmed);
-      setPeriod('1y');
-      setInterval(undefined);
-    }
+  const handleSelect = (sym: string) => {
+    setSymbol(sym);
+    setPeriod('1y');
+    setInterval(undefined);
   };
 
   return (
@@ -108,25 +104,7 @@ export default function App() {
       <header className="border-b border-gray-800 px-4 py-3 sm:px-6 sm:py-4">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
           <h1 className="text-lg font-bold tracking-tight sm:text-xl">Stock Analyst</h1>
-          <form onSubmit={handleSubmit} className="flex gap-2">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ticker"
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="off"
-              spellCheck={false}
-              className="w-24 rounded-md border border-gray-700 bg-gray-900 px-3 py-1.5 text-base text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none sm:w-auto sm:text-sm sm:placeholder:before:content-['(e.g._AAPL)']"
-            />
-            <button
-              type="submit"
-              className="rounded-md bg-blue-600 px-4 py-1.5 text-sm font-medium hover:bg-blue-500 transition-colors"
-            >
-              Go
-            </button>
-          </form>
+          <TickerSearch onSelect={handleSelect} />
         </div>
       </header>
 

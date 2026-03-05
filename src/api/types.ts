@@ -108,6 +108,13 @@ export interface DividendHistory {
   summary: DividendSummary;
 }
 
+export interface SearchResult {
+  symbol: string;
+  name: string;
+  exchange: string;
+  quoteType: string;
+}
+
 export type Period = '1d' | '5d' | '1mo' | '3mo' | '6mo' | '1y' | '2y' | '5y' | '10y' | 'ytd' | 'max';
 
 export type Interval = '1d' | '1wk' | '1mo';

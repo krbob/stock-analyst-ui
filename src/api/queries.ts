@@ -1,5 +1,5 @@
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import { getHistory, getAnalysis, getPrice, getDividends, compareStocks } from './client';
+import { getHistory, getAnalysis, getPrice, getDividends, compareStocks, searchTickers } from './client';
 import type { Interval, Period } from './types';
 
 export function useStockHistory(symbol: string, period: Period = '1y', interval?: Interval) {
@@ -40,5 +40,15 @@ export function useCompare(symbols: string[]) {
     queryKey: ['compare', ...symbols],
     queryFn: () => compareStocks(symbols),
     enabled: symbols.length > 0,
+  });
+}
+
+export function useTickerSearch(query: string) {
+  return useQuery({
+    queryKey: ['search', query],
+    queryFn: () => searchTickers(query),
+    enabled: query.length >= 1,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: keepPreviousData,
   });
 }

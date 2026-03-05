@@ -1,4 +1,4 @@
-import type { Analysis, DividendHistory, Interval, Period, Price, StockHistory } from './types';
+import type { Analysis, DividendHistory, Interval, Period, Price, SearchResult, StockHistory } from './types';
 
 const API_URL = '/api';
 
@@ -38,4 +38,8 @@ export function getDividends(symbol: string): Promise<DividendHistory> {
 
 export function compareStocks(symbols: string[]): Promise<Analysis[]> {
   return fetchApi(`/compare?symbols=${symbols.map(encodeURIComponent).join(',')}`);
+}
+
+export function searchTickers(query: string): Promise<SearchResult[]> {
+  return fetchApi(`/search/${encodeURIComponent(query)}`);
 }
