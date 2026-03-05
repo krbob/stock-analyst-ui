@@ -35,6 +35,16 @@ const LINE_OPTIONS = {
   lineWidth: 2 as const,
 };
 
+const OVERLAY_COLORS: Record<string, string> = {
+  sma50: '#f59e0b',
+  sma200: '#3b82f6',
+  ema50: '#f97316',
+  ema200: '#6366f1',
+  bb_upper: '#8b5cf6',
+  bb_middle: '#a78bfa',
+  bb_lower: '#8b5cf6',
+};
+
 function fmtVol(n: number): string {
   if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
   if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
@@ -52,16 +62,20 @@ interface PriceChartProps {
   interval?: Interval;
   lineChart?: boolean;
   logScale?: boolean;
+  indicators?: string[];
+  activeIndicators?: Set<string>;
 }
 
-export default function PriceChart({ symbol, period = '1y', interval, lineChart, logScale }: PriceChartProps) {
+export default function PriceChart({ symbol, period = '1y', interval, lineChart, logScale, indicators, activeIndicators }: PriceChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const pricesRef = useRef<Map<string, HistoricalPrice>>(new Map());
   const [legend, setLegend] = useState<HistoricalPrice | null>(null);
 
-  const { data, isFetching, error } = useStockHistory(symbol, period, interval);
+  const { data, isFetching, error } = useStockHistory(symbol, period, interval, indicators);
   const prevDataRef = useRef(data);
+
+  const active = activeIndicators ?? new Set<string>();
 
   // ---- Chart creation (once) ----
   useEffect(() => {
@@ -110,6 +124,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
 
     const cleanups: (() => void)[] = [];
 
+    // --- Price series (pane 0) ---
     if (lineChart) {
       const series = chart.addSeries(LineSeries, LINE_OPTIONS);
       series.setData(data.prices.map((p) => ({ time: p.date, value: p.close })));
@@ -128,6 +143,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
       cleanups.push(() => chart.removeSeries(series));
     }
 
+    // --- Volume ---
     const volumeSeries = chart.addSeries(HistogramSeries, {
       priceFormat: { type: 'volume' },
       priceScaleId: 'volume',
@@ -145,6 +161,113 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
     });
     cleanups.push(() => chart.removeSeries(volumeSeries));
 
+    // --- Overlay indicators (SMA, EMA, BB on pane 0) ---
+    const ind = data.indicators;
+    if (ind) {
+      const overlayKeys = ['sma50', 'sma200', 'ema50', 'ema200'] as const;
+      for (const key of overlayKeys) {
+        if (!active.has(key)) continue;
+        const values = ind[key];
+        if (!values) continue;
+        const series = chart.addSeries(LineSeries, {
+          color: OVERLAY_COLORS[key],
+          lineWidth: 1,
+          priceScaleId: 'right',
+        });
+        series.setData(values.map((v) => ({ time: v.date, value: v.value })));
+        cleanups.push(() => chart.removeSeries(series));
+      }
+
+      if (ind.bb && active.has('bb')) {
+        const bbLines = [
+          { data: ind.bb.map((v) => ({ time: v.date, value: v.upper })), color: OVERLAY_COLORS.bb_upper },
+          { data: ind.bb.map((v) => ({ time: v.date, value: v.middle })), color: OVERLAY_COLORS.bb_middle, style: 2 },
+          { data: ind.bb.map((v) => ({ time: v.date, value: v.lower })), color: OVERLAY_COLORS.bb_lower },
+        ];
+        for (const line of bbLines) {
+          const series = chart.addSeries(LineSeries, {
+            color: line.color,
+            lineWidth: 1,
+            lineStyle: (line as { style?: number }).style,
+            priceScaleId: 'right',
+          });
+          series.setData(line.data);
+          cleanups.push(() => chart.removeSeries(series));
+        }
+      }
+
+      // --- RSI pane ---
+      if (ind.rsi && active.has('rsi')) {
+        const rsiPane = chart.addPane();
+        const rsiPaneIdx = rsiPane.paneIndex();
+        rsiPane.setStretchFactor(0.3);
+
+        const rsiSeries = chart.addSeries(LineSeries, {
+          color: '#eab308',
+          lineWidth: 1,
+          priceFormat: { type: 'custom', formatter: (v: number) => v.toFixed(0) },
+        }, rsiPaneIdx);
+        rsiSeries.setData(ind.rsi.map((v) => ({ time: v.date, value: v.value })));
+        cleanups.push(() => chart.removeSeries(rsiSeries));
+
+        // Reference lines at 70 and 30
+        for (const level of [70, 30]) {
+          const refSeries = chart.addSeries(LineSeries, {
+            color: '#4b5563',
+            lineWidth: 1,
+            lineStyle: 2,
+            priceScaleId: 'right',
+            crosshairMarkerVisible: false,
+            lastValueVisible: false,
+          }, rsiPaneIdx);
+          refSeries.setData(ind.rsi.map((v) => ({ time: v.date, value: level })));
+          cleanups.push(() => chart.removeSeries(refSeries));
+        }
+
+        chart.priceScale('right', rsiPaneIdx).applyOptions({
+          autoScale: true,
+          scaleMargins: { top: 0.05, bottom: 0.05 },
+        });
+      }
+
+      // --- MACD pane ---
+      if (ind.macd && active.has('macd')) {
+        const macdPane = chart.addPane();
+        const macdPaneIdx = macdPane.paneIndex();
+        macdPane.setStretchFactor(0.3);
+
+        const macdSeries = chart.addSeries(LineSeries, {
+          color: '#3b82f6',
+          lineWidth: 1,
+          priceFormat: { type: 'custom', formatter: (v: number) => v.toFixed(2) },
+        }, macdPaneIdx);
+        macdSeries.setData(ind.macd.map((v) => ({ time: v.date, value: v.macd })));
+        cleanups.push(() => chart.removeSeries(macdSeries));
+
+        const signalSeries = chart.addSeries(LineSeries, {
+          color: '#f97316',
+          lineWidth: 1,
+        }, macdPaneIdx);
+        signalSeries.setData(ind.macd.map((v) => ({ time: v.date, value: v.signal })));
+        cleanups.push(() => chart.removeSeries(signalSeries));
+
+        const histSeries = chart.addSeries(HistogramSeries, {
+          priceScaleId: 'right',
+        }, macdPaneIdx);
+        histSeries.setData(ind.macd.map((v) => ({
+          time: v.date,
+          value: v.histogram,
+          color: v.histogram >= 0 ? '#22c55e80' : '#ef444480',
+        })));
+        cleanups.push(() => chart.removeSeries(histSeries));
+
+        chart.priceScale('right', macdPaneIdx).applyOptions({
+          autoScale: true,
+          scaleMargins: { top: 0.05, bottom: 0.05 },
+        });
+      }
+    }
+
     chart.priceScale('right').applyOptions({ autoScale: true });
 
     const dataChanged = prevDataRef.current !== data;
@@ -154,7 +277,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
     }
 
     return () => cleanups.forEach((fn) => fn());
-  }, [data, lineChart]);
+  }, [data, lineChart, activeIndicators]);
 
   // ---- Log scale (independent of series) ----
   useEffect(() => {

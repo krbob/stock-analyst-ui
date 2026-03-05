@@ -2,10 +2,10 @@ import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { getHistory, getAnalysis, getPrice, getDividends, compareStocks, searchTickers } from './client';
 import type { Interval, Period } from './types';
 
-export function useStockHistory(symbol: string, period: Period = '1y', interval?: Interval) {
+export function useStockHistory(symbol: string, period: Period = '1y', interval?: Interval, indicators?: string[]) {
   return useQuery({
-    queryKey: ['history', symbol, period, interval],
-    queryFn: () => getHistory(symbol, period, interval),
+    queryKey: ['history', symbol, period, interval, indicators],
+    queryFn: () => getHistory(symbol, period, interval, indicators),
     enabled: symbol.length > 0,
     placeholderData: keepPreviousData,
   });

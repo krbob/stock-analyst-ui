@@ -82,12 +82,42 @@ export interface HistoricalPrice {
   dividend: number;
 }
 
+export interface SingleValue {
+  date: string;
+  value: number;
+}
+
+export interface BollingerValue {
+  date: string;
+  upper: number;
+  middle: number;
+  lower: number;
+}
+
+export interface MacdValue {
+  date: string;
+  macd: number;
+  signal: number;
+  histogram: number;
+}
+
+export interface Indicators {
+  sma50?: SingleValue[];
+  sma200?: SingleValue[];
+  ema50?: SingleValue[];
+  ema200?: SingleValue[];
+  bb?: BollingerValue[];
+  rsi?: SingleValue[];
+  macd?: MacdValue[];
+}
+
 export interface StockHistory {
   symbol: string;
   name: string;
   period: string;
   interval: Interval;
   prices: HistoricalPrice[];
+  indicators?: Indicators;
 }
 
 export interface DividendPayment {
