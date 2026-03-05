@@ -168,7 +168,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
   return (
     <div className="relative">
       {legend && (
-        <div className="absolute left-2 top-2 z-20 flex gap-3 text-xs text-gray-300">
+        <div className="absolute left-2 top-2 z-20 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-300 max-w-[calc(100%-70px)]">
           <span>O <span className="text-white">{legend.open.toFixed(2)}</span></span>
           <span>H <span className="text-white">{legend.high.toFixed(2)}</span></span>
           <span>L <span className="text-white">{legend.low.toFixed(2)}</span></span>
