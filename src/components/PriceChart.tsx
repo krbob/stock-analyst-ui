@@ -325,7 +325,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
       resetRef.current = () => {
         fittingRef.current = true;
         chart.timeScale().fitContent();
-        requestAnimationFrame(() => { fittingRef.current = false; });
+        setTimeout(() => { fittingRef.current = false; }, 100);
         onZoomChange?.(false);
       };
     }
@@ -335,7 +335,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
     if (dataChanged) {
       fittingRef.current = true;
       chart.timeScale().fitContent();
-      requestAnimationFrame(() => { fittingRef.current = false; });
+      setTimeout(() => { fittingRef.current = false; }, 100);
     }
     onZoomChange?.(false);
 
