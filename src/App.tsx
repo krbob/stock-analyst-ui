@@ -128,6 +128,7 @@ export default function App() {
   const [lineChart, setLineChart] = useState(false);
   const [logScale, setLogScale] = useState(false);
   const [indicators, setIndicators] = useState<Set<string>>(new Set());
+  const [showDividends, setShowDividends] = useState(false);
   const [currency, setCurrency] = useState<string | undefined>();
   const [chartZoomed, setChartZoomed] = useState(false);
   const resetViewRef = useRef<(() => void) | null>(null);
@@ -135,8 +136,12 @@ export default function App() {
   // Always fetch all indicators when any are active — avoids refetch on each toggle.
   const indicatorArray = indicators.size > 0 ? ALL_INDICATOR_KEYS : undefined;
 
+  const dividendsParam = showDividends || undefined;
+
   // Native history for interval detection & intraday live price — not blocked by conversion errors.
-  const { data: historyData } = useStockHistory(symbol, period, interval, indicatorArray);
+  const { data: historyData } = useStockHistory(symbol, period, interval, indicatorArray, undefined, dividendsParam);
+  // Currency-converted history — shares cache with PriceChart's query.
+  const { data: convertedHistory } = useStockHistory(symbol, period, interval, indicatorArray, currency, dividendsParam);
   const activeInterval = interval ?? (
     historyData?.symbol.toLowerCase() === symbol.toLowerCase()
       ? historyData?.interval
@@ -205,6 +210,9 @@ export default function App() {
                 <button onClick={() => setLogScale(!logScale)} className={btnClass(logScale)}>
                   Log
                 </button>
+                <button onClick={() => setShowDividends(!showDividends)} className={btnClass(showDividends)}>
+                  Div
+                </button>
               </div>
             </div>
             <div className="mb-2 flex flex-wrap items-center gap-1">
@@ -251,8 +259,8 @@ export default function App() {
                 </button>
               </div>
             </div>
-            <PriceChart symbol={symbol} period={period} interval={interval} lineChart={lineChart} logScale={logScale} indicators={indicatorArray} activeIndicators={indicators} currency={currency} onZoomChange={setChartZoomed} resetRef={resetViewRef} />
-            <StockDetails symbol={symbol} currency={currency} />
+            <PriceChart symbol={symbol} period={period} interval={interval} lineChart={lineChart} logScale={logScale} indicators={indicatorArray} activeIndicators={indicators} currency={currency} dividends={dividendsParam} showDividends={showDividends} onZoomChange={setChartZoomed} resetRef={resetViewRef} />
+            <StockDetails symbol={symbol} currency={currency} prices={convertedHistory?.prices ?? historyData?.prices} showDividends={showDividends} />
           </>
         ) : (
           <div className="flex h-[500px] items-center justify-center text-gray-500 px-4 text-center">

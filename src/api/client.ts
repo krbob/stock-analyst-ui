@@ -1,4 +1,4 @@
-import type { Analysis, DividendHistory, Interval, Period, Price, SearchResult, StockHistory } from './types';
+import type { Analysis, Interval, Period, Price, SearchResult, StockHistory } from './types';
 
 const API_URL = '/api';
 
@@ -18,11 +18,12 @@ async function fetchApi<T>(path: string): Promise<T> {
   return response.json();
 }
 
-export function getHistory(symbol: string, period: Period = '1y', interval?: Interval, indicators?: string[], currency?: string): Promise<StockHistory> {
+export function getHistory(symbol: string, period: Period = '1y', interval?: Interval, indicators?: string[], currency?: string, dividends?: boolean): Promise<StockHistory> {
   let url = `/history/${encodeURIComponent(symbol)}?period=${period}`;
   if (interval) url += `&interval=${interval}`;
   if (indicators && indicators.length > 0) url += `&indicators=${indicators.join(',')}`;
   if (currency) url += `&currency=${encodeURIComponent(currency)}`;
+  if (dividends) url += '&dividends=true';
   return fetchApi(url);
 }
 
@@ -36,10 +37,6 @@ export function getPrice(symbol: string, currency?: string): Promise<Price> {
   let url = `/price/${encodeURIComponent(symbol)}`;
   if (currency) url += `?currency=${encodeURIComponent(currency)}`;
   return fetchApi(url);
-}
-
-export function getDividends(symbol: string): Promise<DividendHistory> {
-  return fetchApi(`/dividends/${encodeURIComponent(symbol)}`);
 }
 
 export function compareStocks(symbols: string[]): Promise<Analysis[]> {

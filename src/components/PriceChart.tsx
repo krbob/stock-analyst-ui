@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { createChart, CandlestickSeries, LineSeries, HistogramSeries, ColorType, PriceScaleMode, type IChartApi, type Time, type UTCTimestamp } from 'lightweight-charts';
+import { createChart, createSeriesMarkers, CandlestickSeries, LineSeries, HistogramSeries, ColorType, PriceScaleMode, type IChartApi, type ISeriesApi, type SeriesType, type Time, type UTCTimestamp } from 'lightweight-charts';
 import type { HistoricalPrice, Indicators } from '../api/types';
 import { useStockHistory } from '../api/queries';
 import type { Interval, Period } from '../api/types';
@@ -115,11 +115,13 @@ interface PriceChartProps {
   indicators?: string[];
   activeIndicators?: Set<string>;
   currency?: string;
+  dividends?: boolean;
+  showDividends?: boolean;
   onZoomChange?: (zoomed: boolean) => void;
   resetRef?: React.MutableRefObject<(() => void) | null>;
 }
 
-export default function PriceChart({ symbol, period = '1y', interval, lineChart, logScale, indicators, activeIndicators, currency, onZoomChange, resetRef }: PriceChartProps) {
+export default function PriceChart({ symbol, period = '1y', interval, lineChart, logScale, indicators, activeIndicators, currency, dividends, showDividends, onZoomChange, resetRef }: PriceChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const pricesRef = useRef<Map<string, HistoricalPrice>>(new Map());
@@ -128,7 +130,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
   const [indLegend, setIndLegend] = useState<IndicatorSnapshot | null>(null);
   const fittingRef = useRef(false);
 
-  const { data, isFetching, error } = useStockHistory(symbol, period, interval, indicators, currency);
+  const { data, isFetching, error } = useStockHistory(symbol, period, interval, indicators, currency, dividends);
   const prevDataRef = useRef(data);
 
   const active = activeIndicators ?? new Set<string>();
@@ -197,9 +199,11 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
     const cleanups: (() => void)[] = [];
 
     // --- Price series (pane 0) ---
+    let priceSeries: ISeriesApi<SeriesType>;
     if (lineChart) {
       const series = chart.addSeries(LineSeries, LINE_OPTIONS);
       series.setData(data.prices.map((p) => ({ time: chartTime(p), value: p.close })));
+      priceSeries = series;
       cleanups.push(() => chart.removeSeries(series));
     } else {
       const series = chart.addSeries(CandlestickSeries, CANDLESTICK_OPTIONS);
@@ -212,7 +216,25 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
           close: p.close,
         })),
       );
+      priceSeries = series;
       cleanups.push(() => chart.removeSeries(series));
+    }
+
+    // --- Dividend markers ---
+    if (showDividends) {
+      const divMarkers = data.prices
+        .filter((p) => p.dividend > 0)
+        .map((p) => ({
+          time: chartTime(p),
+          position: 'belowBar' as const,
+          shape: 'circle' as const,
+          color: '#a78bfa',
+          text: `D ${p.dividend.toFixed(2)}`,
+        }));
+      if (divMarkers.length > 0) {
+        const markers = createSeriesMarkers(priceSeries, divMarkers);
+        cleanups.push(() => markers.detach());
+      }
     }
 
     // --- Volume ---
@@ -361,7 +383,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
     onZoomChange?.(false);
 
     return () => cleanups.forEach((fn) => fn());
-  }, [data, lineChart, activeIndicators]);
+  }, [data, lineChart, activeIndicators, showDividends]);
 
   // ---- Log scale (independent of series) ----
   useEffect(() => {
@@ -381,6 +403,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
           <span>L <span className="text-white">{legend.low.toFixed(2)}</span></span>
           <span>C <span className={legend.close >= legend.open ? 'text-green-400' : 'text-red-400'}>{legend.close.toFixed(2)}</span></span>
           <span>V <span className="text-white">{fmtVol(legend.volume)}</span></span>
+          {legend.dividend > 0 && <span>Div <span className="text-purple-400">{legend.dividend.toFixed(2)}</span></span>}
           {indLegend?.sma50 != null && <span>SMA50 <span style={{ color: OVERLAY_COLORS.sma50 }}>{indLegend.sma50.toFixed(2)}</span></span>}
           {indLegend?.sma200 != null && <span>SMA200 <span style={{ color: OVERLAY_COLORS.sma200 }}>{indLegend.sma200.toFixed(2)}</span></span>}
           {indLegend?.ema50 != null && <span>EMA50 <span style={{ color: OVERLAY_COLORS.ema50 }}>{indLegend.ema50.toFixed(2)}</span></span>}
