@@ -18,19 +18,24 @@ async function fetchApi<T>(path: string): Promise<T> {
   return response.json();
 }
 
-export function getHistory(symbol: string, period: Period = '1y', interval?: Interval, indicators?: string[]): Promise<StockHistory> {
+export function getHistory(symbol: string, period: Period = '1y', interval?: Interval, indicators?: string[], currency?: string): Promise<StockHistory> {
   let url = `/history/${encodeURIComponent(symbol)}?period=${period}`;
   if (interval) url += `&interval=${interval}`;
   if (indicators && indicators.length > 0) url += `&indicators=${indicators.join(',')}`;
+  if (currency) url += `&currency=${encodeURIComponent(currency)}`;
   return fetchApi(url);
 }
 
-export function getAnalysis(symbol: string): Promise<Analysis> {
-  return fetchApi(`/analysis/${encodeURIComponent(symbol)}`);
+export function getAnalysis(symbol: string, currency?: string): Promise<Analysis> {
+  let url = `/analysis/${encodeURIComponent(symbol)}`;
+  if (currency) url += `?currency=${encodeURIComponent(currency)}`;
+  return fetchApi(url);
 }
 
-export function getPrice(symbol: string): Promise<Price> {
-  return fetchApi(`/price/${encodeURIComponent(symbol)}`);
+export function getPrice(symbol: string, currency?: string): Promise<Price> {
+  let url = `/price/${encodeURIComponent(symbol)}`;
+  if (currency) url += `?currency=${encodeURIComponent(currency)}`;
+  return fetchApi(url);
 }
 
 export function getDividends(symbol: string): Promise<DividendHistory> {

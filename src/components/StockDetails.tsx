@@ -65,8 +65,8 @@ function Recommendation({ value, count }: { value: string | null; count: number 
   );
 }
 
-export default function StockDetails({ symbol }: { symbol: string }) {
-  const { data, isLoading, error } = useAnalysis(symbol);
+export default function StockDetails({ symbol, currency }: { symbol: string; currency?: string }) {
+  const { data, isLoading, error } = useAnalysis(symbol, currency);
 
   if (!symbol) return null;
 

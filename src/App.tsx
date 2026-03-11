@@ -1,7 +1,8 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import PriceChart from './components/PriceChart';
 import StockDetails from './components/StockDetails';
 import TickerSearch from './components/TickerSearch';
+import CurrencyPicker from './components/CurrencyPicker';
 import { useAnalysis, usePrice, useStockHistory } from './api/queries';
 import type { Interval, Period } from './api/types';
 
@@ -70,9 +71,23 @@ function GainChip({ label, value }: { label: string; value: number | null }) {
   );
 }
 
-function StockInfo({ symbol, livePrice, hideGain }: { symbol: string; livePrice?: number; hideGain?: boolean }) {
-  const { data, isLoading, error } = usePrice(symbol);
-  const { data: analysis } = useAnalysis(symbol);
+function StockInfo({ symbol, currency, onCurrencyChange, livePrice, hideGain }: {
+  symbol: string;
+  currency?: string;
+  onCurrencyChange: (c: string | undefined) => void;
+  livePrice?: number;
+  hideGain?: boolean;
+}) {
+  const { data, isLoading, error } = usePrice(symbol, currency);
+  const { data: analysis } = useAnalysis(symbol, currency);
+  const nativeCurrencyRef = useRef<string | null>(null);
+
+  useEffect(() => { nativeCurrencyRef.current = null; }, [symbol]);
+
+  // Capture native currency from the first (unconverted) response
+  if (data?.currency && !currency) {
+    nativeCurrencyRef.current = data.currency;
+  }
 
   if (!symbol) return null;
 
@@ -83,16 +98,17 @@ function StockInfo({ symbol, livePrice, hideGain }: { symbol: string; livePrice?
       <div className="flex h-8 items-baseline gap-3">
         <h2 className="text-2xl font-bold text-white">{symbol.toUpperCase()}</h2>
         {isLoading && <Spinner />}
-        {error && <span className="text-sm text-red-400">Not found</span>}
+        {error && <span className="text-sm text-red-400">{currency ? 'Conversion failed' : 'Not found'}</span>}
         {data && (
-          <>
-            <span className="text-xl text-gray-300">{displayPrice?.toFixed(2)} {data.currency && <span className="text-sm text-gray-500">{data.currency}</span>}</span>
-            {data.gain.daily != null && (
-              <span className={`text-lg font-medium transition-opacity duration-300 ${hideGain ? 'opacity-0' : 'opacity-100'} ${data.gain.daily >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {fmtPct(data.gain.daily)}
-              </span>
-            )}
-          </>
+          <span className="text-xl text-gray-300">{displayPrice?.toFixed(2)}</span>
+        )}
+        {nativeCurrencyRef.current && (
+          <CurrencyPicker nativeCurrency={nativeCurrencyRef.current} value={currency} onChange={onCurrencyChange} />
+        )}
+        {data && data.gain.daily != null && (
+          <span className={`text-lg font-medium transition-opacity duration-300 ${hideGain ? 'opacity-0' : 'opacity-100'} ${data.gain.daily >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+            {fmtPct(data.gain.daily)}
+          </span>
         )}
       </div>
       <p className="h-5 text-sm text-gray-500">{data?.name ?? '\u00A0'}</p>
@@ -112,13 +128,14 @@ export default function App() {
   const [lineChart, setLineChart] = useState(false);
   const [logScale, setLogScale] = useState(false);
   const [indicators, setIndicators] = useState<Set<string>>(new Set());
+  const [currency, setCurrency] = useState<string | undefined>();
   const [chartZoomed, setChartZoomed] = useState(false);
   const resetViewRef = useRef<(() => void) | null>(null);
 
   // Always fetch all indicators when any are active — avoids refetch on each toggle.
   const indicatorArray = indicators.size > 0 ? ALL_INDICATOR_KEYS : undefined;
 
-  // Shares the TanStack Query cache with PriceChart (same query key) — no extra fetch.
+  // Native history for interval detection & intraday live price — not blocked by conversion errors.
   const { data: historyData } = useStockHistory(symbol, period, interval, indicatorArray);
   const activeInterval = interval ?? (
     historyData?.symbol.toLowerCase() === symbol.toLowerCase()
@@ -149,6 +166,7 @@ export default function App() {
     setSymbol(sym);
     setPeriod('1y');
     setInterval(undefined);
+    setCurrency(undefined);
   };
 
   const btnClass = (active: boolean) =>
@@ -169,7 +187,7 @@ export default function App() {
         {symbol ? (
           <>
             <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-              <StockInfo symbol={symbol} livePrice={isIntradayPeriod ? historyData?.prices.at(-1)?.close : undefined} hideGain={isIntradayPeriod} />
+              <StockInfo symbol={symbol} currency={currency} onCurrencyChange={setCurrency} livePrice={isIntradayPeriod && !currency ? historyData?.prices.at(-1)?.close : undefined} hideGain={isIntradayPeriod} />
               <div className="flex shrink-0 flex-wrap items-center gap-1">
                 {PERIODS.map((p) => (
                   <button
@@ -233,8 +251,8 @@ export default function App() {
                 </button>
               </div>
             </div>
-            <PriceChart symbol={symbol} period={period} interval={interval} lineChart={lineChart} logScale={logScale} indicators={indicatorArray} activeIndicators={indicators} onZoomChange={setChartZoomed} resetRef={resetViewRef} />
-            <StockDetails symbol={symbol} />
+            <PriceChart symbol={symbol} period={period} interval={interval} lineChart={lineChart} logScale={logScale} indicators={indicatorArray} activeIndicators={indicators} currency={currency} onZoomChange={setChartZoomed} resetRef={resetViewRef} />
+            <StockDetails symbol={symbol} currency={currency} />
           </>
         ) : (
           <div className="flex h-[500px] items-center justify-center text-gray-500 px-4 text-center">

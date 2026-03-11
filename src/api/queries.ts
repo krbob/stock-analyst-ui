@@ -4,14 +4,14 @@ import { getHistory, getAnalysis, getPrice, getDividends, compareStocks, searchT
 import type { Interval, Period } from './types';
 import { INTRADAY_INTERVALS } from './types';
 
-export function useStockHistory(symbol: string, period: Period = '1y', interval?: Interval, indicators?: string[]) {
+export function useStockHistory(symbol: string, period: Period = '1y', interval?: Interval, indicators?: string[], currency?: string) {
   const intraday = interval != null && INTRADAY_INTERVALS.includes(interval);
   const staleCountRef = useRef(0);
   const prevBarCountRef = useRef(0);
   return useQuery({
-    queryKey: ['history', symbol, period, interval, indicators],
+    queryKey: ['history', symbol, period, interval, indicators, currency],
     queryFn: async () => {
-      const result = await getHistory(symbol, period, interval, indicators);
+      const result = await getHistory(symbol, period, interval, indicators, currency);
       const count = result.prices.length;
       if (count === prevBarCountRef.current) {
         staleCountRef.current++;
@@ -29,18 +29,18 @@ export function useStockHistory(symbol: string, period: Period = '1y', interval?
   });
 }
 
-export function useAnalysis(symbol: string) {
+export function useAnalysis(symbol: string, currency?: string) {
   return useQuery({
-    queryKey: ['analysis', symbol],
-    queryFn: () => getAnalysis(symbol),
+    queryKey: ['analysis', symbol, currency],
+    queryFn: () => getAnalysis(symbol, currency),
     enabled: symbol.length > 0,
   });
 }
 
-export function usePrice(symbol: string) {
+export function usePrice(symbol: string, currency?: string) {
   return useQuery({
-    queryKey: ['price', symbol],
-    queryFn: () => getPrice(symbol),
+    queryKey: ['price', symbol, currency],
+    queryFn: () => getPrice(symbol, currency),
     enabled: symbol.length > 0,
   });
 }
