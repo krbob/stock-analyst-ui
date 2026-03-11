@@ -1,13 +1,31 @@
+import { useRef } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { getHistory, getAnalysis, getPrice, getDividends, compareStocks, searchTickers } from './client';
 import type { Interval, Period } from './types';
+import { INTRADAY_INTERVALS } from './types';
 
 export function useStockHistory(symbol: string, period: Period = '1y', interval?: Interval, indicators?: string[]) {
+  const intraday = interval != null && INTRADAY_INTERVALS.includes(interval);
+  const staleCountRef = useRef(0);
+  const prevBarCountRef = useRef(0);
   return useQuery({
     queryKey: ['history', symbol, period, interval, indicators],
-    queryFn: () => getHistory(symbol, period, interval, indicators),
+    queryFn: async () => {
+      const result = await getHistory(symbol, period, interval, indicators);
+      const count = result.prices.length;
+      if (count === prevBarCountRef.current) {
+        staleCountRef.current++;
+      } else {
+        staleCountRef.current = 0;
+      }
+      prevBarCountRef.current = count;
+      return result;
+    },
     enabled: symbol.length > 0,
     placeholderData: keepPreviousData,
+    refetchInterval: intraday
+      ? () => (staleCountRef.current >= 3 ? 300_000 : 30_000)
+      : undefined,
   });
 }
 

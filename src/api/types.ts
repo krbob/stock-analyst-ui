@@ -80,11 +80,13 @@ export interface HistoricalPrice {
   high: number;
   volume: number;
   dividend: number;
+  timestamp?: number;
 }
 
 export interface SingleValue {
   date: string;
   value: number;
+  timestamp?: number;
 }
 
 export interface BollingerValue {
@@ -92,6 +94,7 @@ export interface BollingerValue {
   upper: number;
   middle: number;
   lower: number;
+  timestamp?: number;
 }
 
 export interface MacdValue {
@@ -99,6 +102,7 @@ export interface MacdValue {
   macd: number;
   signal: number;
   histogram: number;
+  timestamp?: number;
 }
 
 export interface Indicators {
@@ -147,4 +151,6 @@ export interface SearchResult {
 
 export type Period = '1d' | '5d' | '1mo' | '3mo' | '6mo' | '1y' | '2y' | '5y' | '10y' | 'ytd' | 'max';
 
-export type Interval = '1d' | '1wk' | '1mo';
+export type Interval = '1m' | '5m' | '15m' | '30m' | '1h' | '1d' | '1wk' | '1mo';
+
+export const INTRADAY_INTERVALS: Interval[] = ['1m', '5m', '15m', '30m', '1h'];

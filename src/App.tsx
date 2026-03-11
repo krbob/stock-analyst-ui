@@ -8,6 +8,8 @@ import type { Interval, Period } from './api/types';
 const fmtPct = (n: number) => (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
 
 const PERIODS: { label: string; value: Period }[] = [
+  { label: '1D', value: '1d' },
+  { label: '5D', value: '5d' },
   { label: '1M', value: '1mo' },
   { label: '6M', value: '6mo' },
   { label: 'YTD', value: 'ytd' },
@@ -16,11 +18,24 @@ const PERIODS: { label: string; value: Period }[] = [
   { label: 'Max', value: 'max' },
 ];
 
-const INTERVALS: { label: string; value: Interval }[] = [
+const INTRADAY_INTERVALS: { label: string; value: Interval }[] = [
+  { label: '1m', value: '1m' },
+  { label: '5m', value: '5m' },
+  { label: '15m', value: '15m' },
+  { label: '30m', value: '30m' },
+  { label: '1h', value: '1h' },
+];
+
+const DAILY_INTERVALS: { label: string; value: Interval }[] = [
   { label: '1D', value: '1d' },
   { label: '1W', value: '1wk' },
   { label: '1M', value: '1mo' },
 ];
+
+const DEFAULT_INTRADAY: Record<string, Interval> = {
+  '1d': '5m',
+  '5d': '15m',
+};
 
 const INDICATORS = [
   { label: 'SMA', keys: ['sma50', 'sma200'] },
@@ -55,11 +70,13 @@ function GainChip({ label, value }: { label: string; value: number | null }) {
   );
 }
 
-function StockInfo({ symbol }: { symbol: string }) {
+function StockInfo({ symbol, livePrice, hideGain }: { symbol: string; livePrice?: number; hideGain?: boolean }) {
   const { data, isLoading, error } = usePrice(symbol);
   const { data: analysis } = useAnalysis(symbol);
 
   if (!symbol) return null;
+
+  const displayPrice = livePrice ?? data?.lastPrice;
 
   return (
     <div className="min-w-0">
@@ -69,9 +86,9 @@ function StockInfo({ symbol }: { symbol: string }) {
         {error && <span className="text-sm text-red-400">Not found</span>}
         {data && (
           <>
-            <span className="text-xl text-gray-300">{data.lastPrice.toFixed(2)}</span>
+            <span className="text-xl text-gray-300">{displayPrice?.toFixed(2)}</span>
             {data.gain.daily != null && (
-              <span className={`text-lg font-medium ${data.gain.daily >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              <span className={`text-lg font-medium transition-opacity duration-300 ${hideGain ? 'opacity-0' : 'opacity-100'} ${data.gain.daily >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                 {fmtPct(data.gain.daily)}
               </span>
             )}
@@ -121,6 +138,13 @@ export default function App() {
     });
   };
 
+  const isIntradayPeriod = period === '1d' || period === '5d';
+
+  const handlePeriod = (p: Period) => {
+    setPeriod(p);
+    setInterval(DEFAULT_INTRADAY[p] ?? undefined);
+  };
+
   const handleSelect = (sym: string) => {
     setSymbol(sym);
     setPeriod('1y');
@@ -145,25 +169,15 @@ export default function App() {
         {symbol ? (
           <>
             <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-              <StockInfo symbol={symbol} />
+              <StockInfo symbol={symbol} livePrice={isIntradayPeriod ? historyData?.prices.at(-1)?.close : undefined} hideGain={isIntradayPeriod} />
               <div className="flex shrink-0 flex-wrap items-center gap-1">
                 {PERIODS.map((p) => (
                   <button
                     key={p.value}
-                    onClick={() => { setPeriod(p.value); setInterval(undefined); }}
+                    onClick={() => handlePeriod(p.value)}
                     className={btnClass(period === p.value)}
                   >
                     {p.label}
-                  </button>
-                ))}
-                <div className="mx-1 h-5 w-px bg-gray-700" />
-                {INTERVALS.map((i) => (
-                  <button
-                    key={i.value}
-                    onClick={() => { if (activeInterval !== i.value) setInterval(i.value); }}
-                    className={btnClass(activeInterval === i.value)}
-                  >
-                    {i.label}
                   </button>
                 ))}
                 <div className="mx-1 h-5 w-px bg-gray-700" />
@@ -188,6 +202,31 @@ export default function App() {
                   </button>
                 );
               })}
+              <div className="mx-1 h-5 w-px bg-gray-700" />
+              <div className="relative flex gap-1">
+                <div className={`flex gap-1 transition-all duration-300 ${isIntradayPeriod ? 'opacity-0 pointer-events-none absolute' : 'opacity-100'}`}>
+                  {DAILY_INTERVALS.map((i) => (
+                    <button
+                      key={i.value}
+                      onClick={() => { if (activeInterval !== i.value) setInterval(i.value); }}
+                      className={btnClass(activeInterval === i.value)}
+                    >
+                      {i.label}
+                    </button>
+                  ))}
+                </div>
+                <div className={`flex gap-1 transition-all duration-300 ${isIntradayPeriod ? 'opacity-100' : 'opacity-0 pointer-events-none absolute'}`}>
+                  {INTRADAY_INTERVALS.map((i) => (
+                    <button
+                      key={i.value}
+                      onClick={() => { if (activeInterval !== i.value) setInterval(i.value); }}
+                      className={btnClass(activeInterval === i.value)}
+                    >
+                      {i.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className={`ml-auto transition-opacity duration-200 ${chartZoomed ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                 <button onClick={() => resetViewRef.current?.()} className={btnClass(false)}>
                   Reset
