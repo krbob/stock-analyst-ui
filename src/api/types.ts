@@ -37,6 +37,7 @@ export interface MovingAverages {
 export interface Analysis {
   symbol: string;
   name: string;
+  currency: string | null;
   conversionName: string | null;
   date: string;
   lastPrice: number;
@@ -66,6 +67,7 @@ export interface Analysis {
 export interface Price {
   symbol: string;
   name: string;
+  currency: string | null;
   conversionName: string | null;
   date: string;
   lastPrice: number;
