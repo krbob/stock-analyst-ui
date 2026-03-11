@@ -114,11 +114,12 @@ interface PriceChartProps {
   logScale?: boolean;
   indicators?: string[];
   activeIndicators?: Set<string>;
+  currency?: string;
   onZoomChange?: (zoomed: boolean) => void;
   resetRef?: React.MutableRefObject<(() => void) | null>;
 }
 
-export default function PriceChart({ symbol, period = '1y', interval, lineChart, logScale, indicators, activeIndicators, onZoomChange, resetRef }: PriceChartProps) {
+export default function PriceChart({ symbol, period = '1y', interval, lineChart, logScale, indicators, activeIndicators, currency, onZoomChange, resetRef }: PriceChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const pricesRef = useRef<Map<string, HistoricalPrice>>(new Map());
@@ -127,7 +128,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
   const [indLegend, setIndLegend] = useState<IndicatorSnapshot | null>(null);
   const fittingRef = useRef(false);
 
-  const { data, isFetching, error } = useStockHistory(symbol, period, interval, indicators);
+  const { data, isFetching, error } = useStockHistory(symbol, period, interval, indicators, currency);
   const prevDataRef = useRef(data);
 
   const active = activeIndicators ?? new Set<string>();
@@ -399,7 +400,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
       )}
       {error && (
         <div className="absolute inset-0 z-10 flex items-center justify-center text-red-400 bg-[#1a1a2e]/80">
-          {error instanceof Error ? error.message : 'Failed to load chart data'}
+          {currency ? 'Currency conversion not available' : error instanceof Error ? error.message : 'Failed to load chart data'}
         </div>
       )}
     </div>
