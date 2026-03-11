@@ -86,7 +86,7 @@ function StockInfo({ symbol, livePrice, hideGain }: { symbol: string; livePrice?
         {error && <span className="text-sm text-red-400">Not found</span>}
         {data && (
           <>
-            <span className="text-xl text-gray-300">{displayPrice?.toFixed(2)}</span>
+            <span className="text-xl text-gray-300">{displayPrice?.toFixed(2)} {data.currency && <span className="text-sm text-gray-500">{data.currency}</span>}</span>
             {data.gain.daily != null && (
               <span className={`text-lg font-medium transition-opacity duration-300 ${hideGain ? 'opacity-0' : 'opacity-100'} ${data.gain.daily >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                 {fmtPct(data.gain.daily)}
