@@ -25,6 +25,12 @@ function addRecent(code: string): string[] {
   return trimmed;
 }
 
+function removeRecent(code: string): string[] {
+  const recents = loadRecents().filter((c) => c !== code);
+  saveRecents(recents);
+  return recents;
+}
+
 interface CurrencyPickerProps {
   nativeCurrency: string | null;
   value: string | undefined;
@@ -130,12 +136,28 @@ export default function CurrencyPicker({ nativeCurrency, value, onChange }: Curr
                   <div
                     key={`recent-${code}`}
                     onMouseDown={(e) => { e.preventDefault(); select(code); }}
-                    className={`flex cursor-pointer items-center px-3 py-1.5 text-sm hover:bg-gray-800 ${
+                    className={`flex cursor-pointer items-center justify-between px-3 py-1.5 text-sm hover:bg-gray-800 ${
                       value === code ? 'bg-gray-800/50 text-white' : 'text-gray-300'
                     }`}
                   >
-                    <span className="font-medium">{code}</span>
-                    <span className="ml-2 text-gray-400">{getCurrencyName(code)}</span>
+                    <div className="min-w-0 truncate">
+                      <span className="font-medium">{code}</span>
+                      <span className="ml-2 text-gray-400">{getCurrencyName(code)}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setRecents(removeRecent(code));
+                      }}
+                      className="ml-1 shrink-0 rounded p-0.5 text-gray-600 hover:bg-gray-700 hover:text-gray-300"
+                      aria-label={`Remove ${code}`}
+                    >
+                      <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                      </svg>
+                    </button>
                   </div>
                 ))}
               </>
