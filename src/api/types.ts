@@ -38,7 +38,6 @@ export interface Analysis {
   symbol: string;
   name: string;
   currency: string | null;
-  conversionName: string | null;
   date: string;
   lastPrice: number;
   gain: Gain;
@@ -68,7 +67,6 @@ export interface Price {
   symbol: string;
   name: string;
   currency: string | null;
-  conversionName: string | null;
   date: string;
   lastPrice: number;
   gain: Gain;
