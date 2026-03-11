@@ -124,24 +124,6 @@ export interface StockHistory {
   indicators?: Indicators;
 }
 
-export interface DividendPayment {
-  date: string;
-  amount: number;
-}
-
-export interface DividendSummary {
-  currentYield: number;
-  growth: number | null;
-  frequency: number;
-}
-
-export interface DividendHistory {
-  symbol: string;
-  name: string;
-  payments: DividendPayment[];
-  summary: DividendSummary;
-}
-
 export interface SearchResult {
   symbol: string;
   name: string;
