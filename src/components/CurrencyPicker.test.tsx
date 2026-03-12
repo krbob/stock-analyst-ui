@@ -24,11 +24,11 @@ beforeEach(() => {
 });
 
 describe('CurrencyPicker', () => {
-  it('renders nothing when nativeCurrency is null', () => {
-    const { container } = render(
+  it('renders Currency label when nativeCurrency is null', () => {
+    render(
       <CurrencyPicker nativeCurrency={null} value={undefined} onChange={vi.fn()} />,
     );
-    expect(container.innerHTML).toBe('');
+    expect(screen.getByText('Currency')).toBeDefined();
   });
 
   it('displays native currency when no value selected', () => {

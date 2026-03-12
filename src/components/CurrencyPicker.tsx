@@ -44,7 +44,7 @@ export default function CurrencyPicker({ nativeCurrency, value, onChange }: Curr
   const containerRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  const displayCode = value ?? nativeCurrency;
+  const displayCode = value ?? nativeCurrency ?? 'Currency';
 
   useEffect(() => {
     if (isOpen) {
@@ -88,8 +88,6 @@ export default function CurrencyPicker({ nativeCurrency, value, onChange }: Curr
     .filter((code) => !nativeCurrency || code.toUpperCase() !== nativeCurrency.toUpperCase())
     .filter((code) => !query || code.toLowerCase().includes(query) || getCurrencyName(code).toLowerCase().includes(query));
 
-  if (!nativeCurrency) return null;
-
   return (
     <div ref={containerRef} className="relative">
       <button
@@ -114,7 +112,7 @@ export default function CurrencyPicker({ nativeCurrency, value, onChange }: Curr
 
           <div className="max-h-64 overflow-y-auto">
             {/* Native currency — always on top */}
-            {(!query || nativeCurrency.toLowerCase().includes(query) || getCurrencyName(nativeCurrency).toLowerCase().includes(query)) && (
+            {nativeCurrency && (!query || nativeCurrency.toLowerCase().includes(query) || getCurrencyName(nativeCurrency).toLowerCase().includes(query)) && (
               <div
                 onMouseDown={(e) => { e.preventDefault(); select(nativeCurrency); }}
                 className={`flex cursor-pointer items-center justify-between px-3 py-2 text-sm hover:bg-gray-800 ${
@@ -126,6 +124,17 @@ export default function CurrencyPicker({ nativeCurrency, value, onChange }: Curr
                   <span className="ml-2 text-gray-400">{getCurrencyName(nativeCurrency)}</span>
                 </span>
                 <span className="text-xs text-blue-400">default</span>
+              </div>
+            )}
+            {/* No conversion option — when no native currency */}
+            {!nativeCurrency && (
+              <div
+                onMouseDown={(e) => { e.preventDefault(); onChange(undefined); setIsOpen(false); }}
+                className={`flex cursor-pointer items-center justify-between px-3 py-2 text-sm hover:bg-gray-800 ${
+                  !value ? 'bg-gray-800/50 text-white' : 'text-gray-300'
+                }`}
+              >
+                <span className="text-gray-400">No conversion</span>
               </div>
             )}
 
