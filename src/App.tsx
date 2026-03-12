@@ -4,7 +4,7 @@ import StockDetails from './components/StockDetails';
 import CompareView, { COMPARE_COLORS } from './components/CompareView';
 import TickerSearch from './components/TickerSearch';
 import CurrencyPicker from './components/CurrencyPicker';
-import { useAnalysis, usePrice, useStockHistory } from './api/queries';
+import { useQuote, useStockHistory } from './api/queries';
 import type { Interval, Period } from './api/types';
 import { parseUrlParams, buildUrlParams } from './url-state';
 
@@ -84,8 +84,7 @@ function StockInfo({ symbol, currency, onCurrencyChange, livePrice, hideGain }: 
   livePrice?: number;
   hideGain?: boolean;
 }) {
-  const { data, isLoading, error } = usePrice(symbol, currency);
-  const { data: analysis } = useAnalysis(symbol, currency);
+  const { data, isLoading, error } = useQuote(symbol, currency);
   const [nativeCurrency, setNativeCurrency] = useState<string | null>(null);
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -123,8 +122,8 @@ function StockInfo({ symbol, currency, onCurrencyChange, livePrice, hideGain }: 
       </div>
       <p className="h-5 text-sm text-gray-500">{data?.name ?? '\u00A0'}</p>
       <div className="mt-1 flex min-h-5 flex-wrap gap-3">
-        {analysis && GAIN_PERIODS.map((p) => (
-          <GainChip key={p.key} label={p.label} value={analysis.gain[p.key]} />
+        {data && GAIN_PERIODS.map((p) => (
+          <GainChip key={p.key} label={p.label} value={data.gain[p.key]} />
         ))}
       </div>
     </div>
@@ -152,8 +151,9 @@ export default function App() {
 
   const inCompareMode = compareSymbols.length > 0;
 
-  // Always fetch all indicators when any are active — avoids refetch on each toggle.
-  const indicatorArray = indicators.size > 0 ? ALL_INDICATOR_KEYS : undefined;
+  // Always fetch all indicators — StockDetails derives technicals from the last data point,
+  // and the chart shows only the ones toggled on via `activeIndicators`.
+  const indicatorArray = ALL_INDICATOR_KEYS;
 
   const dividendsParam = showDividends || undefined;
 
@@ -342,7 +342,7 @@ export default function App() {
               </div>
             </div>
             <PriceChart symbol={symbol} period={period} interval={interval} lineChart={lineChart} logScale={logScale} indicators={indicatorArray} activeIndicators={indicators} currency={currency} dividends={dividendsParam} showDividends={showDividends} onZoomChange={setChartZoomed} resetRef={resetViewRef} />
-            <StockDetails symbol={symbol} currency={currency} prices={convertedHistory?.prices ?? historyData?.prices} showDividends={showDividends} />
+            <StockDetails symbol={symbol} currency={currency} prices={convertedHistory?.prices ?? historyData?.prices} indicators={convertedHistory?.indicators ?? historyData?.indicators} showDividends={showDividends} />
           </div>
         ) : !inCompareMode && (
           <div className="flex h-[500px] items-center justify-center text-gray-500 px-4 text-center">

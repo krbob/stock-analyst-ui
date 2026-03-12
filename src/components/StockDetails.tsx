@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { useAnalysis } from '../api/queries';
-import type { HistoricalPrice } from '../api/types';
+import { useQuote } from '../api/queries';
+import type { HistoricalPrice, Indicators } from '../api/types';
 
 function fmtMktCap(n: number): string {
   if (n >= 1e12) return (n / 1e12).toFixed(2) + 'T';
@@ -13,7 +13,7 @@ function fmtRate(n: number): string {
   return (n * 100).toFixed(2) + '%';
 }
 
-function fmtNum(n: number | null, decimals = 2): string {
+function fmtNum(n: number | null | undefined, decimals = 2): string {
   return n != null ? n.toFixed(decimals) : '—';
 }
 
@@ -143,8 +143,12 @@ function CrossFade({ show, children }: { show: boolean; children: React.ReactNod
   );
 }
 
-export default function StockDetails({ symbol, currency, prices, showDividends }: { symbol: string; currency?: string; prices?: HistoricalPrice[]; showDividends?: boolean }) {
-  const { data, isLoading, error } = useAnalysis(symbol, currency);
+function lastValue(arr?: { value: number }[]): number | undefined {
+  return arr && arr.length > 0 ? arr[arr.length - 1].value : undefined;
+}
+
+export default function StockDetails({ symbol, currency, prices, indicators, showDividends }: { symbol: string; currency?: string; prices?: HistoricalPrice[]; indicators?: Indicators; showDividends?: boolean }) {
+  const { data, isLoading, error } = useQuote(symbol, currency);
   const dividends = showDividends ? extractDividends(prices) : [];
 
   if (!symbol) return null;
@@ -158,6 +162,19 @@ export default function StockDetails({ symbol, currency, prices, showDividends }
   }
 
   if (error || !data) return null;
+
+  // Derive technicals from the last point of each indicator series
+  const rsiVal = lastValue(indicators?.rsi);
+  const macdLine = indicators?.macd?.at(-1)?.macd ?? null;
+  const macdSignal = indicators?.macd?.at(-1)?.signal ?? null;
+  const macdHist = indicators?.macd?.at(-1)?.histogram ?? null;
+  const sma50 = lastValue(indicators?.sma50);
+  const sma200 = lastValue(indicators?.sma200);
+  const ema50 = lastValue(indicators?.ema50);
+  const ema200 = lastValue(indicators?.ema200);
+  const bbUpper = indicators?.bb?.at(-1)?.upper ?? null;
+  const bbMiddle = indicators?.bb?.at(-1)?.middle ?? null;
+  const bbLower = indicators?.bb?.at(-1)?.lower ?? null;
 
   return (
     <div className="mt-4 space-y-4">
@@ -185,21 +202,19 @@ export default function StockDetails({ symbol, currency, prices, showDividends }
         <div className="rounded-lg border border-gray-800 bg-gray-900/50 px-4 py-3">
           <h3 className="mb-2 text-sm font-medium text-gray-400">Technicals</h3>
           <div className="grid grid-cols-2 gap-x-6 text-sm">
-            <Item label="RSI (D)" value={fmtNum(data.rsi.daily, 1)} tooltip="Daily RSI (14-period). 0–100 scale. Above 70 = overbought, below 30 = oversold. Measures the speed and magnitude of recent price changes." />
-            <Item label="RSI (W)" value={fmtNum(data.rsi.weekly, 1)} tooltip="Weekly RSI (14-period). Same as daily RSI but based on weekly candles. Better for identifying longer-term momentum shifts." />
-            <Item label="RSI (M)" value={fmtNum(data.rsi.monthly, 1)} tooltip="Monthly RSI (14-period). Based on monthly candles. Useful for long-term trend analysis." />
-            <Item label="ATR" value={fmtNum(data.atr)} tooltip="Average True Range (14-period). Measures daily price volatility in dollars. Higher ATR = more volatile. Useful for setting stop-losses." />
-            <Item label="MACD" value={fmtNum(data.macd.macd)} tooltip="MACD Line (12/26 EMA difference). When MACD crosses above the signal line = bullish signal; below = bearish." />
-            <Item label="Signal" value={fmtNum(data.macd.signal)} tooltip="MACD Signal Line (9-period EMA of MACD). Acts as a trigger for buy/sell signals when crossed by the MACD line." />
-            <Item label="Histogram" value={fmtNum(data.macd.histogram)} tooltip="MACD Histogram (MACD minus Signal). Positive and growing = strengthening bullish momentum. Negative and growing = strengthening bearish momentum." />
+            <Item label="RSI" value={fmtNum(rsiVal, 1)} tooltip="RSI (14-period). 0–100 scale. Above 70 = overbought, below 30 = oversold. Measures the speed and magnitude of recent price changes." />
             <div />
-            <Item label="SMA 50" value={fmtNum(data.movingAverages.sma50)} tooltip="50-day Simple Moving Average. Average closing price over the last 50 days. Price above SMA50 = short-term uptrend." />
-            <Item label="SMA 200" value={fmtNum(data.movingAverages.sma200)} tooltip="200-day Simple Moving Average. Key long-term trend indicator. Price above SMA200 = long-term uptrend. SMA50 crossing SMA200 produces golden/death cross signals." />
-            <Item label="EMA 50" value={fmtNum(data.movingAverages.ema50)} tooltip="50-day Exponential Moving Average. Like SMA50 but gives more weight to recent prices, reacting faster to changes." />
-            <Item label="EMA 200" value={fmtNum(data.movingAverages.ema200)} tooltip="200-day Exponential Moving Average. Long-term trend with faster reaction than SMA200." />
-            <Item label="BB Upper" value={fmtNum(data.bollingerBands.upper)} tooltip="Bollinger Band Upper (20-day SMA + 2 std dev). Price touching or exceeding this band suggests the stock may be overbought." />
-            <Item label="BB Mid" value={fmtNum(data.bollingerBands.middle)} tooltip="Bollinger Band Middle (20-day SMA). Acts as a dynamic support/resistance level." />
-            <Item label="BB Lower" value={fmtNum(data.bollingerBands.lower)} tooltip="Bollinger Band Lower (20-day SMA − 2 std dev). Price touching or going below suggests the stock may be oversold." />
+            <Item label="MACD" value={fmtNum(macdLine)} tooltip="MACD Line (12/26 EMA difference). When MACD crosses above the signal line = bullish signal; below = bearish." />
+            <Item label="Signal" value={fmtNum(macdSignal)} tooltip="MACD Signal Line (9-period EMA of MACD). Acts as a trigger for buy/sell signals when crossed by the MACD line." />
+            <Item label="Histogram" value={fmtNum(macdHist)} tooltip="MACD Histogram (MACD minus Signal). Positive and growing = strengthening bullish momentum. Negative and growing = strengthening bearish momentum." />
+            <div />
+            <Item label="SMA 50" value={fmtNum(sma50)} tooltip="50-day Simple Moving Average. Average closing price over the last 50 days. Price above SMA50 = short-term uptrend." />
+            <Item label="SMA 200" value={fmtNum(sma200)} tooltip="200-day Simple Moving Average. Key long-term trend indicator. Price above SMA200 = long-term uptrend. SMA50 crossing SMA200 produces golden/death cross signals." />
+            <Item label="EMA 50" value={fmtNum(ema50)} tooltip="50-day Exponential Moving Average. Like SMA50 but gives more weight to recent prices, reacting faster to changes." />
+            <Item label="EMA 200" value={fmtNum(ema200)} tooltip="200-day Exponential Moving Average. Long-term trend with faster reaction than SMA200." />
+            <Item label="BB Upper" value={fmtNum(bbUpper)} tooltip="Bollinger Band Upper (20-day SMA + 2 std dev). Price touching or exceeding this band suggests the stock may be overbought." />
+            <Item label="BB Mid" value={fmtNum(bbMiddle)} tooltip="Bollinger Band Middle (20-day SMA). Acts as a dynamic support/resistance level." />
+            <Item label="BB Lower" value={fmtNum(bbLower)} tooltip="Bollinger Band Lower (20-day SMA − 2 std dev). Price touching or going below suggests the stock may be oversold." />
           </div>
         </div>
       </div>

@@ -17,15 +17,19 @@ function normalize(prices: { close: number; date: string }[]): { time: string; v
 function findBestIdx(values: (number | string | null)[], dir: 'max' | 'min'): number {
   let best = -1;
   let bestVal = dir === 'max' ? -Infinity : Infinity;
+  let tied = false;
   for (let i = 0; i < values.length; i++) {
     const v = values[i];
     if (typeof v !== 'number') continue;
     if (dir === 'max' ? v > bestVal : v < bestVal) {
       bestVal = v;
       best = i;
+      tied = false;
+    } else if (v === bestVal) {
+      tied = true;
     }
   }
-  return best;
+  return tied ? -1 : best;
 }
 
 const fmtNum = (d: number) => d.toFixed(2);
@@ -97,6 +101,15 @@ describe('findBestIdx', () => {
 
   it('handles single value', () => {
     expect(findBestIdx([42], 'max')).toBe(0);
+  });
+
+  it('returns -1 when best value is tied', () => {
+    expect(findBestIdx([10, 30, 30], 'max')).toBe(-1);
+    expect(findBestIdx([5, 5, 10], 'min')).toBe(-1);
+  });
+
+  it('highlights best when no tie', () => {
+    expect(findBestIdx([0, 0.01, 0], 'max')).toBe(1);
   });
 });
 

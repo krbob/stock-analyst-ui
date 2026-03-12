@@ -1,4 +1,4 @@
-import type { Analysis, Interval, Period, Price, SearchResult, StockHistory } from './types';
+import type { CompareResult, Interval, Period, Quote, SearchResult, StockHistory } from './types';
 
 const API_URL = '/api';
 
@@ -27,19 +27,13 @@ export function getHistory(symbol: string, period: Period = '1y', interval?: Int
   return fetchApi(url);
 }
 
-export function getAnalysis(symbol: string, currency?: string): Promise<Analysis> {
-  let url = `/analysis/${encodeURIComponent(symbol)}`;
+export function getQuote(symbol: string, currency?: string): Promise<Quote> {
+  let url = `/quote/${encodeURIComponent(symbol)}`;
   if (currency) url += `?currency=${encodeURIComponent(currency)}`;
   return fetchApi(url);
 }
 
-export function getPrice(symbol: string, currency?: string): Promise<Price> {
-  let url = `/price/${encodeURIComponent(symbol)}`;
-  if (currency) url += `?currency=${encodeURIComponent(currency)}`;
-  return fetchApi(url);
-}
-
-export function compareStocks(symbols: string[], currency?: string): Promise<Analysis[]> {
+export function compareStocks(symbols: string[], currency?: string): Promise<CompareResult[]> {
   let url = `/compare?symbols=${symbols.map(encodeURIComponent).join(',')}`;
   if (currency) url += `&currency=${encodeURIComponent(currency)}`;
   return fetchApi(url);

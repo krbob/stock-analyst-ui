@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import { getHistory, getAnalysis, getPrice, compareStocks, searchTickers } from './client';
+import { getHistory, getQuote, compareStocks, searchTickers } from './client';
 import type { Interval, Period } from './types';
 import { INTRADAY_INTERVALS } from './types';
 
@@ -29,18 +29,10 @@ export function useStockHistory(symbol: string, period: Period = '1y', interval?
   });
 }
 
-export function useAnalysis(symbol: string, currency?: string) {
+export function useQuote(symbol: string, currency?: string) {
   return useQuery({
-    queryKey: ['analysis', symbol, currency],
-    queryFn: () => getAnalysis(symbol, currency),
-    enabled: symbol.length > 0,
-  });
-}
-
-export function usePrice(symbol: string, currency?: string) {
-  return useQuery({
-    queryKey: ['price', symbol, currency],
-    queryFn: () => getPrice(symbol, currency),
+    queryKey: ['quote', symbol, currency],
+    queryFn: () => getQuote(symbol, currency),
     enabled: symbol.length > 0,
   });
 }

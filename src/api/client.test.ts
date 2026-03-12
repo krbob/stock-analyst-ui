@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getHistory, getAnalysis, getPrice, compareStocks, searchTickers } from './client';
+import { getHistory, getQuote, compareStocks, searchTickers } from './client';
 
 const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
@@ -81,31 +81,17 @@ describe('getHistory', () => {
   });
 });
 
-describe('getAnalysis', () => {
+describe('getQuote', () => {
   it('builds URL with symbol only', async () => {
     mockFetch.mockReturnValue(jsonResponse({}));
-    await getAnalysis('AAPL');
-    expect(mockFetch).toHaveBeenCalledWith('/api/analysis/AAPL');
+    await getQuote('AAPL');
+    expect(mockFetch).toHaveBeenCalledWith('/api/quote/AAPL');
   });
 
   it('includes currency', async () => {
     mockFetch.mockReturnValue(jsonResponse({}));
-    await getAnalysis('AAPL', 'EUR');
-    expect(mockFetch).toHaveBeenCalledWith('/api/analysis/AAPL?currency=EUR');
-  });
-});
-
-describe('getPrice', () => {
-  it('builds URL with symbol only', async () => {
-    mockFetch.mockReturnValue(jsonResponse({}));
-    await getPrice('TSLA');
-    expect(mockFetch).toHaveBeenCalledWith('/api/price/TSLA');
-  });
-
-  it('includes currency', async () => {
-    mockFetch.mockReturnValue(jsonResponse({}));
-    await getPrice('TSLA', 'PLN');
-    expect(mockFetch).toHaveBeenCalledWith('/api/price/TSLA?currency=PLN');
+    await getQuote('AAPL', 'EUR');
+    expect(mockFetch).toHaveBeenCalledWith('/api/quote/AAPL?currency=EUR');
   });
 });
 
@@ -146,12 +132,12 @@ describe('searchTickers', () => {
 describe('fetchApi error handling', () => {
   it('throws with JSON error message', async () => {
     mockFetch.mockReturnValue(errorResponse({ error: 'Stock not found' }, 404));
-    await expect(getPrice('INVALID')).rejects.toThrow('Stock not found');
+    await expect(getQuote('INVALID')).rejects.toThrow('Stock not found');
   });
 
   it('throws with plain text body', async () => {
     mockFetch.mockReturnValue(errorResponse('Something broke', 500));
-    await expect(getPrice('AAPL')).rejects.toThrow('Something broke');
+    await expect(getQuote('AAPL')).rejects.toThrow('Something broke');
   });
 
   it('throws with status text when body is empty', async () => {
@@ -163,6 +149,6 @@ describe('fetchApi error handling', () => {
         text: () => Promise.resolve(''),
       }),
     );
-    await expect(getPrice('AAPL')).rejects.toThrow('503 Service Unavailable');
+    await expect(getQuote('AAPL')).rejects.toThrow('503 Service Unavailable');
   });
 });
