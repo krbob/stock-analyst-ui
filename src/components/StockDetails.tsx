@@ -9,8 +9,8 @@ function fmtMktCap(n: number): string {
   return n.toFixed(0);
 }
 
-function fmtPct(n: number): string {
-  return (n >= 0 ? '+' : '') + (n * 100).toFixed(2) + '%';
+function fmtRate(n: number): string {
+  return (n * 100).toFixed(2) + '%';
 }
 
 function fmtNum(n: number | null, decimals = 2): string {
@@ -168,9 +168,9 @@ export default function StockDetails({ symbol, currency, prices, showDividends }
             <Item label="EPS" value={fmtNum(data.eps)} tooltip="Earnings Per Share. Company's net profit divided by shares outstanding. Higher is better. Negative EPS means the company is losing money." />
             <Item label="P/B" value={fmtNum(data.pbRatio)} tooltip="Price-to-Book ratio. Compares stock price to book value (assets minus liabilities). Below 1.0 may indicate undervaluation; above 3.0 is typical for growth stocks." />
             <Item label="Mkt Cap" value={data.marketCap != null ? fmtMktCap(data.marketCap) : '—'} tooltip="Market Capitalization. Total market value of all shares. Mega cap: >$200B, Large: $10–200B, Mid: $2–10B, Small: <$2B." />
-            <Item label="Yield" value={data.dividendYield != null ? fmtPct(data.dividendYield) : '—'} tooltip="Dividend Yield. Annual dividend payments as a percentage of stock price. Higher yield = more income, but very high yields (>8%) may signal risk." />
-            <Item label="Div Grw" value={data.dividendGrowth != null ? fmtPct(data.dividendGrowth) : '—'} tooltip="Dividend Growth. Year-over-year change in annual dividend payments. Consistent growth is a sign of financial health." />
-            <Item label="ROE" value={data.roe != null ? fmtPct(data.roe) : '—'} tooltip="Return on Equity. How efficiently a company uses shareholders' equity to generate profit. Above 15% is generally considered good." />
+            <Item label="Yield" value={data.dividendYield ? fmtRate(data.dividendYield) : '—'} tooltip="Dividend Yield. Annual dividend payments as a percentage of stock price. Higher yield = more income, but very high yields (>8%) may signal risk." />
+            <Item label="Div Grw" value={data.dividendGrowth ? fmtRate(data.dividendGrowth) : '—'} tooltip="Dividend Growth. Year-over-year change in annual dividend payments. Consistent growth is a sign of financial health." />
+            <Item label="ROE" value={data.roe != null ? fmtRate(data.roe) : '—'} tooltip="Return on Equity. How efficiently a company uses shareholders' equity to generate profit. Above 15% is generally considered good." />
             <Item label="Beta" value={fmtNum(data.beta)} tooltip="Beta. Measures volatility relative to the market. Beta 1.0 = moves with market, >1.0 = more volatile, <1.0 = less volatile. Negative beta moves opposite to market." />
             <Item label="52W High" value={fmtNum(data.fiftyTwoWeekHigh)} tooltip="52-Week High. Highest price in the last year. Current price near the high suggests strength; far below may indicate weakness or a buying opportunity." />
             <Item label="52W Low" value={fmtNum(data.fiftyTwoWeekLow)} tooltip="52-Week Low. Lowest price in the last year." />
