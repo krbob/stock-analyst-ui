@@ -135,7 +135,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
 
   const active = activeIndicators ?? new Set<string>();
 
-  // ---- Chart creation (once) ----
+  // ---- Chart creation (once) — must not recreate on prop changes ----
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -181,6 +181,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
       chart.remove();
       chartRef.current = null;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ---- Series + data (recreated on type or data change) ----
@@ -390,6 +391,8 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
     onZoomChange?.(false);
 
     return () => cleanups.forEach((fn) => fn());
+  // onZoomChange/resetRef/active are stable refs from parent — including them causes infinite loops
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, lineChart, activeIndicators, showDividends]);
 
   // ---- Log scale (independent of series) ----

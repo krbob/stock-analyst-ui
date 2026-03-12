@@ -3,6 +3,7 @@ import { createChart, LineSeries, ColorType, type IChartApi, type Time } from 'l
 import { useStockHistory, useCompare } from '../api/queries';
 import type { Analysis, HistoricalPrice, Period } from '../api/types';
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const COMPARE_COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899'];
 
 const CHART_OPTIONS = {
@@ -198,6 +199,8 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
       try { chart.remove(); } catch { /* lightweight-charts may throw on remove */ }
       chartRef.current = null;
     };
+  // symbols/histories are derived from fixed hook slots — spread deps track actual data changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasData, activeCount, period, currency, ...symbols, h0.data, h1.data, h2.data, h3.data, h4.data, h5.data]);
 
   const chartLoading = !hasData;

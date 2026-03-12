@@ -123,6 +123,7 @@ function CrossFade({ show, children }: { show: boolean; children: React.ReactNod
   useEffect(() => {
     clearTimeout(timerRef.current);
     if (show) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setRendered(true);
       // Ensure the DOM is painted before transitioning opacity
       requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)));

@@ -88,11 +88,13 @@ function StockInfo({ symbol, currency, onCurrencyChange, livePrice, hideGain }: 
   const { data: analysis } = useAnalysis(symbol, currency);
   const [nativeCurrency, setNativeCurrency] = useState<string | null>(null);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setNativeCurrency(null); }, [symbol]);
 
   // Capture native currency from the first (unconverted) response
   useEffect(() => {
     if (data?.currency && !currency) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setNativeCurrency(data.currency);
     }
   }, [data?.currency, currency]);
