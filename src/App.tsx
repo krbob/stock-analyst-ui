@@ -246,6 +246,7 @@ export default function App() {
                     <button onClick={() => removeFromCompare(sym)} className="ml-0.5 hover:text-white">&times;</button>
                   </span>
                 ))}
+                <CurrencyPicker nativeCurrency={null} value={currency} onChange={setCurrency} />
                 {compareSymbols.length < 6 && (
                   <span className="text-xs text-gray-500">Search to add more</span>
                 )}
