@@ -134,6 +134,14 @@ export default function TickerSearch({ onSelect }: TickerSearchProps) {
           ref={inputRef}
           type="text"
           value={input}
+          onPointerDown={(e) => {
+            if (e.button !== 0) return;
+            if (document.activeElement === inputRef.current) return;
+            if (input.length === 0) return;
+            setInput('');
+            setIsOpen(true);
+            setActiveIndex(-1);
+          }}
           onChange={(e) => {
             setInput(e.target.value);
             setIsOpen(true);
