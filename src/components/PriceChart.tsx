@@ -146,6 +146,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
     });
 
     chartRef.current = chart;
+    let prevWidth = containerRef.current.clientWidth;
 
     chart.subscribeCrosshairMove((param) => {
       if (!param.time) {
@@ -164,7 +165,13 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
 
     const handleResize = () => {
       if (containerRef.current) {
-        chart.applyOptions({ width: containerRef.current.clientWidth });
+        const newWidth = containerRef.current.clientWidth;
+        chart.applyOptions({ width: newWidth });
+        // Re-fit when transitioning from hidden (0) to visible
+        if (prevWidth === 0 && newWidth > 0) {
+          chart.timeScale().fitContent();
+        }
+        prevWidth = newWidth;
       }
     };
 

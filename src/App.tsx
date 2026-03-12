@@ -9,6 +9,36 @@ import type { Interval, Period } from './api/types';
 
 const fmtPct = (n: number) => (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
 
+// ---------------------------------------------------------------------------
+// URL state
+// ---------------------------------------------------------------------------
+
+const VALID_PERIODS: Set<string> = new Set(['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']);
+const VALID_INTERVALS: Set<string> = new Set(['1m', '5m', '15m', '30m', '1h', '1d', '1wk', '1mo']);
+const VALID_INDICATORS: Set<string> = new Set(['bb', 'ema50', 'ema200', 'macd', 'rsi', 'sma50', 'sma200']);
+
+function parseUrlState() {
+  const p = new URLSearchParams(window.location.search);
+  const rawCmp = p.get('cmp');
+  const compareSymbols = rawCmp ? rawCmp.split(',').map(s => s.toUpperCase()).filter(Boolean).slice(0, 6) : [];
+  const symbol = p.get('s')?.toUpperCase() || (compareSymbols.length > 0 ? compareSymbols[0] : '');
+  const rawPeriod = p.get('p');
+  const period: Period = rawPeriod && VALID_PERIODS.has(rawPeriod) ? rawPeriod as Period : '1y';
+  const rawInterval = p.get('i');
+  const interval: Interval | undefined = rawInterval && VALID_INTERVALS.has(rawInterval) ? rawInterval as Interval : undefined;
+  const lineChart = p.get('line') === '1';
+  const logScale = p.get('log') === '1';
+  const showDividends = p.get('div') === '1';
+  const rawInd = p.get('ind');
+  const indicators = new Set(rawInd ? rawInd.split(',').filter(k => VALID_INDICATORS.has(k)) : []);
+  const currency = p.get('cur') || undefined;
+  return { symbol, period, interval, lineChart, logScale, indicators, showDividends, currency, compareSymbols };
+}
+
+const URL_INIT = parseUrlState();
+
+// ---------------------------------------------------------------------------
+
 const PERIODS: { label: string; value: Period }[] = [
   { label: '1D', value: '1d' },
   { label: '5D', value: '5d' },
@@ -123,17 +153,33 @@ function StockInfo({ symbol, currency, onCurrencyChange, livePrice, hideGain }: 
 }
 
 export default function App() {
-  const [symbol, setSymbol] = useState('');
-  const [period, setPeriod] = useState<Period>('1y');
-  const [interval, setInterval] = useState<Interval | undefined>();
-  const [lineChart, setLineChart] = useState(false);
-  const [logScale, setLogScale] = useState(false);
-  const [indicators, setIndicators] = useState<Set<string>>(new Set());
-  const [showDividends, setShowDividends] = useState(false);
-  const [currency, setCurrency] = useState<string | undefined>();
+  const [symbol, setSymbol] = useState(URL_INIT.symbol);
+  const [period, setPeriod] = useState<Period>(URL_INIT.period);
+  const [interval, setInterval] = useState<Interval | undefined>(URL_INIT.interval);
+  const [lineChart, setLineChart] = useState(URL_INIT.lineChart);
+  const [logScale, setLogScale] = useState(URL_INIT.logScale);
+  const [indicators, setIndicators] = useState<Set<string>>(URL_INIT.indicators);
+  const [showDividends, setShowDividends] = useState(URL_INIT.showDividends);
+  const [currency, setCurrency] = useState<string | undefined>(URL_INIT.currency);
   const [chartZoomed, setChartZoomed] = useState(false);
-  const [compareSymbols, setCompareSymbols] = useState<string[]>([]);
+  const [compareSymbols, setCompareSymbols] = useState<string[]>(URL_INIT.compareSymbols);
   const resetViewRef = useRef<(() => void) | null>(null);
+
+  // Sync state → URL
+  useEffect(() => {
+    const p = new URLSearchParams();
+    if (symbol) p.set('s', symbol);
+    if (period !== '1y') p.set('p', period);
+    if (interval) p.set('i', interval);
+    if (lineChart) p.set('line', '1');
+    if (logScale) p.set('log', '1');
+    if (showDividends) p.set('div', '1');
+    if (indicators.size > 0) p.set('ind', [...indicators].sort().join(','));
+    if (currency) p.set('cur', currency);
+    if (compareSymbols.length > 0) p.set('cmp', compareSymbols.join(','));
+    const qs = p.toString();
+    window.history.replaceState(null, '', qs ? `?${qs}` : window.location.pathname);
+  }, [symbol, period, interval, lineChart, logScale, indicators, showDividends, currency, compareSymbols]);
 
   const inCompareMode = compareSymbols.length > 0;
 
@@ -191,6 +237,9 @@ export default function App() {
 
   const exitCompare = () => {
     setCompareSymbols([]);
+    // PriceChart may have mounted in a hidden container (e.g. opened from compare URL)
+    // — trigger resize so it recalculates dimensions.
+    requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
   };
 
   const removeFromCompare = (sym: string) => {
