@@ -43,6 +43,7 @@ interface Metric {
   get: MetricFn;
   fmt: (v: number | string | null) => string;
   best?: 'max' | 'min';
+  gain?: boolean;
 }
 
 const fmtNum = (d: number) => d.toFixed(2);
@@ -70,11 +71,11 @@ const METRICS: Metric[] = [
   { label: 'Beta', get: (a) => a.beta, fmt: (v) => v != null ? fmtNum(v as number) : '—' },
   { label: 'Div Yield', get: (a) => a.dividendYield, fmt: (v) => v != null && v !== 0 ? fmtRate(v as number) : '—', best: 'max' },
   { label: 'Div Growth', get: (a) => a.dividendGrowth, fmt: (v) => v != null && v !== 0 ? fmtRate(v as number) : '—', best: 'max' },
-  { label: 'Daily', get: (a) => a.gain.daily, fmt: (v) => v != null ? fmtPct(v as number) : '—', best: 'max' },
-  { label: 'Monthly', get: (a) => a.gain.monthly, fmt: (v) => v != null ? fmtPct(v as number) : '—', best: 'max' },
-  { label: 'YTD', get: (a) => a.gain.ytd, fmt: (v) => v != null ? fmtPct(v as number) : '—', best: 'max' },
-  { label: '1Y', get: (a) => a.gain.yearly, fmt: (v) => v != null ? fmtPct(v as number) : '—', best: 'max' },
-  { label: '5Y', get: (a) => a.gain.fiveYear, fmt: (v) => v != null ? fmtPct(v as number) : '—', best: 'max' },
+  { label: 'Daily', get: (a) => a.gain.daily, fmt: (v) => v != null ? fmtPct(v as number) : '—', best: 'max', gain: true },
+  { label: 'Monthly', get: (a) => a.gain.monthly, fmt: (v) => v != null ? fmtPct(v as number) : '—', best: 'max', gain: true },
+  { label: 'YTD', get: (a) => a.gain.ytd, fmt: (v) => v != null ? fmtPct(v as number) : '—', best: 'max', gain: true },
+  { label: '1Y', get: (a) => a.gain.yearly, fmt: (v) => v != null ? fmtPct(v as number) : '—', best: 'max', gain: true },
+  { label: '5Y', get: (a) => a.gain.fiveYear, fmt: (v) => v != null ? fmtPct(v as number) : '—', best: 'max', gain: true },
   { label: 'RSI (D)', get: (a) => a.rsi.daily, fmt: (v) => v != null ? (v as number).toFixed(0) : '—' },
   { label: '52W High', get: (a) => a.fiftyTwoWeekHigh, fmt: (v) => v != null ? fmtNum(v as number) : '—' },
   { label: '52W Low', get: (a) => a.fiftyTwoWeekLow, fmt: (v) => v != null ? fmtNum(v as number) : '—' },
@@ -256,8 +257,7 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
                     {values.map((v, i) => {
                       const formatted = m.fmt(v);
                       const isBest = i === bestIdx;
-                      const isGain = typeof v === 'number' && m.label !== 'P/E' && m.label !== 'P/B' && m.label !== 'Beta';
-                      const gainColor = isGain && typeof v === 'number' ? (v >= 0 ? 'text-green-400' : 'text-red-400') : 'text-gray-300';
+                      const gainColor = m.gain && typeof v === 'number' ? (v >= 0 ? 'text-green-400' : 'text-red-400') : 'text-gray-300';
                       return (
                         <td key={i} className={`px-3 py-1.5 text-right ${isBest ? 'font-semibold text-green-400' : gainColor}`}>
                           {formatted}
