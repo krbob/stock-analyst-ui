@@ -79,6 +79,29 @@ describe('getHistory', () => {
     await getHistory('BRK.B');
     expect(mockFetch).toHaveBeenCalledWith('/api/history/BRK.B?period=1y');
   });
+
+  it('attaches normalized request metadata to the response', async () => {
+    mockFetch.mockReturnValue(jsonResponse({
+      symbol: 'AAPL',
+      name: 'Apple Inc.',
+      period: '1y',
+      interval: '1d',
+      prices: [],
+      currency: 'EUR',
+    }));
+
+    const result = await getHistory('aapl', '1y', '1d', ['sma50'], 'eur', true);
+
+    expect(mockFetch).toHaveBeenCalledWith('/api/history/AAPL?period=1y&interval=1d&indicators=sma50&currency=EUR&dividends=true');
+    expect(result.request).toEqual({
+      symbol: 'AAPL',
+      period: '1y',
+      interval: '1d',
+      indicatorsKey: 'sma50',
+      currency: 'EUR',
+      dividends: true,
+    });
+  });
 });
 
 describe('getQuote', () => {

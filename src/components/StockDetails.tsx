@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useQuote } from '../api/queries';
 import type { HistoricalPrice, Indicators } from '../api/types';
 
@@ -21,9 +21,9 @@ function Item({ label, value, tooltip }: { label: string; value: string; tooltip
   return (
     <div className="flex justify-between gap-2 py-1">
       {tooltip ? (
-        <span className="group relative shrink-0 cursor-help text-gray-500 underline decoration-dotted decoration-gray-600 underline-offset-2">
+        <span tabIndex={0} className="group relative shrink-0 cursor-help text-gray-500 underline decoration-dotted decoration-gray-600 underline-offset-2">
           {label}
-          <span className="pointer-events-none absolute bottom-full left-0 z-30 mb-1.5 hidden w-56 rounded bg-gray-800 px-2.5 py-1.5 text-xs leading-relaxed text-gray-200 shadow-lg group-hover:block">
+          <span className="pointer-events-none absolute bottom-full left-0 z-30 mb-1.5 hidden w-56 rounded bg-gray-800 px-2.5 py-1.5 text-xs leading-relaxed text-gray-200 shadow-lg group-hover:block group-focus:block">
             {tooltip}
           </span>
         </span>
@@ -56,9 +56,9 @@ function Recommendation({ value, count }: { value: string | null; count: number 
   const countStr = count != null ? ` (${count})` : '';
   return (
     <div className="flex justify-between gap-2 py-1">
-      <span className="group relative cursor-help text-gray-500 underline decoration-dotted decoration-gray-600 underline-offset-2">
+      <span tabIndex={0} className="group relative cursor-help text-gray-500 underline decoration-dotted decoration-gray-600 underline-offset-2">
         Rating
-        <span className="pointer-events-none absolute bottom-full left-0 z-30 mb-1.5 hidden w-56 rounded bg-gray-800 px-2.5 py-1.5 text-xs leading-relaxed text-gray-200 shadow-lg group-hover:block">
+        <span className="pointer-events-none absolute bottom-full left-0 z-30 mb-1.5 hidden w-56 rounded bg-gray-800 px-2.5 py-1.5 text-xs leading-relaxed text-gray-200 shadow-lg group-hover:block group-focus:block">
           {tip}
         </span>
       </span>
@@ -115,34 +115,6 @@ function DividendTable({ dividends }: { dividends: DividendEntry[] }) {
   );
 }
 
-function CrossFade({ show, children }: { show: boolean; children: React.ReactNode }) {
-  const [rendered, setRendered] = useState(show);
-  const [visible, setVisible] = useState(show);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-
-  useEffect(() => {
-    clearTimeout(timerRef.current);
-    if (show) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setRendered(true);
-      // Ensure the DOM is painted before transitioning opacity
-      requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)));
-    } else {
-      setVisible(false);
-      timerRef.current = setTimeout(() => setRendered(false), 300);
-    }
-    return () => clearTimeout(timerRef.current);
-  }, [show]);
-
-  if (!rendered) return null;
-
-  return (
-    <div className={`transition-opacity duration-300 ${visible ? 'opacity-100' : 'opacity-0'}`}>
-      {children}
-    </div>
-  );
-}
-
 function lastValue(arr?: { value: number }[]): number | undefined {
   return arr && arr.length > 0 ? arr[arr.length - 1].value : undefined;
 }
@@ -150,6 +122,7 @@ function lastValue(arr?: { value: number }[]): number | undefined {
 export default function StockDetails({ symbol, currency, prices, indicators, showDividends }: { symbol: string; currency?: string; prices?: HistoricalPrice[]; indicators?: Indicators; showDividends?: boolean }) {
   const { data, isLoading, error } = useQuote(symbol, currency);
   const dividends = showDividends ? extractDividends(prices) : [];
+  const dividendKey = dividends.length > 0 ? `${symbol}:${dividends[0].date}:${dividends.length}` : `${symbol}:empty`;
 
   if (!symbol) return null;
 
@@ -186,8 +159,8 @@ export default function StockDetails({ symbol, currency, prices, indicators, sho
             <Item label="EPS" value={fmtNum(data.eps)} tooltip="Earnings Per Share. Company's net profit divided by shares outstanding. Higher is better. Negative EPS means the company is losing money." />
             <Item label="P/B" value={fmtNum(data.pbRatio)} tooltip="Price-to-Book ratio. Compares stock price to book value (assets minus liabilities). Below 1.0 may indicate undervaluation; above 3.0 is typical for growth stocks." />
             <Item label="Mkt Cap" value={data.marketCap != null ? fmtMktCap(data.marketCap) : '—'} tooltip="Market Capitalization. Total market value of all shares. Mega cap: >$200B, Large: $10–200B, Mid: $2–10B, Small: <$2B." />
-            <Item label="Yield" value={data.dividendYield ? fmtRate(data.dividendYield) : '—'} tooltip="Dividend Yield. Annual dividend payments as a percentage of stock price. Higher yield = more income, but very high yields (>8%) may signal risk." />
-            <Item label="Div Grw" value={data.dividendGrowth ? fmtRate(data.dividendGrowth) : '—'} tooltip="Dividend Growth. Year-over-year change in annual dividend payments. Consistent growth is a sign of financial health." />
+            <Item label="Yield" value={data.dividendYield != null ? fmtRate(data.dividendYield) : '—'} tooltip="Dividend Yield. Annual dividend payments as a percentage of stock price. Higher yield = more income, but very high yields (>8%) may signal risk." />
+            <Item label="Div Grw" value={data.dividendGrowth != null ? fmtRate(data.dividendGrowth) : '—'} tooltip="Dividend Growth. Year-over-year change in annual dividend payments. Consistent growth is a sign of financial health." />
             <Item label="ROE" value={data.roe != null ? fmtRate(data.roe) : '—'} tooltip="Return on Equity. How efficiently a company uses shareholders' equity to generate profit. Above 15% is generally considered good." />
             <Item label="Beta" value={fmtNum(data.beta)} tooltip="Beta. Measures volatility relative to the market. Beta 1.0 = moves with market, >1.0 = more volatile, <1.0 = less volatile. Negative beta moves opposite to market." />
             <Item label="52W High" value={fmtNum(data.fiftyTwoWeekHigh)} tooltip="52-Week High. Highest price in the last year. Current price near the high suggests strength; far below may indicate weakness or a buying opportunity." />
@@ -219,9 +192,7 @@ export default function StockDetails({ symbol, currency, prices, indicators, sho
         </div>
       </div>
 
-      <CrossFade show={dividends.length > 0}>
-        <DividendTable dividends={dividends} />
-      </CrossFade>
+      {dividends.length > 0 && <DividendTable key={dividendKey} dividends={dividends} />}
     </div>
   );
 }

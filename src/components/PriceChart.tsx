@@ -3,6 +3,7 @@ import { createChart, createSeriesMarkers, CandlestickSeries, LineSeries, Histog
 import type { HistoricalPrice, Indicators } from '../api/types';
 import { useStockHistory } from '../api/queries';
 import type { Interval, Period } from '../api/types';
+import { createHistoryRequest, matchesHistoryRequest } from '../api/history-utils';
 
 // ---------------------------------------------------------------------------
 // Time helpers
@@ -102,6 +103,10 @@ function fmtVol(n: number): string {
   return n.toString();
 }
 
+function fallbackChartHeight(mobile: number, desktop: number): number {
+  return window.matchMedia('(max-width: 639px)').matches ? mobile : desktop;
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -129,24 +134,37 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
   const [legend, setLegend] = useState<HistoricalPrice | null>(null);
   const [indLegend, setIndLegend] = useState<IndicatorSnapshot | null>(null);
   const fittingRef = useRef(false);
+  const fitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { data, isFetching, error } = useStockHistory(symbol, period, interval, indicators, currency, dividends);
-  const prevDataRef = useRef(data);
+  const request = createHistoryRequest(symbol, period, interval, indicators, currency, dividends);
+  const currentData = matchesHistoryRequest(data, request) ? data : undefined;
+  const prevDataRef = useRef(currentData);
 
   const active = activeIndicators ?? new Set<string>();
+
+  const scheduleFitReset = () => {
+    if (fitTimerRef.current) clearTimeout(fitTimerRef.current);
+    fitTimerRef.current = setTimeout(() => {
+      fittingRef.current = false;
+      fitTimerRef.current = null;
+    }, 100);
+  };
 
   // ---- Chart creation (once) — must not recreate on prop changes ----
   useEffect(() => {
     if (!containerRef.current) return;
 
+    const initialWidth = containerRef.current.clientWidth;
+    const initialHeight = containerRef.current.clientHeight;
     const chart = createChart(containerRef.current, {
       ...CHART_OPTIONS,
-      width: containerRef.current.clientWidth,
-      height: window.innerWidth < 640 ? 350 : 500,
+      width: Math.max(initialWidth, 1),
+      height: Math.max(initialHeight, fallbackChartHeight(350, 500)),
     });
 
     chartRef.current = chart;
-    let prevWidth = containerRef.current.clientWidth;
+    let prevSize = { width: initialWidth, height: initialHeight };
 
     chart.subscribeCrosshairMove((param) => {
       if (!param.time) {
@@ -165,20 +183,27 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
 
     const handleResize = () => {
       if (containerRef.current) {
-        const newWidth = containerRef.current.clientWidth;
-        chart.applyOptions({ width: newWidth });
-        // Re-fit when transitioning from hidden (0) to visible
-        if (prevWidth === 0 && newWidth > 0) {
+        const rawWidth = containerRef.current.clientWidth;
+        const rawHeight = containerRef.current.clientHeight;
+        chart.applyOptions({
+          width: Math.max(rawWidth, 1),
+          height: Math.max(rawHeight, fallbackChartHeight(350, 500)),
+        });
+        if ((prevSize.width === 0 || prevSize.height === 0) && rawWidth > 0 && rawHeight > 0) {
           chart.timeScale().fitContent();
         }
-        prevWidth = newWidth;
+        prevSize = { width: rawWidth, height: rawHeight };
       }
     };
 
+    const resizeObserver = 'ResizeObserver' in window ? new ResizeObserver(handleResize) : null;
+    resizeObserver?.observe(containerRef.current);
     window.addEventListener('resize', handleResize);
     return () => {
+      if (fitTimerRef.current) clearTimeout(fitTimerRef.current);
+      resizeObserver?.disconnect();
       window.removeEventListener('resize', handleResize);
-      chart.remove();
+      try { chart.remove(); } catch { /* lightweight-charts may throw on remove */ }
       chartRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -187,16 +212,23 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
   // ---- Series + data (recreated on type or data change) ----
   useEffect(() => {
     const chart = chartRef.current;
-    if (!chart || !data) return;
+    if (!chart || !currentData) {
+      pricesRef.current = new Map();
+      indRef.current = new Map();
+      setLegend(null);
+      setIndLegend(null);
+      if (resetRef) resetRef.current = null;
+      return;
+    }
 
     const priceMap = new Map<string, HistoricalPrice>();
-    for (const p of data.prices) priceMap.set(timeKey(p), p);
+    for (const p of currentData.prices) priceMap.set(timeKey(p), p);
     pricesRef.current = priceMap;
-    indRef.current = data.indicators ? buildIndicatorLookup(data.indicators, active) : new Map();
+    indRef.current = currentData.indicators ? buildIndicatorLookup(currentData.indicators, active) : new Map();
     setLegend(null);
     setIndLegend(null);
 
-    const isIntraday = data.prices.some((p) => p.timestamp != null);
+    const isIntraday = currentData.prices.some((p) => p.timestamp != null);
     chart.applyOptions({
       timeScale: {
         timeVisible: isIntraday,
@@ -210,13 +242,13 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
     let priceSeries: ISeriesApi<SeriesType>;
     if (lineChart) {
       const series = chart.addSeries(LineSeries, LINE_OPTIONS);
-      series.setData(data.prices.map((p) => ({ time: chartTime(p), value: p.close })));
+      series.setData(currentData.prices.map((p) => ({ time: chartTime(p), value: p.close })));
       priceSeries = series;
       cleanups.push(() => chart.removeSeries(series));
     } else {
       const series = chart.addSeries(CandlestickSeries, CANDLESTICK_OPTIONS);
       series.setData(
-        data.prices.map((p) => ({
+        currentData.prices.map((p) => ({
           time: chartTime(p),
           open: p.open,
           high: p.high,
@@ -230,7 +262,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
 
     // --- Dividend markers ---
     if (showDividends) {
-      const divMarkers = data.prices
+      const divMarkers = currentData.prices
         .filter((p) => p.dividend > 0)
         .map((p) => ({
           time: chartTime(p),
@@ -251,7 +283,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
       priceScaleId: 'volume',
     });
     volumeSeries.setData(
-      data.prices.map((p) => ({
+      currentData.prices.map((p) => ({
         time: chartTime(p),
         value: p.volume,
         color: p.close >= p.open ? '#22c55e40' : '#ef444440',
@@ -264,7 +296,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
     cleanups.push(() => chart.removeSeries(volumeSeries));
 
     // --- Overlay indicators (SMA, EMA, BB on pane 0) ---
-    const ind = data.indicators;
+    const ind = currentData.indicators;
     if (ind) {
       const overlayKeys = ['sma50', 'sma200', 'ema50', 'ema200'] as const;
       for (const key of overlayKeys) {
@@ -376,24 +408,24 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
       resetRef.current = () => {
         fittingRef.current = true;
         chart.timeScale().fitContent();
-        setTimeout(() => { fittingRef.current = false; }, 100);
+        scheduleFitReset();
         onZoomChange?.(false);
       };
     }
 
-    const dataChanged = prevDataRef.current !== data;
-    prevDataRef.current = data;
+    const dataChanged = prevDataRef.current !== currentData;
+    prevDataRef.current = currentData;
     if (dataChanged) {
       fittingRef.current = true;
       chart.timeScale().fitContent();
-      setTimeout(() => { fittingRef.current = false; }, 100);
+      scheduleFitReset();
     }
     onZoomChange?.(false);
 
     return () => cleanups.forEach((fn) => fn());
   // onZoomChange/resetRef/active are stable refs from parent — including them causes infinite loops
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, lineChart, activeIndicators, showDividends]);
+  }, [currentData, lineChart, activeIndicators, showDividends]);
 
   // ---- Log scale (independent of series) ----
   useEffect(() => {
@@ -423,17 +455,22 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
           {indLegend?.macd != null && <span style={{ color: '#3b82f6' }}>MACD <span>{indLegend.macd.macd.toFixed(2)} / {indLegend.macd.signal.toFixed(2)} / {indLegend.macd.histogram.toFixed(2)}</span></span>}
         </div>
       )}
-      <div ref={containerRef} className="w-full" />
+      <div ref={containerRef} className="h-[350px] w-full sm:h-[500px]" />
       {isFetching && (
         <div className={`absolute inset-0 z-10 flex items-center justify-center ${
-          data?.symbol.toLowerCase() === symbol.toLowerCase() ? 'bg-[#1a1a2e]/80' : 'bg-[#1a1a2e]'
+          currentData ? 'bg-[#1a1a2e]/80' : 'bg-[#1a1a2e]'
         }`}>
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-600 border-t-blue-400" />
         </div>
       )}
-      {error && (
+      {error && !currentData && (
         <div className="absolute inset-0 z-10 flex items-center justify-center text-red-400 bg-[#1a1a2e]/80">
           {error instanceof Error ? error.message : 'Failed to load chart data'}
+        </div>
+      )}
+      {error && currentData && (
+        <div className="absolute bottom-2 right-2 z-20 rounded-md bg-red-900/70 px-2 py-1 text-xs text-red-100">
+          {error instanceof Error ? error.message : 'Failed to refresh chart data'}
         </div>
       )}
     </div>

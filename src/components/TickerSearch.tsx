@@ -61,12 +61,14 @@ export default function TickerSearch({ onSelect }: TickerSearchProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const debouncedQuery = useDebounce(input.trim(), 300);
-  const { data: results = [] } = useTickerSearch(debouncedQuery);
+  const { data: results = [], isFetching } = useTickerSearch(debouncedQuery);
 
   const hasQuery = input.trim().length > 0;
   const showSearchResults = isOpen && hasQuery && results.length > 0;
   const showRecents = isOpen && !hasQuery && recents.length > 0;
-  const showDropdown = showSearchResults || showRecents;
+  const showSearching = isOpen && hasQuery && debouncedQuery === input.trim() && isFetching;
+  const showNoResults = isOpen && hasQuery && debouncedQuery === input.trim() && !isFetching && results.length === 0;
+  const showDropdown = showSearchResults || showRecents || showSearching || showNoResults;
 
   const items = showSearchResults ? results : showRecents ? recents : [];
 
@@ -150,6 +152,8 @@ export default function TickerSearch({ onSelect }: TickerSearchProps) {
           role="combobox"
           aria-expanded={showDropdown}
           aria-autocomplete="list"
+          aria-label="Search ticker"
+          aria-busy={showSearching}
           aria-controls="ticker-search-listbox"
           aria-activedescendant={
             activeIndex >= 0 ? `ticker-option-${activeIndex}` : undefined
@@ -167,6 +171,12 @@ export default function TickerSearch({ onSelect }: TickerSearchProps) {
               role="listbox"
               className="max-h-60 overflow-y-auto"
             >
+              {showSearching && (
+                <li className="px-3 py-2 text-sm text-gray-400">Searching...</li>
+              )}
+              {showNoResults && (
+                <li className="px-3 py-2 text-sm text-gray-400">No tickers found</li>
+              )}
               {items.map((item, index) => (
                 <li
                   key={item.symbol}

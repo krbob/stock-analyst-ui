@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createChart, LineSeries, ColorType, type IChartApi, type Time } from 'lightweight-charts';
 import { useStockHistory, useCompare } from '../api/queries';
 import type { CompareResult, HistoricalPrice, Period, Quote } from '../api/types';
+import { createHistoryRequest, matchesHistoryRequest } from '../api/history-utils';
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const COMPARE_COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899'];
@@ -70,8 +71,8 @@ const METRICS: Metric[] = [
   { label: 'EPS', get: (q) => q.eps, fmt: (v) => v != null ? fmtNum(v as number) : '—', best: 'max' },
   { label: 'ROE', get: (q) => q.roe, fmt: (v) => v != null ? fmtRate(v as number) : '—', best: 'max' },
   { label: 'Beta', get: (q) => q.beta, fmt: (v) => v != null ? fmtNum(v as number) : '—' },
-  { label: 'Div Yield', get: (q) => q.dividendYield, fmt: (v) => v != null && v !== 0 ? fmtRate(v as number) : '—', best: 'max' },
-  { label: 'Div Growth', get: (q) => q.dividendGrowth, fmt: (v) => v != null && v !== 0 ? fmtRate(v as number) : '—', best: 'max' },
+  { label: 'Div Yield', get: (q) => q.dividendYield, fmt: (v) => v != null ? fmtRate(v as number) : '—', best: 'max' },
+  { label: 'Div Growth', get: (q) => q.dividendGrowth, fmt: (v) => v != null ? fmtRate(v as number) : '—', best: 'max' },
   { label: 'Daily', get: (q) => q.gain.daily, fmt: (v) => v != null ? fmtPct(v as number) : '—', best: 'max', gain: true },
   { label: 'Monthly', get: (q) => q.gain.monthly, fmt: (v) => v != null ? fmtPct(v as number) : '—', best: 'max', gain: true },
   { label: 'YTD', get: (q) => q.gain.ytd, fmt: (v) => v != null ? fmtPct(v as number) : '—', best: 'max', gain: true },
@@ -101,6 +102,10 @@ function findBestIdx(values: (number | string | null)[], dir: 'max' | 'min'): nu
   return tied ? -1 : best;
 }
 
+function fallbackChartHeight(): number {
+  return window.matchMedia('(max-width: 639px)').matches ? 300 : 400;
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -128,21 +133,51 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
   const { data: compareData } = useCompare(symbols, currency);
 
   const activeCount = symbols.length;
-  const hasData = histories.slice(0, activeCount).every((h) => h.data && h.data.prices.length > 0);
+  const historySources = symbols.map((sym, index) => {
+    const request = createHistoryRequest(sym, period, undefined, undefined, currency);
+    const data = matchesHistoryRequest(histories[index]?.data, request) ? histories[index].data : undefined;
+    return {
+      symbol: sym,
+      colorIndex: index,
+      data,
+      error: histories[index]?.error,
+      isFetching: histories[index]?.isFetching ?? false,
+    };
+  });
+  const chartSeries = historySources.filter((source) => source.data && source.data.prices.length > 0);
+  const hasData = chartSeries.length > 0;
   const isFetching = histories.slice(0, activeCount).some((h) => h.isFetching);
 
   // Extract successful quotes from compare results
   const quotes = compareData?.filter((r): r is CompareResult & { data: Quote } => r.data != null).map((r) => r.data) ?? [];
-  const errors = compareData?.filter((r) => r.error != null) ?? [];
+  const statusMessages = new Map<string, string>();
+  for (const result of compareData?.filter((r) => r.error != null) ?? []) {
+    statusMessages.set(result.symbol.toUpperCase(), result.error ?? 'Failed to load quote');
+  }
+  for (const source of historySources) {
+    if (source.data || source.isFetching) continue;
+    const message = source.error instanceof Error
+      ? source.error.message
+      : source.error
+        ? String(source.error)
+        : 'No chart data available';
+    const symbol = source.symbol.toUpperCase();
+    if (!statusMessages.has(symbol)) {
+      statusMessages.set(symbol, message);
+    }
+  }
+  const errors = [...statusMessages.entries()].map(([symbol, error]) => ({ symbol, error }));
 
   // Single combined effect: create chart + series only when data is ready
   useEffect(() => {
     if (!containerRef.current || !hasData) return;
 
+    const initialWidth = containerRef.current.clientWidth;
+    const initialHeight = containerRef.current.clientHeight;
     const chart = createChart(containerRef.current, {
       ...CHART_OPTIONS,
-      width: containerRef.current.clientWidth,
-      height: window.innerWidth < 640 ? 300 : 400,
+      width: Math.max(initialWidth, 1),
+      height: Math.max(initialHeight, fallbackChartHeight()),
       rightPriceScale: {
         borderColor: '#3a3a4e',
         autoScale: true,
@@ -152,11 +187,12 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
 
     const seriesMap = new Map<string, Map<string, number>>();
     const cleanups: (() => void)[] = [];
+    let prevSize = { width: initialWidth, height: initialHeight };
 
-    for (let i = 0; i < activeCount; i++) {
-      const data = histories[i].data!;
-      const sym = symbols[i];
-      const color = COMPARE_COLORS[i % COMPARE_COLORS.length];
+    for (const source of chartSeries) {
+      const data = source.data!;
+      const sym = source.symbol;
+      const color = COMPARE_COLORS[source.colorIndex % COMPARE_COLORS.length];
       const normalized = normalize(data.prices);
       if (normalized.length === 0) continue;
 
@@ -192,17 +228,30 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
 
     const handleResize = () => {
       if (containerRef.current) {
-        chart.applyOptions({ width: containerRef.current.clientWidth });
+        const rawWidth = containerRef.current.clientWidth;
+        const rawHeight = containerRef.current.clientHeight;
+        chart.applyOptions({
+          width: Math.max(rawWidth, 1),
+          height: Math.max(rawHeight, fallbackChartHeight()),
+        });
+        if ((prevSize.width === 0 || prevSize.height === 0) && rawWidth > 0 && rawHeight > 0) {
+          chart.timeScale().fitContent();
+        }
+        prevSize = { width: rawWidth, height: rawHeight };
       }
     };
+    const resizeObserver = 'ResizeObserver' in window ? new ResizeObserver(handleResize) : null;
+    resizeObserver?.observe(containerRef.current);
     window.addEventListener('resize', handleResize);
 
     cleanups.push(() => {
+      resizeObserver?.disconnect();
       window.removeEventListener('resize', handleResize);
     });
 
     return () => {
       cleanups.forEach((fn) => fn());
+      setLegendValues(new Map());
       try { chart.remove(); } catch { /* lightweight-charts may throw on remove */ }
       chartRef.current = null;
     };
@@ -210,13 +259,13 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasData, activeCount, period, currency, ...symbols, h0.data, h1.data, h2.data, h3.data, h4.data, h5.data]);
 
-  const chartLoading = !hasData;
+  const chartLoading = !hasData && isFetching;
   const tableLoading = !compareData;
 
   return (
     <div className="space-y-4">
       {/* Overlay chart */}
-      <div className="relative rounded-lg border border-gray-800 bg-[#1a1a2e] overflow-hidden" style={{ minHeight: window.innerWidth < 640 ? 300 : 400 }}>
+      <div className="relative overflow-hidden rounded-lg border border-gray-800 bg-[#1a1a2e]">
         {/* Legend */}
         <div className="absolute left-2 top-2 z-20 flex flex-wrap gap-x-3 gap-y-0.5 text-xs">
           {symbols.map((sym, i) => {
@@ -230,10 +279,15 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
             );
           })}
         </div>
-        <div ref={containerRef} className="w-full" />
+        <div ref={containerRef} className="h-[300px] w-full sm:h-[400px]" />
         {(chartLoading || isFetching) && (
           <div className={`absolute inset-0 z-10 flex items-center justify-center ${chartLoading ? 'bg-[#1a1a2e]' : 'bg-[#1a1a2e]/80'}`}>
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-600 border-t-blue-400" />
+          </div>
+        )}
+        {!chartLoading && !hasData && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#1a1a2e] px-4 text-center text-sm text-gray-400">
+            No chart data available for the selected symbols
           </div>
         )}
       </div>
@@ -243,7 +297,7 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
         <div className="flex flex-wrap gap-2">
           {errors.map((r) => (
             <span key={r.symbol} className="rounded-full bg-red-900/30 px-3 py-1 text-xs text-red-400">
-              {r.symbol.toUpperCase()}: {r.error}
+              {r.symbol}: {r.error}
             </span>
           ))}
         </div>

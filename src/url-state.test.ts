@@ -87,6 +87,10 @@ describe('parseUrlParams', () => {
     expect(parseUrlParams('?s=A&cur=EUR').currency).toBe('EUR');
   });
 
+  it('uppercases currency', () => {
+    expect(parseUrlParams('?s=A&cur=eur').currency).toBe('EUR');
+  });
+
   it('parses compare symbols', () => {
     const state = parseUrlParams('?cmp=AAPL,MSFT,GOOG');
     expect(state.compareSymbols).toEqual(['AAPL', 'MSFT', 'GOOG']);
@@ -104,6 +108,11 @@ describe('parseUrlParams', () => {
 
   it('filters empty compare symbols', () => {
     const state = parseUrlParams('?cmp=AAPL,,MSFT,');
+    expect(state.compareSymbols).toEqual(['AAPL', 'MSFT']);
+  });
+
+  it('deduplicates compare symbols case-insensitively after uppercasing', () => {
+    const state = parseUrlParams('?cmp=AAPL,aapl,MSFT,msft');
     expect(state.compareSymbols).toEqual(['AAPL', 'MSFT']);
   });
 
