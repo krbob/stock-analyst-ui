@@ -177,7 +177,7 @@ GitHub Actions pipeline (`.github/workflows/ci-build.yml`):
 
 1. **Type check** — `tsc --noEmit`
 2. **Lint** — ESLint
-3. **Test** — Vitest (133 tests)
+3. **Test** — Vitest
 4. **Docker build** — multi-stage image
 5. **Smoke test** — container serves HTML with expected content
 6. **Publish** (main only) — push to `ghcr.io/krbob/stock-analyst-ui`

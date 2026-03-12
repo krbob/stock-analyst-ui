@@ -200,4 +200,35 @@ describe('TickerSearch', () => {
     expect(stored[0].symbol).toBe('NEW');
     expect(stored[7].symbol).toBe('SYM6'); // SYM7 dropped
   });
+
+  it('clears input when clicked while blurred and containing a value', async () => {
+    const user = userEvent.setup();
+    renderWithQuery(<TickerSearch onSelect={vi.fn()} />);
+
+    const input = screen.getByPlaceholderText('Ticker');
+    await user.type(input, 'AAPL');
+    await user.click(screen.getByRole('button', { name: 'Go' }));
+
+    expect(input).toHaveValue('AAPL');
+    expect(input).not.toHaveFocus();
+
+    await user.click(input);
+
+    expect(input).toHaveValue('');
+    expect(input).toHaveFocus();
+  });
+
+  it('does not clear input when clicked while already focused', async () => {
+    const user = userEvent.setup();
+    renderWithQuery(<TickerSearch onSelect={vi.fn()} />);
+
+    const input = screen.getByPlaceholderText('Ticker');
+    await user.type(input, 'AAPL');
+
+    expect(input).toHaveFocus();
+    await user.click(input);
+
+    expect(input).toHaveValue('AAPL');
+    expect(input).toHaveFocus();
+  });
 });
