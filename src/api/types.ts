@@ -89,6 +89,7 @@ export interface StockHistory {
   interval: Interval;
   prices: HistoricalPrice[];
   indicators?: Indicators;
+  currency?: string | null;
 }
 
 export interface SearchResult {

@@ -87,6 +87,8 @@ docker compose up
 
 Requires the [stock-analyst](https://github.com/krbob/stock-analyst) API running on port 8080 (Vite proxies `/api/*` to it automatically).
 
+The UI expects intraday `timestamp` values from the API to be standard UTC epoch seconds and surfaces backend error messages directly, including `422` responses when currency conversion is unavailable for a symbol.
+
 ```bash
 npm install
 npm run dev

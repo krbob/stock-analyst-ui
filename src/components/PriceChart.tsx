@@ -433,7 +433,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
       )}
       {error && (
         <div className="absolute inset-0 z-10 flex items-center justify-center text-red-400 bg-[#1a1a2e]/80">
-          {currency ? 'Currency conversion not available' : error instanceof Error ? error.message : 'Failed to load chart data'}
+          {error instanceof Error ? error.message : 'Failed to load chart data'}
         </div>
       )}
     </div>

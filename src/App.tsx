@@ -101,13 +101,16 @@ function StockInfo({ symbol, currency, onCurrencyChange, livePrice, hideGain }: 
   if (!symbol) return null;
 
   const displayPrice = livePrice ?? data?.lastPrice;
+  const errorMessage = error instanceof Error
+    ? error.message
+    : currency ? 'Conversion failed' : 'Not found';
 
   return (
     <div className="min-w-0">
       <div className="flex h-8 items-baseline gap-3">
         <h2 className="text-2xl font-bold text-white">{symbol.toUpperCase()}</h2>
         {isLoading && <Spinner />}
-        {error && <span className="text-sm text-red-400">{currency ? 'Conversion failed' : 'Not found'}</span>}
+        {error && <span className="text-sm text-red-400">{errorMessage}</span>}
         {data && (
           <span className="text-xl text-gray-300">{displayPrice?.toFixed(2)}</span>
         )}
