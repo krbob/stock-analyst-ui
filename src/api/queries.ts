@@ -45,10 +45,10 @@ export function usePrice(symbol: string, currency?: string) {
   });
 }
 
-export function useCompare(symbols: string[]) {
+export function useCompare(symbols: string[], currency?: string) {
   return useQuery({
-    queryKey: ['compare', ...symbols],
-    queryFn: () => compareStocks(symbols),
+    queryKey: ['compare', ...symbols, currency],
+    queryFn: () => compareStocks(symbols, currency),
     enabled: symbols.length > 0,
   });
 }

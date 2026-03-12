@@ -39,8 +39,10 @@ export function getPrice(symbol: string, currency?: string): Promise<Price> {
   return fetchApi(url);
 }
 
-export function compareStocks(symbols: string[]): Promise<Analysis[]> {
-  return fetchApi(`/compare?symbols=${symbols.map(encodeURIComponent).join(',')}`);
+export function compareStocks(symbols: string[], currency?: string): Promise<Analysis[]> {
+  let url = `/compare?symbols=${symbols.map(encodeURIComponent).join(',')}`;
+  if (currency) url += `&currency=${encodeURIComponent(currency)}`;
+  return fetchApi(url);
 }
 
 export function searchTickers(query: string): Promise<SearchResult[]> {

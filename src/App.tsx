@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import PriceChart from './components/PriceChart';
 import StockDetails from './components/StockDetails';
+import CompareView, { COMPARE_COLORS } from './components/CompareView';
 import TickerSearch from './components/TickerSearch';
 import CurrencyPicker from './components/CurrencyPicker';
 import { useAnalysis, usePrice, useStockHistory } from './api/queries';
@@ -131,7 +132,10 @@ export default function App() {
   const [showDividends, setShowDividends] = useState(false);
   const [currency, setCurrency] = useState<string | undefined>();
   const [chartZoomed, setChartZoomed] = useState(false);
+  const [compareSymbols, setCompareSymbols] = useState<string[]>([]);
   const resetViewRef = useRef<(() => void) | null>(null);
+
+  const inCompareMode = compareSymbols.length > 0;
 
   // Always fetch all indicators when any are active — avoids refetch on each toggle.
   const indicatorArray = indicators.size > 0 ? ALL_INDICATOR_KEYS : undefined;
@@ -164,14 +168,33 @@ export default function App() {
 
   const handlePeriod = (p: Period) => {
     setPeriod(p);
-    setInterval(DEFAULT_INTRADAY[p] ?? undefined);
+    if (!inCompareMode) setInterval(DEFAULT_INTRADAY[p] ?? undefined);
   };
 
   const handleSelect = (sym: string) => {
-    setSymbol(sym);
-    setPeriod('1y');
-    setInterval(undefined);
-    setCurrency(undefined);
+    if (inCompareMode) {
+      const exists = compareSymbols.some(s => s.toLowerCase() === sym.toLowerCase());
+      if (!exists && compareSymbols.length < 6) {
+        setCompareSymbols(prev => [...prev, sym]);
+      }
+    } else {
+      setSymbol(sym);
+      setPeriod('1y');
+      setInterval(undefined);
+      setCurrency(undefined);
+    }
+  };
+
+  const enterCompare = () => {
+    setCompareSymbols([symbol]);
+  };
+
+  const exitCompare = () => {
+    setCompareSymbols([]);
+  };
+
+  const removeFromCompare = (sym: string) => {
+    setCompareSymbols(prev => prev.filter(s => s.toLowerCase() !== sym.toLowerCase()));
   };
 
   const btnClass = (active: boolean) =>
@@ -189,21 +212,44 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-4 sm:px-6 sm:py-6">
-        {symbol ? (
-          <>
-            <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-              <StockInfo symbol={symbol} currency={currency} onCurrencyChange={setCurrency} livePrice={isIntradayPeriod && !currency ? historyData?.prices.at(-1)?.close : undefined} hideGain={isIntradayPeriod} />
-              <div className="flex shrink-0 flex-wrap items-center gap-1">
-                {PERIODS.map((p) => (
-                  <button
-                    key={p.value}
-                    onClick={() => handlePeriod(p.value)}
-                    className={btnClass(period === p.value)}
+        {/* Toolbar — one bar, buttons animate */}
+        {symbol && (
+          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            {/* Left: StockInfo or compare chips */}
+            {inCompareMode ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {compareSymbols.map((sym, i) => (
+                  <span
+                    key={sym}
+                    className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium"
+                    style={{ backgroundColor: COMPARE_COLORS[i % COMPARE_COLORS.length] + '22', color: COMPARE_COLORS[i % COMPARE_COLORS.length] }}
                   >
-                    {p.label}
-                  </button>
+                    {sym.toUpperCase()}
+                    <button onClick={() => removeFromCompare(sym)} className="ml-0.5 hover:text-white">&times;</button>
+                  </span>
                 ))}
-                <div className="mx-1 h-5 w-px bg-gray-700" />
+                {compareSymbols.length < 6 && (
+                  <span className="text-xs text-gray-500">Search to add more</span>
+                )}
+              </div>
+            ) : (
+              <StockInfo symbol={symbol} currency={currency} onCurrencyChange={setCurrency} livePrice={isIntradayPeriod && !currency ? historyData?.prices.at(-1)?.close : undefined} hideGain={isIntradayPeriod} />
+            )}
+
+            {/* Right: periods + animated button groups */}
+            <div className="flex shrink-0 flex-wrap items-center gap-1">
+              {PERIODS.map((p) => (
+                <button
+                  key={p.value}
+                  onClick={() => handlePeriod(p.value)}
+                  className={btnClass(period === p.value)}
+                >
+                  {p.label}
+                </button>
+              ))}
+              {/* Line/Log/Div — collapses in compare mode */}
+              <div className={`flex items-center gap-1 overflow-hidden transition-all duration-300 ease-in-out ${inCompareMode ? 'max-w-0 opacity-0' : 'max-w-64 opacity-100'}`}>
+                <div className="mx-1 h-5 w-px shrink-0 bg-gray-700" />
                 <button onClick={() => setLineChart(!lineChart)} className={btnClass(lineChart)}>
                   Line
                 </button>
@@ -214,7 +260,25 @@ export default function App() {
                   Div
                 </button>
               </div>
+              <div className="mx-1 h-5 w-px shrink-0 bg-gray-700" />
+              <button
+                onClick={inCompareMode ? exitCompare : enterCompare}
+                className={`w-[8rem] shrink-0 whitespace-nowrap rounded-md border px-2.5 py-1 text-xs font-medium transition-colors sm:px-3 sm:text-sm ${inCompareMode ? 'border-transparent text-red-400 hover:text-white hover:bg-red-900/50' : 'border-blue-800/50 text-blue-400 hover:text-white hover:bg-blue-900/40'}`}
+              >
+                {inCompareMode ? 'Exit Compare' : 'Compare'}
+              </button>
             </div>
+          </div>
+        )}
+
+        {/* Compare chart + table */}
+        {inCompareMode && (
+          <CompareView symbols={compareSymbols} period={period} currency={currency} />
+        )}
+
+        {/* Single-stock content (hidden but mounted in compare to avoid chart.remove() crash) */}
+        {symbol ? (
+          <div className={inCompareMode ? 'hidden' : ''}>
             <div className="mb-2 flex flex-wrap items-center gap-1">
               {INDICATORS.map((ind) => {
                 const active = ind.keys.every((k) => indicators.has(k));
@@ -261,8 +325,8 @@ export default function App() {
             </div>
             <PriceChart symbol={symbol} period={period} interval={interval} lineChart={lineChart} logScale={logScale} indicators={indicatorArray} activeIndicators={indicators} currency={currency} dividends={dividendsParam} showDividends={showDividends} onZoomChange={setChartZoomed} resetRef={resetViewRef} />
             <StockDetails symbol={symbol} currency={currency} prices={convertedHistory?.prices ?? historyData?.prices} showDividends={showDividends} />
-          </>
-        ) : (
+          </div>
+        ) : !inCompareMode && (
           <div className="flex h-[500px] items-center justify-center text-gray-500 px-4 text-center">
             Enter a stock ticker to view the chart
           </div>
