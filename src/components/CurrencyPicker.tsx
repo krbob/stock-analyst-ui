@@ -4,10 +4,27 @@ import { CURRENCIES, getCurrencyName } from '../data/currencies';
 const RECENTS_KEY = 'recentCurrencies';
 const MAX_RECENTS = 5;
 
+function normalizeCurrencyCode(code: string): string {
+  return code.trim().toUpperCase();
+}
+
 function loadRecents(): string[] {
   try {
     const stored = localStorage.getItem(RECENTS_KEY);
-    return stored ? JSON.parse(stored) : [];
+    if (!stored) return [];
+
+    const codes = JSON.parse(stored);
+    if (!Array.isArray(codes)) return [];
+
+    const seen = new Set<string>();
+    return codes
+      .filter((code): code is string => typeof code === 'string')
+      .map((code) => normalizeCurrencyCode(code))
+      .filter((code) => {
+        if (seen.has(code)) return false;
+        seen.add(code);
+        return true;
+      });
   } catch {
     return [];
   }
@@ -18,15 +35,17 @@ function saveRecents(codes: string[]) {
 }
 
 function addRecent(code: string): string[] {
-  const recents = loadRecents().filter((c) => c !== code);
-  recents.unshift(code);
+  const normalizedCode = normalizeCurrencyCode(code);
+  const recents = loadRecents().filter((c) => c !== normalizedCode);
+  recents.unshift(normalizedCode);
   const trimmed = recents.slice(0, MAX_RECENTS);
   saveRecents(trimmed);
   return trimmed;
 }
 
 function removeRecent(code: string): string[] {
-  const recents = loadRecents().filter((c) => c !== code);
+  const normalizedCode = normalizeCurrencyCode(code);
+  const recents = loadRecents().filter((c) => c !== normalizedCode);
   saveRecents(recents);
   return recents;
 }
@@ -43,15 +62,17 @@ export default function CurrencyPicker({ nativeCurrency, value, onChange }: Curr
   const [recents, setRecents] = useState(loadRecents);
   const containerRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const focusFrameRef = useRef<number | null>(null);
 
   const displayCode = value ?? nativeCurrency ?? 'Currency';
 
   useEffect(() => {
     if (isOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSearch('');
-      setTimeout(() => searchRef.current?.focus(), 0);
+      focusFrameRef.current = requestAnimationFrame(() => searchRef.current?.focus());
     }
+    return () => {
+      if (focusFrameRef.current != null) cancelAnimationFrame(focusFrameRef.current);
+    };
   }, [isOpen]);
 
   const handleClickOutside = useCallback((e: MouseEvent) => {
@@ -68,13 +89,22 @@ export default function CurrencyPicker({ nativeCurrency, value, onChange }: Curr
   }, [isOpen, handleClickOutside]);
 
   const select = (code: string) => {
-    if (nativeCurrency && code.toUpperCase() === nativeCurrency.toUpperCase()) {
+    const normalizedCode = normalizeCurrencyCode(code);
+    if (nativeCurrency && normalizedCode === nativeCurrency.toUpperCase()) {
       onChange(undefined);
     } else {
-      onChange(code);
-      setRecents(addRecent(code));
+      onChange(normalizedCode);
+      setRecents(addRecent(normalizedCode));
     }
     setIsOpen(false);
+  };
+
+  const toggleOpen = () => {
+    setIsOpen((prev) => {
+      const next = !prev;
+      if (next) setSearch('');
+      return next;
+    });
   };
 
   const query = search.toLowerCase();
@@ -87,11 +117,17 @@ export default function CurrencyPicker({ nativeCurrency, value, onChange }: Curr
   const recentCurrencies = recents
     .filter((code) => !nativeCurrency || code.toUpperCase() !== nativeCurrency.toUpperCase())
     .filter((code) => !query || code.toLowerCase().includes(query) || getCurrencyName(code).toLowerCase().includes(query));
+  const showNoResults = filtered.length === 0 && recentCurrencies.length === 0
+    && (!nativeCurrency || (query && !nativeCurrency.toLowerCase().includes(query) && !getCurrencyName(nativeCurrency).toLowerCase().includes(query)));
 
   return (
     <div ref={containerRef} className="relative">
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        type="button"
+        onClick={toggleOpen}
+        aria-expanded={isOpen}
+        aria-haspopup="dialog"
+        aria-label="Select currency"
         className="rounded-md border border-gray-700 bg-gray-900 px-2 py-0.5 text-sm text-gray-300 hover:border-gray-500 hover:text-white transition-colors"
       >
         {displayCode}
@@ -106,6 +142,7 @@ export default function CurrencyPicker({ nativeCurrency, value, onChange }: Curr
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search currency..."
+              aria-label="Search currency"
               className="w-full rounded border border-gray-700 bg-gray-800 px-2 py-1 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
             />
           </div>
@@ -175,6 +212,9 @@ export default function CurrencyPicker({ nativeCurrency, value, onChange }: Curr
 
             {/* All currencies */}
             <div className="border-t border-gray-700/50 px-3 py-1 text-xs text-gray-500">All currencies</div>
+            {showNoResults && (
+              <div className="px-3 py-2 text-sm text-gray-400">No currencies found</div>
+            )}
             {filtered.map((c) => (
               <div
                 key={c.code}

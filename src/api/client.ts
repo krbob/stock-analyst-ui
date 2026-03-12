@@ -1,4 +1,5 @@
 import type { CompareResult, Interval, Period, Quote, SearchResult, StockHistory } from './types';
+import { attachHistoryRequest, createHistoryRequest } from './history-utils';
 
 const API_URL = '/api';
 
@@ -19,12 +20,14 @@ async function fetchApi<T>(path: string): Promise<T> {
 }
 
 export function getHistory(symbol: string, period: Period = '1y', interval?: Interval, indicators?: string[], currency?: string, dividends?: boolean): Promise<StockHistory> {
-  let url = `/history/${encodeURIComponent(symbol)}?period=${period}`;
-  if (interval) url += `&interval=${interval}`;
-  if (indicators && indicators.length > 0) url += `&indicators=${indicators.join(',')}`;
-  if (currency) url += `&currency=${encodeURIComponent(currency)}`;
-  if (dividends) url += '&dividends=true';
-  return fetchApi(url);
+  const request = createHistoryRequest(symbol, period, interval, indicators, currency, dividends);
+  let url = `/history/${encodeURIComponent(request.symbol)}?period=${request.period}`;
+  if (request.interval) url += `&interval=${request.interval}`;
+  if (request.indicatorsKey) url += `&indicators=${request.indicatorsKey}`;
+  if (request.currency) url += `&currency=${encodeURIComponent(request.currency)}`;
+  if (request.dividends) url += '&dividends=true';
+
+  return fetchApi<StockHistory>(url).then((history) => attachHistoryRequest(history, request));
 }
 
 export function getQuote(symbol: string, currency?: string): Promise<Quote> {

@@ -19,7 +19,19 @@ export interface UrlState {
 export function parseUrlParams(search: string): UrlState {
   const p = new URLSearchParams(search);
   const rawCmp = p.get('cmp');
-  const compareSymbols = rawCmp ? rawCmp.split(',').map(s => s.toUpperCase()).filter(Boolean).slice(0, 6) : [];
+  const seenCompare = new Set<string>();
+  const compareSymbols = rawCmp
+    ? rawCmp
+      .split(',')
+      .map(s => s.toUpperCase())
+      .filter(Boolean)
+      .filter((symbol) => {
+        if (seenCompare.has(symbol)) return false;
+        seenCompare.add(symbol);
+        return true;
+      })
+      .slice(0, 6)
+    : [];
   const symbol = p.get('s')?.toUpperCase() || (compareSymbols.length > 0 ? compareSymbols[0] : '');
   const rawPeriod = p.get('p');
   const period: Period = rawPeriod && VALID_PERIODS.has(rawPeriod) ? rawPeriod as Period : '1y';
@@ -30,7 +42,7 @@ export function parseUrlParams(search: string): UrlState {
   const showDividends = p.get('div') === '1';
   const rawInd = p.get('ind');
   const indicators = new Set(rawInd ? rawInd.split(',').filter(k => VALID_INDICATORS.has(k)) : []);
-  const currency = p.get('cur') || undefined;
+  const currency = p.get('cur')?.toUpperCase() || undefined;
   return { symbol, period, interval, lineChart, logScale, indicators, showDividends, currency, compareSymbols };
 }
 

@@ -7,6 +7,7 @@ import CurrencyPicker from './components/CurrencyPicker';
 import { useQuote, useStockHistory } from './api/queries';
 import type { Interval, Period } from './api/types';
 import { parseUrlParams, buildUrlParams } from './url-state';
+import { createHistoryRequest, matchesHistoryRequest } from './api/history-utils';
 
 const fmtPct = (n: number) => (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
 
@@ -84,22 +85,17 @@ function StockInfo({ symbol, currency, onCurrencyChange, livePrice, hideGain }: 
   livePrice?: number;
   hideGain?: boolean;
 }) {
-  const { data, isLoading, error } = useQuote(symbol, currency);
-  const [nativeCurrency, setNativeCurrency] = useState<string | null>(null);
-
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { setNativeCurrency(null); }, [symbol]);
-
-  // Capture native currency from the first (unconverted) response
-  useEffect(() => {
-    if (data?.currency && !currency) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setNativeCurrency(data.currency);
-    }
-  }, [data?.currency, currency]);
+  const nativeQuote = useQuote(symbol);
+  const convertedQuote = useQuote(symbol, currency);
 
   if (!symbol) return null;
 
+  const data = currency ? convertedQuote.data : nativeQuote.data;
+  const error = currency ? convertedQuote.error : nativeQuote.error;
+  const isLoading = currency
+    ? convertedQuote.isLoading && !convertedQuote.data
+    : nativeQuote.isLoading && !nativeQuote.data;
+  const nativeCurrency = nativeQuote.data?.currency ?? data?.currency ?? null;
   const displayPrice = livePrice ?? data?.lastPrice;
   const errorMessage = error instanceof Error
     ? error.message
@@ -159,14 +155,18 @@ export default function App() {
   const indicatorArray = ALL_INDICATOR_KEYS;
 
   const dividendsParam = showDividends || undefined;
+  const nativeHistoryRequest = createHistoryRequest(symbol, period, interval, indicatorArray, undefined, dividendsParam);
+  const convertedHistoryRequest = createHistoryRequest(symbol, period, interval, indicatorArray, currency, dividendsParam);
 
   // Native history for interval detection & intraday live price — not blocked by conversion errors.
   const { data: historyData } = useStockHistory(symbol, period, interval, indicatorArray, undefined, dividendsParam);
   // Currency-converted history — shares cache with PriceChart's query.
   const { data: convertedHistory } = useStockHistory(symbol, period, interval, indicatorArray, currency, dividendsParam);
+  const nativeHistory = matchesHistoryRequest(historyData, nativeHistoryRequest) ? historyData : undefined;
+  const currencyHistory = matchesHistoryRequest(convertedHistory, convertedHistoryRequest) ? convertedHistory : undefined;
   const activeInterval = interval ?? (
-    historyData?.symbol.toLowerCase() === symbol.toLowerCase()
-      ? historyData?.interval
+    nativeHistory?.symbol.toLowerCase() === symbol.toLowerCase()
+      ? nativeHistory.interval
       : undefined
   );
 
@@ -209,9 +209,6 @@ export default function App() {
 
   const exitCompare = () => {
     setCompareSymbols([]);
-    // PriceChart may have mounted in a hidden container (e.g. opened from compare URL)
-    // — trigger resize so it recalculates dimensions.
-    requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
   };
 
   const removeFromCompare = (sym: string) => {
@@ -246,7 +243,7 @@ export default function App() {
                     style={{ backgroundColor: COMPARE_COLORS[i % COMPARE_COLORS.length] + '22', color: COMPARE_COLORS[i % COMPARE_COLORS.length] }}
                   >
                     {sym.toUpperCase()}
-                    <button onClick={() => removeFromCompare(sym)} className="ml-0.5 hover:text-white">&times;</button>
+                    <button type="button" onClick={() => removeFromCompare(sym)} className="ml-0.5 hover:text-white" aria-label={`Remove ${sym.toUpperCase()} from compare`}>&times;</button>
                   </span>
                 ))}
                 <CurrencyPicker nativeCurrency={null} value={currency} onChange={setCurrency} />
@@ -255,7 +252,7 @@ export default function App() {
                 )}
               </div>
             ) : (
-              <StockInfo symbol={symbol} currency={currency} onCurrencyChange={setCurrency} livePrice={isIntradayPeriod && !currency ? historyData?.prices.at(-1)?.close : undefined} hideGain={isIntradayPeriod} />
+              <StockInfo symbol={symbol} currency={currency} onCurrencyChange={setCurrency} livePrice={isIntradayPeriod && !currency ? nativeHistory?.prices.at(-1)?.close : undefined} hideGain={isIntradayPeriod} />
             )}
 
             {/* Right: periods + animated button groups */}
@@ -344,10 +341,10 @@ export default function App() {
                   Reset
                 </button>
               </div>
+              </div>
+              <PriceChart symbol={symbol} period={period} interval={interval} lineChart={lineChart} logScale={logScale} indicators={indicatorArray} activeIndicators={indicators} currency={currency} dividends={dividendsParam} showDividends={showDividends} onZoomChange={setChartZoomed} resetRef={resetViewRef} />
+              <StockDetails symbol={symbol} currency={currency} prices={currencyHistory?.prices ?? nativeHistory?.prices} indicators={currencyHistory?.indicators ?? nativeHistory?.indicators} showDividends={showDividends} />
             </div>
-            <PriceChart symbol={symbol} period={period} interval={interval} lineChart={lineChart} logScale={logScale} indicators={indicatorArray} activeIndicators={indicators} currency={currency} dividends={dividendsParam} showDividends={showDividends} onZoomChange={setChartZoomed} resetRef={resetViewRef} />
-            <StockDetails symbol={symbol} currency={currency} prices={convertedHistory?.prices ?? historyData?.prices} indicators={convertedHistory?.indicators ?? historyData?.indicators} showDividends={showDividends} />
-          </div>
         ) : !inCompareMode && (
           <div className="flex h-[500px] items-center justify-center text-gray-500 px-4 text-center">
             Enter a stock ticker to view the chart

@@ -155,4 +155,16 @@ describe('CurrencyPicker', () => {
     expect(recentSection).toBeInTheDocument();
     // USD should appear only as the default entry, not in recents
   });
+
+  it('normalizes stored recents to uppercase and removes duplicates', async () => {
+    storageMock.setItem('recentCurrencies', JSON.stringify(['eur', 'EUR', 'gbp']));
+    const user = userEvent.setup();
+    render(
+      <CurrencyPicker nativeCurrency="USD" value={undefined} onChange={vi.fn()} />,
+    );
+
+    await user.click(screen.getByText('USD'));
+
+    expect(screen.getAllByRole('button', { name: /Remove/ })).toHaveLength(2);
+  });
 });

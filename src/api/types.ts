@@ -72,6 +72,15 @@ export interface MacdValue {
   timestamp?: number;
 }
 
+export interface HistoryRequest {
+  symbol: string;
+  period: Period;
+  interval?: Interval;
+  indicatorsKey: string;
+  currency: string | null;
+  dividends: boolean;
+}
+
 export interface Indicators {
   sma50?: SingleValue[];
   sma200?: SingleValue[];
@@ -90,6 +99,7 @@ export interface StockHistory {
   prices: HistoricalPrice[];
   indicators?: Indicators;
   currency?: string | null;
+  request?: HistoryRequest;
 }
 
 export interface SearchResult {
