@@ -49,7 +49,7 @@ Interactive stock analysis dashboard built with React and [lightweight-charts](h
 
 ### Docker Compose (with backend)
 
-The easiest way to run the full stack. The `docker-compose.yml` lives in the [stock-analyst](https://github.com/krbob/stock-analyst) repo:
+The easiest way to run the full stack:
 
 ```yaml
 services:
@@ -68,13 +68,13 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - stock-analyst-backend
+      - stock-analyst-backend-yfinance
     environment:
-      - BACKEND_URL=http://stock-analyst-backend:8081
+      - BACKEND_URL=http://stock-analyst-backend-yfinance:8081
     restart: unless-stopped
 
-  stock-analyst-backend:
-    image: ghcr.io/krbob/stock-analyst-backend:main
+  stock-analyst-backend-yfinance:
+    image: ghcr.io/krbob/stock-analyst-backend-yfinance:main
     restart: unless-stopped
 ```
 
