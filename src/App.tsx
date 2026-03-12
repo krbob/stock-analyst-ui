@@ -6,36 +6,11 @@ import TickerSearch from './components/TickerSearch';
 import CurrencyPicker from './components/CurrencyPicker';
 import { useAnalysis, usePrice, useStockHistory } from './api/queries';
 import type { Interval, Period } from './api/types';
+import { parseUrlParams, buildUrlParams } from './url-state';
 
 const fmtPct = (n: number) => (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
 
-// ---------------------------------------------------------------------------
-// URL state
-// ---------------------------------------------------------------------------
-
-const VALID_PERIODS: Set<string> = new Set(['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']);
-const VALID_INTERVALS: Set<string> = new Set(['1m', '5m', '15m', '30m', '1h', '1d', '1wk', '1mo']);
-const VALID_INDICATORS: Set<string> = new Set(['bb', 'ema50', 'ema200', 'macd', 'rsi', 'sma50', 'sma200']);
-
-function parseUrlState() {
-  const p = new URLSearchParams(window.location.search);
-  const rawCmp = p.get('cmp');
-  const compareSymbols = rawCmp ? rawCmp.split(',').map(s => s.toUpperCase()).filter(Boolean).slice(0, 6) : [];
-  const symbol = p.get('s')?.toUpperCase() || (compareSymbols.length > 0 ? compareSymbols[0] : '');
-  const rawPeriod = p.get('p');
-  const period: Period = rawPeriod && VALID_PERIODS.has(rawPeriod) ? rawPeriod as Period : '1y';
-  const rawInterval = p.get('i');
-  const interval: Interval | undefined = rawInterval && VALID_INTERVALS.has(rawInterval) ? rawInterval as Interval : undefined;
-  const lineChart = p.get('line') === '1';
-  const logScale = p.get('log') === '1';
-  const showDividends = p.get('div') === '1';
-  const rawInd = p.get('ind');
-  const indicators = new Set(rawInd ? rawInd.split(',').filter(k => VALID_INDICATORS.has(k)) : []);
-  const currency = p.get('cur') || undefined;
-  return { symbol, period, interval, lineChart, logScale, indicators, showDividends, currency, compareSymbols };
-}
-
-const URL_INIT = parseUrlState();
+const URL_INIT = parseUrlParams(window.location.search);
 
 // ---------------------------------------------------------------------------
 
@@ -111,14 +86,16 @@ function StockInfo({ symbol, currency, onCurrencyChange, livePrice, hideGain }: 
 }) {
   const { data, isLoading, error } = usePrice(symbol, currency);
   const { data: analysis } = useAnalysis(symbol, currency);
-  const nativeCurrencyRef = useRef<string | null>(null);
+  const [nativeCurrency, setNativeCurrency] = useState<string | null>(null);
 
-  useEffect(() => { nativeCurrencyRef.current = null; }, [symbol]);
+  useEffect(() => { setNativeCurrency(null); }, [symbol]);
 
   // Capture native currency from the first (unconverted) response
-  if (data?.currency && !currency) {
-    nativeCurrencyRef.current = data.currency;
-  }
+  useEffect(() => {
+    if (data?.currency && !currency) {
+      setNativeCurrency(data.currency);
+    }
+  }, [data?.currency, currency]);
 
   if (!symbol) return null;
 
@@ -133,8 +110,8 @@ function StockInfo({ symbol, currency, onCurrencyChange, livePrice, hideGain }: 
         {data && (
           <span className="text-xl text-gray-300">{displayPrice?.toFixed(2)}</span>
         )}
-        {nativeCurrencyRef.current && (
-          <CurrencyPicker nativeCurrency={nativeCurrencyRef.current} value={currency} onChange={onCurrencyChange} />
+        {nativeCurrency && (
+          <CurrencyPicker nativeCurrency={nativeCurrency} value={currency} onChange={onCurrencyChange} />
         )}
         {data && data.gain.daily != null && (
           <span className={`text-lg font-medium transition-opacity duration-300 ${hideGain ? 'opacity-0' : 'opacity-100'} ${data.gain.daily >= 0 ? 'text-green-400' : 'text-red-400'}`}>
@@ -167,17 +144,7 @@ export default function App() {
 
   // Sync state → URL
   useEffect(() => {
-    const p = new URLSearchParams();
-    if (symbol) p.set('s', symbol);
-    if (period !== '1y') p.set('p', period);
-    if (interval) p.set('i', interval);
-    if (lineChart) p.set('line', '1');
-    if (logScale) p.set('log', '1');
-    if (showDividends) p.set('div', '1');
-    if (indicators.size > 0) p.set('ind', [...indicators].sort().join(','));
-    if (currency) p.set('cur', currency);
-    if (compareSymbols.length > 0) p.set('cmp', compareSymbols.join(','));
-    const qs = p.toString();
+    const qs = buildUrlParams({ symbol, period, interval, lineChart, logScale, indicators, showDividends, currency, compareSymbols });
     window.history.replaceState(null, '', qs ? `?${qs}` : window.location.pathname);
   }, [symbol, period, interval, lineChart, logScale, indicators, showDividends, currency, compareSymbols]);
 

@@ -19,5 +19,11 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // Chart and animation code legitimately sets state in effects
+      'react-hooks/set-state-in-effect': 'warn',
+      // Allow exporting constants alongside components
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+    },
   },
 ])
