@@ -9,67 +9,34 @@ export interface Gain {
   fiveYear: number | null;
 }
 
-export interface Rsi {
-  daily: number | null;
-  weekly: number | null;
-  monthly: number | null;
-}
-
-export interface Macd {
-  macd: number | null;
-  signal: number | null;
-  histogram: number | null;
-}
-
-export interface BollingerBands {
-  upper: number | null;
-  middle: number | null;
-  lower: number | null;
-}
-
-export interface MovingAverages {
-  sma50: number | null;
-  sma200: number | null;
-  ema50: number | null;
-  ema200: number | null;
-}
-
-export interface Analysis {
+export interface Quote {
   symbol: string;
   name: string;
   currency: string | null;
   date: string;
   lastPrice: number;
   gain: Gain;
-  rsi: Rsi;
-  macd: Macd;
-  bollingerBands: BollingerBands;
-  movingAverages: MovingAverages;
-  atr: number | null;
-  dividendYield: number | null;
-  dividendGrowth: number | null;
   peRatio: number | null;
   pbRatio: number | null;
   eps: number | null;
   roe: number | null;
   marketCap: number | null;
-  recommendation: string | null;
-  analystCount: number | null;
+  beta: number | null;
+  dividendYield: number | null;
+  dividendGrowth: number | null;
   fiftyTwoWeekHigh: number | null;
   fiftyTwoWeekLow: number | null;
-  beta: number | null;
   sector: string | null;
   industry: string | null;
   earningsDate: string | null;
+  recommendation: string | null;
+  analystCount: number | null;
 }
 
-export interface Price {
+export interface CompareResult {
   symbol: string;
-  name: string;
-  currency: string | null;
-  date: string;
-  lastPrice: number;
-  gain: Gain;
+  data: Quote | null;
+  error: string | null;
 }
 
 export interface HistoricalPrice {

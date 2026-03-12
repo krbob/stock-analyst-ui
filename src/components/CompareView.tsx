@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createChart, LineSeries, ColorType, type IChartApi, type Time } from 'lightweight-charts';
 import { useStockHistory, useCompare } from '../api/queries';
-import type { Analysis, HistoricalPrice, Period } from '../api/types';
+import type { CompareResult, HistoricalPrice, Period, Quote } from '../api/types';
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const COMPARE_COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899'];
@@ -37,7 +37,7 @@ function normalize(prices: HistoricalPrice[]): { time: Time; value: number }[] {
 // Table helpers
 // ---------------------------------------------------------------------------
 
-type MetricFn = (a: Analysis) => number | string | null;
+type MetricFn = (q: Quote) => number | string | null;
 
 interface Metric {
   label: string;
@@ -63,39 +63,42 @@ const fmtBig = (d: number) => {
 };
 
 const METRICS: Metric[] = [
-  { label: 'Price', get: (a) => a.lastPrice, fmt: (v) => v != null ? fmtNum(v as number) : '—', best: 'max' },
-  { label: 'Market Cap', get: (a) => a.marketCap, fmt: (v) => v != null ? fmtBig(v as number) : '—', best: 'max' },
-  { label: 'P/E', get: (a) => a.peRatio, fmt: (v) => v != null ? fmtNum(v as number) : '—', best: 'min' },
-  { label: 'P/B', get: (a) => a.pbRatio, fmt: (v) => v != null ? fmtNum(v as number) : '—', best: 'min' },
-  { label: 'EPS', get: (a) => a.eps, fmt: (v) => v != null ? fmtNum(v as number) : '—', best: 'max' },
-  { label: 'ROE', get: (a) => a.roe, fmt: (v) => v != null ? fmtRate(v as number) : '—', best: 'max' },
-  { label: 'Beta', get: (a) => a.beta, fmt: (v) => v != null ? fmtNum(v as number) : '—' },
-  { label: 'Div Yield', get: (a) => a.dividendYield, fmt: (v) => v != null && v !== 0 ? fmtRate(v as number) : '—', best: 'max' },
-  { label: 'Div Growth', get: (a) => a.dividendGrowth, fmt: (v) => v != null && v !== 0 ? fmtRate(v as number) : '—', best: 'max' },
-  { label: 'Daily', get: (a) => a.gain.daily, fmt: (v) => v != null ? fmtPct(v as number) : '—', best: 'max', gain: true },
-  { label: 'Monthly', get: (a) => a.gain.monthly, fmt: (v) => v != null ? fmtPct(v as number) : '—', best: 'max', gain: true },
-  { label: 'YTD', get: (a) => a.gain.ytd, fmt: (v) => v != null ? fmtPct(v as number) : '—', best: 'max', gain: true },
-  { label: '1Y', get: (a) => a.gain.yearly, fmt: (v) => v != null ? fmtPct(v as number) : '—', best: 'max', gain: true },
-  { label: '5Y', get: (a) => a.gain.fiveYear, fmt: (v) => v != null ? fmtPct(v as number) : '—', best: 'max', gain: true },
-  { label: 'RSI (D)', get: (a) => a.rsi.daily, fmt: (v) => v != null ? (v as number).toFixed(0) : '—' },
-  { label: '52W High', get: (a) => a.fiftyTwoWeekHigh, fmt: (v) => v != null ? fmtNum(v as number) : '—' },
-  { label: '52W Low', get: (a) => a.fiftyTwoWeekLow, fmt: (v) => v != null ? fmtNum(v as number) : '—' },
-  { label: 'Sector', get: (a) => a.sector, fmt: (v) => v != null ? String(v) : '—' },
-  { label: 'Recommendation', get: (a) => a.recommendation, fmt: (v) => v != null ? (REC_LABELS[v as string] ?? String(v)) : '—' },
+  { label: 'Price', get: (q) => q.lastPrice, fmt: (v) => v != null ? fmtNum(v as number) : '—', best: 'max' },
+  { label: 'Market Cap', get: (q) => q.marketCap, fmt: (v) => v != null ? fmtBig(v as number) : '—', best: 'max' },
+  { label: 'P/E', get: (q) => q.peRatio, fmt: (v) => v != null ? fmtNum(v as number) : '—', best: 'min' },
+  { label: 'P/B', get: (q) => q.pbRatio, fmt: (v) => v != null ? fmtNum(v as number) : '—', best: 'min' },
+  { label: 'EPS', get: (q) => q.eps, fmt: (v) => v != null ? fmtNum(v as number) : '—', best: 'max' },
+  { label: 'ROE', get: (q) => q.roe, fmt: (v) => v != null ? fmtRate(v as number) : '—', best: 'max' },
+  { label: 'Beta', get: (q) => q.beta, fmt: (v) => v != null ? fmtNum(v as number) : '—' },
+  { label: 'Div Yield', get: (q) => q.dividendYield, fmt: (v) => v != null && v !== 0 ? fmtRate(v as number) : '—', best: 'max' },
+  { label: 'Div Growth', get: (q) => q.dividendGrowth, fmt: (v) => v != null && v !== 0 ? fmtRate(v as number) : '—', best: 'max' },
+  { label: 'Daily', get: (q) => q.gain.daily, fmt: (v) => v != null ? fmtPct(v as number) : '—', best: 'max', gain: true },
+  { label: 'Monthly', get: (q) => q.gain.monthly, fmt: (v) => v != null ? fmtPct(v as number) : '—', best: 'max', gain: true },
+  { label: 'YTD', get: (q) => q.gain.ytd, fmt: (v) => v != null ? fmtPct(v as number) : '—', best: 'max', gain: true },
+  { label: '1Y', get: (q) => q.gain.yearly, fmt: (v) => v != null ? fmtPct(v as number) : '—', best: 'max', gain: true },
+  { label: '5Y', get: (q) => q.gain.fiveYear, fmt: (v) => v != null ? fmtPct(v as number) : '—', best: 'max', gain: true },
+  { label: '52W High', get: (q) => q.fiftyTwoWeekHigh, fmt: (v) => v != null ? fmtNum(v as number) : '—' },
+  { label: '52W Low', get: (q) => q.fiftyTwoWeekLow, fmt: (v) => v != null ? fmtNum(v as number) : '—' },
+  { label: 'Sector', get: (q) => q.sector, fmt: (v) => v != null ? String(v) : '—' },
+  { label: 'Recommendation', get: (q) => q.recommendation, fmt: (v) => v != null ? (REC_LABELS[v as string] ?? String(v)) : '—' },
 ];
 
 function findBestIdx(values: (number | string | null)[], dir: 'max' | 'min'): number {
   let best = -1;
   let bestVal = dir === 'max' ? -Infinity : Infinity;
+  let tied = false;
   for (let i = 0; i < values.length; i++) {
     const v = values[i];
     if (typeof v !== 'number') continue;
     if (dir === 'max' ? v > bestVal : v < bestVal) {
       bestVal = v;
       best = i;
+      tied = false;
+    } else if (v === bestVal) {
+      tied = true;
     }
   }
-  return best;
+  return tied ? -1 : best;
 }
 
 // ---------------------------------------------------------------------------
@@ -127,6 +130,10 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
   const activeCount = symbols.length;
   const hasData = histories.slice(0, activeCount).every((h) => h.data && h.data.prices.length > 0);
   const isFetching = histories.slice(0, activeCount).some((h) => h.isFetching);
+
+  // Extract successful quotes from compare results
+  const quotes = compareData?.filter((r): r is CompareResult & { data: Quote } => r.data != null).map((r) => r.data) ?? [];
+  const errors = compareData?.filter((r) => r.error != null) ?? [];
 
   // Single combined effect: create chart + series only when data is ready
   useEffect(() => {
@@ -231,28 +238,42 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
         )}
       </div>
 
+      {/* Error badges for failed symbols */}
+      {errors.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {errors.map((r) => (
+            <span key={r.symbol} className="rounded-full bg-red-900/30 px-3 py-1 text-xs text-red-400">
+              {r.symbol.toUpperCase()}: {r.error}
+            </span>
+          ))}
+        </div>
+      )}
+
       {/* Comparison table */}
       {tableLoading ? (
         <div className="flex h-32 items-center justify-center rounded-lg border border-gray-800 bg-gray-900/50">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-600 border-t-blue-400" />
         </div>
-      ) : compareData.length > 0 && (
+      ) : quotes.length > 0 && (
         <div className="overflow-x-auto rounded-lg border border-gray-800">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-800 bg-gray-900/50">
                 <th className="px-3 py-2 text-left text-gray-400 font-medium">Metric</th>
-                {compareData.map((a, i) => (
-                  <th key={a.symbol} className="px-3 py-2 text-right font-medium" style={{ color: COMPARE_COLORS[i % COMPARE_COLORS.length] }}>
-                    {a.symbol.toUpperCase()}
-                    {a.name && <span className="block text-xs text-gray-500 font-normal">{a.name}</span>}
-                  </th>
-                ))}
+                {quotes.map((q) => {
+                  const idx = Math.max(0, symbols.findIndex((s) => s.toLowerCase() === q.symbol.toLowerCase()));
+                  return (
+                    <th key={q.symbol} className="px-3 py-2 text-right font-medium" style={{ color: COMPARE_COLORS[idx % COMPARE_COLORS.length] }}>
+                      {q.symbol.toUpperCase()}
+                      {q.name && <span className="block text-xs text-gray-500 font-normal">{q.name}</span>}
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
               {METRICS.map((m) => {
-                const values = compareData.map((a) => m.get(a));
+                const values = quotes.map((q) => m.get(q));
                 const bestIdx = m.best ? findBestIdx(values, m.best) : -1;
                 return (
                   <tr key={m.label} className="border-b border-gray-800/50 hover:bg-gray-800/30">
