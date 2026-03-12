@@ -14,7 +14,18 @@ interface RecentTicker {
 function loadRecents(): RecentTicker[] {
   try {
     const stored = localStorage.getItem(RECENTS_KEY);
-    return stored ? JSON.parse(stored) : [];
+    if (!stored) return [];
+    const items: RecentTicker[] = JSON.parse(stored);
+    // Deduplicate case-insensitively, keeping the entry with more metadata
+    const seen = new Map<string, RecentTicker>();
+    for (const item of items) {
+      const key = item.symbol.toLowerCase();
+      const prev = seen.get(key);
+      if (!prev || (!prev.name && item.name)) {
+        seen.set(key, item);
+      }
+    }
+    return [...seen.values()];
   } catch {
     return [];
   }
@@ -25,7 +36,7 @@ function saveRecents(items: RecentTicker[]) {
 }
 
 function addRecent(ticker: RecentTicker): RecentTicker[] {
-  const recents = loadRecents().filter((t) => t.symbol !== ticker.symbol);
+  const recents = loadRecents().filter((t) => t.symbol.toLowerCase() !== ticker.symbol.toLowerCase());
   recents.unshift(ticker);
   const trimmed = recents.slice(0, MAX_RECENTS);
   saveRecents(trimmed);
@@ -33,7 +44,7 @@ function addRecent(ticker: RecentTicker): RecentTicker[] {
 }
 
 function removeRecent(symbol: string): RecentTicker[] {
-  const recents = loadRecents().filter((t) => t.symbol !== symbol);
+  const recents = loadRecents().filter((t) => t.symbol.toLowerCase() !== symbol.toLowerCase());
   saveRecents(recents);
   return recents;
 }
@@ -64,6 +75,7 @@ export default function TickerSearch({ onSelect }: TickerSearchProps) {
     setIsOpen(false);
     setActiveIndex(-1);
     setRecents(addRecent({ symbol, name: name ?? '', exchange: exchange ?? '' }));
+    inputRef.current?.blur();
     onSelect(symbol);
   }, [onSelect]);
 
@@ -78,10 +90,12 @@ export default function TickerSearch({ onSelect }: TickerSearchProps) {
     e.preventDefault();
     const trimmed = input.trim();
     if (trimmed) {
+      const upper = trimmed.toUpperCase();
       setIsOpen(false);
       setActiveIndex(-1);
-      setRecents(addRecent({ symbol: trimmed, name: '', exchange: '' }));
-      onSelect(trimmed);
+      setRecents(addRecent({ symbol: upper, name: '', exchange: '' }));
+      inputRef.current?.blur();
+      onSelect(upper);
     }
   };
 
