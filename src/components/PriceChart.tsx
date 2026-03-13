@@ -4,6 +4,7 @@ import type { HistoricalPrice, Indicators } from '../api/types';
 import { useStockHistory } from '../api/queries';
 import type { Interval, Period } from '../api/types';
 import { createHistoryRequest, matchesHistoryRequest } from '../api/history-utils';
+import { getPaneStretchFactors, type IndicatorPaneKind } from './price-chart-layout';
 
 // ---------------------------------------------------------------------------
 // Time helpers
@@ -107,6 +108,13 @@ function fallbackChartHeight(mobile: number, desktop: number): number {
   return window.matchMedia('(max-width: 639px)').matches ? mobile : desktop;
 }
 
+function rebalancePanes(chart: IChartApi, indicatorPanes: IndicatorPaneKind[]): void {
+  const factors = getPaneStretchFactors(indicatorPanes);
+  chart.panes().forEach((pane, index) => {
+    pane.setStretchFactor(factors[index] ?? 1);
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -165,6 +173,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
 
     chartRef.current = chart;
     let prevSize = { width: initialWidth, height: initialHeight };
+    chart.panes()[0]?.setPreserveEmptyPane(true);
 
     chart.subscribeCrosshairMove((param) => {
       if (!param.time) {
@@ -298,6 +307,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
     // --- Overlay indicators (SMA, EMA, BB on pane 0) ---
     const ind = currentData.indicators;
     if (ind) {
+      const indicatorPanes: IndicatorPaneKind[] = [];
       const overlayKeys = ['sma50', 'sma200', 'ema50', 'ema200'] as const;
       for (const key of overlayKeys) {
         if (!active.has(key)) continue;
@@ -332,9 +342,9 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
 
       // --- RSI pane ---
       if (ind.rsi && active.has('rsi')) {
+        indicatorPanes.push('rsi');
         const rsiPane = chart.addPane();
         const rsiPaneIdx = rsiPane.paneIndex();
-        rsiPane.setStretchFactor(0.3);
 
         const rsiSeries = chart.addSeries(LineSeries, {
           color: '#eab308',
@@ -366,9 +376,9 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
 
       // --- MACD pane ---
       if (ind.macd && active.has('macd')) {
+        indicatorPanes.push('macd');
         const macdPane = chart.addPane();
         const macdPaneIdx = macdPane.paneIndex();
-        macdPane.setStretchFactor(0.3);
 
         const macdSeries = chart.addSeries(LineSeries, {
           color: '#3b82f6',
@@ -400,6 +410,8 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
           scaleMargins: { top: 0.05, bottom: 0.05 },
         });
       }
+
+      rebalancePanes(chart, indicatorPanes);
     }
 
     chart.priceScale('right').applyOptions({ autoScale: true });
