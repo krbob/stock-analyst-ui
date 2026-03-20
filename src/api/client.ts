@@ -12,7 +12,7 @@ async function fetchApi<T>(path: string): Promise<T> {
       const json = JSON.parse(text);
       if (json.error) message = json.error;
     } catch {
-      if (text) message = text;
+      if (text && !text.trimStart().startsWith('<')) message = text;
     }
     throw new Error(message);
   }

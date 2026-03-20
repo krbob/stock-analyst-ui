@@ -4,13 +4,14 @@ import { describe, it, expect } from 'vitest';
 // For now, replicate the logic here to validate correctness.
 // If they grow, they should be extracted into a shared utility.
 
-function normalize(prices: { close: number; date: string }[]): { time: string; value: number }[] {
+function normalizeFrom(prices: { close: number; date: string }[], baseIndex: number = 0): { time: string; value: number }[] {
   if (prices.length === 0) return [];
-  const first = prices[0].close;
-  if (first === 0) return [];
+  const idx = Math.min(Math.max(0, baseIndex), prices.length - 1);
+  const base = prices[idx].close;
+  if (base === 0) return [];
   return prices.map((p) => ({
     time: p.date,
-    value: (p.close / first - 1) * 100,
+    value: (p.close / base - 1) * 100,
   }));
 }
 
@@ -42,17 +43,17 @@ const fmtBig = (d: number) => {
   return d.toFixed(0);
 };
 
-describe('normalize', () => {
+describe('normalizeFrom', () => {
   it('returns empty for empty array', () => {
-    expect(normalize([])).toEqual([]);
+    expect(normalizeFrom([])).toEqual([]);
   });
 
   it('returns empty when first close is 0', () => {
-    expect(normalize([{ close: 0, date: '2025-01-01' }])).toEqual([]);
+    expect(normalizeFrom([{ close: 0, date: '2025-01-01' }])).toEqual([]);
   });
 
   it('first point is always 0%', () => {
-    const result = normalize([
+    const result = normalizeFrom([
       { close: 100, date: '2025-01-01' },
       { close: 110, date: '2025-01-02' },
     ]);
@@ -60,13 +61,36 @@ describe('normalize', () => {
   });
 
   it('calculates percentage change correctly', () => {
-    const result = normalize([
+    const result = normalizeFrom([
       { close: 100, date: '2025-01-01' },
       { close: 110, date: '2025-01-02' },
       { close: 90, date: '2025-01-03' },
     ]);
     expect(result[1].value).toBeCloseTo(10);
     expect(result[2].value).toBeCloseTo(-10);
+  });
+
+  it('normalizes from a non-zero base index', () => {
+    const result = normalizeFrom([
+      { close: 100, date: '2025-01-01' },
+      { close: 110, date: '2025-01-02' },
+      { close: 121, date: '2025-01-03' },
+    ], 1);
+    expect(result[0].value).toBeCloseTo(-9.09, 1);
+    expect(result[1].value).toBe(0);
+    expect(result[2].value).toBeCloseTo(10);
+  });
+
+  it('clamps base index to valid range', () => {
+    const prices = [
+      { close: 100, date: '2025-01-01' },
+      { close: 200, date: '2025-01-02' },
+    ];
+    const fromNeg = normalizeFrom(prices, -5);
+    expect(fromNeg[0].value).toBe(0);
+
+    const fromOver = normalizeFrom(prices, 100);
+    expect(fromOver[1].value).toBe(0);
   });
 });
 
