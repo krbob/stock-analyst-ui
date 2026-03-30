@@ -370,6 +370,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
 
         chart.priceScale('right', rsiPaneIdx).applyOptions({
           autoScale: true,
+          mode: PriceScaleMode.Normal,
           scaleMargins: { top: 0.05, bottom: 0.05 },
         });
       }
@@ -407,6 +408,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
 
         chart.priceScale('right', macdPaneIdx).applyOptions({
           autoScale: true,
+          mode: PriceScaleMode.Normal,
           scaleMargins: { top: 0.05, bottom: 0.05 },
         });
       }
@@ -414,7 +416,10 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
       rebalancePanes(chart, indicatorPanes);
     }
 
-    chart.priceScale('right').applyOptions({ autoScale: true });
+    chart.priceScale('right').applyOptions({
+      autoScale: true,
+      mode: logScale ? PriceScaleMode.Logarithmic : PriceScaleMode.Normal,
+    });
 
     if (resetRef) {
       resetRef.current = () => {
