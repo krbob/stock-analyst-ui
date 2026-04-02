@@ -3,6 +3,7 @@ import { createChart, LineSeries, ColorType, type IChartApi, type ISeriesApi, ty
 import { useStockHistory, useCompare } from '../api/queries';
 import type { CompareResult, HistoricalPrice, Period, Quote } from '../api/types';
 import { createHistoryRequest, matchesHistoryRequest } from '../api/history-utils';
+import { normalizeFromTime, findBestIdx } from './compare-utils';
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const COMPARE_COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899'];
@@ -19,21 +20,6 @@ const CHART_OPTIONS = {
   timeScale: { borderColor: '#3a3a4e' },
   rightPriceScale: { borderColor: '#3a3a4e' },
 } as const;
-
-function chartTime(p: HistoricalPrice): Time {
-  return p.timestamp != null ? p.timestamp as Time : p.date as Time;
-}
-
-function normalizeFrom(prices: HistoricalPrice[], baseIndex: number): { time: Time; value: number }[] {
-  if (prices.length === 0) return [];
-  const idx = Math.min(Math.max(0, baseIndex), prices.length - 1);
-  const base = prices[idx].close;
-  if (base === 0) return [];
-  return prices.map((p) => ({
-    time: chartTime(p),
-    value: (p.close / base - 1) * 100,
-  }));
-}
 
 // ---------------------------------------------------------------------------
 // Table helpers
@@ -84,24 +70,6 @@ const METRICS: Metric[] = [
   { label: 'Sector', get: (q) => q.sector, fmt: (v) => v != null ? String(v) : '—' },
   { label: 'Recommendation', get: (q) => q.recommendation, fmt: (v) => v != null ? (REC_LABELS[v as string] ?? String(v)) : '—' },
 ];
-
-function findBestIdx(values: (number | string | null)[], dir: 'max' | 'min'): number {
-  let best = -1;
-  let bestVal = dir === 'max' ? -Infinity : Infinity;
-  let tied = false;
-  for (let i = 0; i < values.length; i++) {
-    const v = values[i];
-    if (typeof v !== 'number') continue;
-    if (dir === 'max' ? v > bestVal : v < bestVal) {
-      bestVal = v;
-      best = i;
-      tied = false;
-    } else if (v === bestVal) {
-      tied = true;
-    }
-  }
-  return tied ? -1 : best;
-}
 
 function fallbackChartHeight(): number {
   return window.matchMedia('(max-width: 639px)').matches ? 300 : 400;
@@ -195,7 +163,7 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
       const data = source.data!;
       const sym = source.symbol;
       const color = COMPARE_COLORS[source.colorIndex % COMPARE_COLORS.length];
-      const normalized = normalizeFrom(data.prices, 0);
+      const normalized = normalizeFromTime(data.prices, null);
       if (normalized.length === 0) continue;
 
       const series = chart.addSeries(LineSeries, {
@@ -229,16 +197,16 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
 
     // Re-normalize percentages based on the first visible data point when panning/zooming
     let renormGuard = false;
-    let lastBaseIndex = 0;
-    chart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
+    let lastBaseTime: Time | null = null;
+    chart.timeScale().subscribeVisibleTimeRangeChange((range) => {
       if (!range || renormGuard) return;
-      const baseIndex = Math.max(0, Math.ceil(range.from));
-      if (baseIndex === lastBaseIndex) return;
-      lastBaseIndex = baseIndex;
+      const baseTime = range.from;
+      if (baseTime === lastBaseTime) return;
+      lastBaseTime = baseTime;
 
       renormGuard = true;
       for (const { symbol, prices, series } of stored) {
-        const newData = normalizeFrom(prices, baseIndex);
+        const newData = normalizeFromTime(prices, baseTime);
         if (newData.length === 0) continue;
         series.setData(newData);
 
