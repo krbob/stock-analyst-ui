@@ -9,10 +9,15 @@ test.use({
 const SCREENSHOT_DIR = './docs';
 
 async function waitForChart(page: Page) {
+  // Wait for all loading spinners to disappear (data loaded)
+  await page.waitForFunction(
+    () => document.querySelectorAll('.animate-spin').length === 0,
+    { timeout: 30_000 },
+  );
   // Wait for a visible canvas (chart rendered with data)
-  await page.locator('canvas >> visible=true').first().waitFor({ timeout: 20_000 });
-  // Let remaining data settle (compare table, indicators)
-  await page.waitForTimeout(2_000);
+  await page.locator('canvas >> visible=true').first().waitFor({ timeout: 10_000 });
+  // Let chart animations settle
+  await page.waitForTimeout(1_000);
 }
 
 test.describe.serial('generate README screenshots', () => {
@@ -20,7 +25,7 @@ test.describe.serial('generate README screenshots', () => {
   test('main view — AAPL 1Y with SMA', async ({ page }) => {
     await page.goto('/?s=AAPL&p=1y&ind=sma50,sma200');
     await waitForChart(page);
-    await page.screenshot({ path: `${SCREENSHOT_DIR}/screenshot-main.png`, fullPage: true });
+    await page.screenshot({ path: `${SCREENSHOT_DIR}/screenshot-main.png`, fullPage: false });
   });
 
   test('indicators — AAPL 5D line with BB, RSI, MACD', async ({ page }) => {
@@ -32,6 +37,6 @@ test.describe.serial('generate README screenshots', () => {
   test('compare mode — AAPL vs MSFT vs INTC 5Y', async ({ page }) => {
     await page.goto('/?s=INTC&cmp=AAPL,MSFT,INTC&p=5y');
     await waitForChart(page);
-    await page.screenshot({ path: `${SCREENSHOT_DIR}/screenshot-compare.png`, fullPage: true });
+    await page.screenshot({ path: `${SCREENSHOT_DIR}/screenshot-compare.png`, fullPage: false });
   });
 });
