@@ -4,7 +4,12 @@
 
 Interactive stock analysis dashboard built with React and [lightweight-charts](https://github.com/nicosommi/lightweight-charts). Connects to the [stock-analyst](https://github.com/krbob/stock-analyst) API backend.
 
-![Stock Analyst UI](docs/screenshot-main.png)
+<a href="docs/screenshot-main.png"><img src="docs/screenshot-main.png" width="720" alt="Stock Analyst UI"></a>
+
+<p>
+  <a href="docs/screenshot-indicators.png"><img src="docs/screenshot-indicators.png" width="355" alt="Technical Indicators"></a>
+  <a href="docs/screenshot-compare.png"><img src="docs/screenshot-compare.png" width="355" alt="Compare Mode"></a>
+</p>
 
 ## Features
 
@@ -22,8 +27,6 @@ Interactive stock analysis dashboard built with React and [lightweight-charts](h
 - RSI (14-period) in a separate pane with 70/30 reference lines
 - MACD (line, signal, histogram) in a separate pane
 
-![Technical Indicators](docs/screenshot-indicators.png)
-
 **Fundamentals & technicals panel**
 - P/E, EPS, P/B, Market Cap, ROE, Beta, Dividend Yield/Growth
 - RSI (daily/weekly/monthly), MACD, Bollinger Bands, Moving Averages, ATR
@@ -36,8 +39,6 @@ Interactive stock analysis dashboard built with React and [lightweight-charts](h
 - Normalized percentage overlay chart
 - Comparison table with fundamental and performance metrics
 - Best-in-group highlighting
-
-![Compare Mode](docs/screenshot-compare.png)
 
 **Other**
 - Currency conversion (150+ currencies via the API)
