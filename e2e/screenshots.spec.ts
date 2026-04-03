@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { test, type Page } from '@playwright/test';
 
 test.use({
   viewport: { width: 1440, height: 900 },

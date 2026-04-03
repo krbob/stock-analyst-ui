@@ -5,11 +5,9 @@
 Interactive stock analysis dashboard built with React and [lightweight-charts](https://github.com/nicosommi/lightweight-charts). Connects to the [stock-analyst](https://github.com/krbob/stock-analyst) API backend.
 
 <a href="docs/screenshot-main.png"><img src="docs/screenshot-main.png" width="720" alt="Stock Analyst UI"></a>
-
-<p>
-  <a href="docs/screenshot-indicators.png"><img src="docs/screenshot-indicators.png" width="355" alt="Technical Indicators"></a>
-  <a href="docs/screenshot-compare.png"><img src="docs/screenshot-compare.png" width="355" alt="Compare Mode"></a>
-</p>
+<br>
+<a href="docs/screenshot-indicators.png"><img src="docs/screenshot-indicators.png" width="355" alt="Technical Indicators"></a>
+<a href="docs/screenshot-compare.png"><img src="docs/screenshot-compare.png" width="355" alt="Compare Mode"></a>
 
 ## Features
 
