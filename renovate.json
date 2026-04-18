@@ -3,5 +3,140 @@
   "extends": [
     "config:recommended"
   ],
-  "automerge": true
+  "timezone": "Europe/Warsaw",
+  "automerge": true,
+  "automergeType": "pr",
+  "platformAutomerge": false,
+  "schedule": [
+    "* * 1 * *"
+  ],
+  "automergeSchedule": [
+    "* * 1 * *"
+  ],
+  "updateNotScheduled": false,
+  "prConcurrentLimit": 0,
+  "branchConcurrentLimit": 0,
+  "prHourlyLimit": 0,
+  "packageRules": [
+    {
+      "description": "Group non-major frontend runtime dependency updates",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchDepTypes": [
+        "dependencies"
+      ],
+      "matchUpdateTypes": [
+        "patch",
+        "minor",
+        "digest",
+        "pin"
+      ],
+      "groupName": "Frontend runtime dependencies"
+    },
+    {
+      "description": "Group non-major TypeScript type package updates",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchPackageNames": [
+        "@types/**"
+      ],
+      "matchUpdateTypes": [
+        "patch",
+        "minor",
+        "digest",
+        "pin"
+      ],
+      "groupName": "TypeScript type packages"
+    },
+    {
+      "description": "Group non-major frontend build tooling updates",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchPackageNames": [
+        "typescript",
+        "vite",
+        "@vitejs/plugin-react",
+        "tailwindcss",
+        "@tailwindcss/vite"
+      ],
+      "matchUpdateTypes": [
+        "patch",
+        "minor",
+        "digest",
+        "pin"
+      ],
+      "groupName": "Frontend build tooling"
+    },
+    {
+      "description": "Group non-major frontend test tooling updates",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchPackageNames": [
+        "@playwright/test",
+        "@testing-library/**",
+        "jsdom",
+        "vitest",
+        "@vitest/**"
+      ],
+      "matchUpdateTypes": [
+        "patch",
+        "minor",
+        "digest",
+        "pin"
+      ],
+      "groupName": "Frontend test tooling"
+    },
+    {
+      "description": "Group non-major frontend linting updates",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchPackageNames": [
+        "eslint",
+        "@eslint/js",
+        "eslint-plugin-react-hooks",
+        "eslint-plugin-react-refresh",
+        "globals",
+        "typescript-eslint"
+      ],
+      "matchUpdateTypes": [
+        "patch",
+        "minor",
+        "digest",
+        "pin"
+      ],
+      "groupName": "Frontend linting"
+    },
+    {
+      "description": "Group non-major GitHub Actions updates",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchUpdateTypes": [
+        "patch",
+        "minor",
+        "digest",
+        "pin"
+      ],
+      "groupName": "GitHub Actions"
+    },
+    {
+      "description": "Group non-major Docker image updates",
+      "matchManagers": [
+        "dockerfile",
+        "docker-compose"
+      ],
+      "matchUpdateTypes": [
+        "patch",
+        "minor",
+        "digest",
+        "pin"
+      ],
+      "groupName": "Docker images"
+    }
+  ]
 }
