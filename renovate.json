@@ -11,9 +11,9 @@
     "* * 1 * *"
   ],
   "automergeSchedule": [
-    "* * 1 * *"
+    "at any time"
   ],
-  "updateNotScheduled": false,
+  "updateNotScheduled": true,
   "prConcurrentLimit": 0,
   "branchConcurrentLimit": 0,
   "prHourlyLimit": 0,
