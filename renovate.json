@@ -6,7 +6,8 @@
   "timezone": "Europe/Warsaw",
   "automerge": true,
   "automergeType": "pr",
-  "platformAutomerge": false,
+  "platformAutomerge": true,
+  "rebaseWhen": "behind-base-branch",
   "schedule": [
     "* * 1 * *"
   ],
