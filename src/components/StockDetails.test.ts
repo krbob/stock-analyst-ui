@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatMarketCap, formatNumber, formatRatioPercent } from '../lib/format';
+import { formatMarketCap, formatNumber, formatRatioPercent, rangeFraction } from '../lib/format';
 
 describe('formatMarketCap', () => {
   it('formats trillions', () => {
@@ -93,5 +93,28 @@ describe('dividend extraction logic', () => {
   it('returns empty for no dividends', () => {
     expect(extractDividends([])).toEqual([]);
     expect(extractDividends([{ date: '2025-01-01', dividend: 0 }])).toEqual([]);
+  });
+});
+
+describe('rangeFraction', () => {
+  it('returns the clamped position within the range', () => {
+    expect(rangeFraction(150, 100, 200)).toBe(0.5);
+    expect(rangeFraction(100, 100, 200)).toBe(0);
+    expect(rangeFraction(200, 100, 200)).toBe(1);
+    expect(rangeFraction(90, 100, 200)).toBe(0);
+    expect(rangeFraction(210, 100, 200)).toBe(1);
+  });
+
+  it('returns null when any bound is missing', () => {
+    expect(rangeFraction(null, 100, 200)).toBeNull();
+    expect(rangeFraction(150, null, 200)).toBeNull();
+    expect(rangeFraction(150, 100, undefined)).toBeNull();
+  });
+
+  it('returns null for non-finite values or empty ranges', () => {
+    expect(rangeFraction(NaN, 100, 200)).toBeNull();
+    expect(rangeFraction(150, 100, Infinity)).toBeNull();
+    expect(rangeFraction(150, 200, 200)).toBeNull();
+    expect(rangeFraction(150, 200, 100)).toBeNull();
   });
 });

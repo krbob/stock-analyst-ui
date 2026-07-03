@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useQuote } from '../api/queries';
 import type { HistoricalPrice, Indicators } from '../api/types';
 import { formatMarketCap, formatNumber, formatRatioPercent, rangeFraction } from '../lib/format';
@@ -76,16 +76,31 @@ function DetailsSkeleton() {
   );
 }
 
+function TooltipLabel({ label, tooltip }: { label: string; tooltip: string }) {
+  const tooltipId = useId();
+  return (
+    <span
+      tabIndex={0}
+      aria-describedby={tooltipId}
+      className="group relative shrink-0 cursor-help text-muted underline decoration-dotted decoration-border-strong underline-offset-2 outline-none focus-visible:ring-2 focus-visible:ring-accent"
+    >
+      {label}
+      <span
+        role="tooltip"
+        id={tooltipId}
+        className="pointer-events-none absolute bottom-full left-0 z-30 mb-1.5 hidden w-56 rounded-md border border-border bg-surface-raised px-2.5 py-1.5 text-xs leading-relaxed text-secondary shadow-lg group-hover:block group-focus:block"
+      >
+        {tooltip}
+      </span>
+    </span>
+  );
+}
+
 function Item({ label, value, tooltip }: { label: string; value: string; tooltip?: string }) {
   return (
     <div className="flex justify-between gap-2 py-1">
       {tooltip ? (
-        <span tabIndex={0} className="group relative shrink-0 cursor-help text-muted underline decoration-dotted decoration-border-strong underline-offset-2">
-          {label}
-          <span className="pointer-events-none absolute bottom-full left-0 z-30 mb-1.5 hidden w-56 rounded-md border border-border bg-surface-raised px-2.5 py-1.5 text-xs leading-relaxed text-secondary shadow-lg group-hover:block group-focus:block">
-            {tooltip}
-          </span>
-        </span>
+        <TooltipLabel label={label} tooltip={tooltip} />
       ) : (
         <span className="shrink-0 text-muted">{label}</span>
       )}
@@ -100,12 +115,7 @@ function Recommendation({ value, count }: { value: string | null; count: number 
   const countStr = count != null ? ` (${count})` : '';
   return (
     <div className="flex justify-between gap-2 py-1">
-      <span tabIndex={0} className="group relative cursor-help text-muted underline decoration-dotted decoration-border-strong underline-offset-2">
-        Rating
-        <span className="pointer-events-none absolute bottom-full left-0 z-30 mb-1.5 hidden w-56 rounded-md border border-border bg-surface-raised px-2.5 py-1.5 text-xs leading-relaxed text-secondary shadow-lg group-hover:block group-focus:block">
-          {tip}
-        </span>
-      </span>
+      <TooltipLabel label="Rating" tooltip={tip} />
       <span className={RECOMMENDATION_COLORS[value] ?? 'text-primary'}>{formatRecommendation(value)}{countStr}</span>
     </div>
   );
@@ -149,7 +159,9 @@ function DividendTable({ dividends }: { dividends: DividendEntry[] }) {
       </table>
       {dividends.length > 6 && (
         <button
+          type="button"
           onClick={() => setExpanded(!expanded)}
+          aria-expanded={expanded}
           className="mt-2 text-xs text-muted transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           {expanded ? 'Show less' : `Show all ${dividends.length} payments`}
