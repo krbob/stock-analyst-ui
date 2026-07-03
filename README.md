@@ -56,7 +56,7 @@ services:
   stock-analyst-ui:
     image: ghcr.io/krbob/stock-analyst-ui:latest
     ports:
-      - "3001:80"
+      - "3001:8080"
     depends_on:
       - stock-analyst
     environment:
@@ -116,7 +116,7 @@ Example: `?s=AAPL&p=5y&log=1&ind=sma50,sma200&cmp=AAPL,MSFT`
 ## Architecture
 
 ```
-Browser → Nginx (:80) → /api/* → stock-analyst API (:8080)
+Browser → Nginx (:8080) → /api/* → stock-analyst API (:8080)
                        → /*    → React SPA (index.html)
 ```
 
@@ -166,7 +166,7 @@ Multi-stage build: Node 24 for compilation, Nginx Alpine for serving.
 docker build -t stock-analyst-ui .
 
 # Run (API_URL defaults to http://localhost:8080)
-docker run -p 3001:80 -e API_URL=http://your-api:8080 stock-analyst-ui
+docker run -p 3001:8080 -e API_URL=http://your-api:8080 stock-analyst-ui
 ```
 
 The `API_URL` environment variable is substituted into the Nginx config at container startup.
