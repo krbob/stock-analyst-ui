@@ -3,7 +3,8 @@ import { createChart, LineSeries, type IChartApi, type ISeriesApi, type SeriesTy
 import { useStockHistory, useCompare } from '../api/queries';
 import type { CompareResult, HistoricalPrice, Period, Quote } from '../api/types';
 import { createHistoryRequest, matchesHistoryRequest } from '../api/history-utils';
-import { CHART_OPTIONS, COMPARE_COLORS } from '../lib/chart-theme';
+import { buildChartOptions, COMPARE_COLORS } from '../lib/chart-theme';
+import { useChartTheme } from '../hooks/useChartTheme';
 import { formatGain, formatMarketCap, formatNumber, formatRatioPercent } from '../lib/format';
 import { formatRecommendation } from '../lib/recommendation';
 import { normalizeFromTime, findBestIdx } from './compare-utils';
@@ -61,6 +62,7 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const [legendValues, setLegendValues] = useState<Map<string, number>>(new Map());
+  const chartTheme = useChartTheme();
 
   // 6 fixed hook slots — hooks cannot be called conditionally
   const h0 = useStockHistory(symbols[0] ?? '', period, undefined, undefined, currency);
@@ -116,11 +118,11 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
     const initialWidth = containerRef.current.clientWidth;
     const initialHeight = containerRef.current.clientHeight;
     const chart = createChart(containerRef.current, {
-      ...CHART_OPTIONS,
+      ...buildChartOptions(chartTheme),
       width: Math.max(initialWidth, 1),
       height: Math.max(initialHeight, fallbackChartHeight()),
       rightPriceScale: {
-        borderColor: '#3a3a4e',
+        borderColor: chartTheme.scaleBorder,
         autoScale: true,
       },
     });
@@ -222,7 +224,7 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
     };
   // symbols/histories are derived from fixed hook slots — spread deps track actual data changes
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasData, activeCount, period, currency, ...symbols, h0.data, h1.data, h2.data, h3.data, h4.data, h5.data]);
+  }, [hasData, activeCount, period, currency, chartTheme, ...symbols, h0.data, h1.data, h2.data, h3.data, h4.data, h5.data]);
 
   const chartLoading = !hasData && isFetching;
   const tableLoading = !compareData;
@@ -230,28 +232,28 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
   return (
     <div className="space-y-4">
       {/* Overlay chart */}
-      <div className="relative overflow-hidden rounded-lg border border-gray-800 bg-[#1a1a2e]">
+      <div className="relative overflow-hidden rounded-xl border border-border bg-chart-bg shadow-sm">
         {/* Legend */}
-        <div className="absolute left-2 top-2 z-20 flex flex-wrap gap-x-3 gap-y-0.5 text-xs">
+        <div className="absolute left-2 top-2 z-20 flex flex-wrap gap-x-3 gap-y-0.5 rounded-lg border border-border bg-surface-raised/85 px-2.5 py-1.5 text-xs shadow-sm backdrop-blur">
           {symbols.map((sym, i) => {
             const color = COMPARE_COLORS[i % COMPARE_COLORS.length];
             const val = legendValues.get(sym);
             return (
               <span key={sym} style={{ color }}>
                 {sym.toUpperCase()}
-                {val != null && <span className="ml-1 text-white">{val >= 0 ? '+' : ''}{val.toFixed(2)}%</span>}
+                {val != null && <span className="ml-1 text-primary">{val >= 0 ? '+' : ''}{val.toFixed(2)}%</span>}
               </span>
             );
           })}
         </div>
         <div ref={containerRef} className="h-[300px] w-full sm:h-[400px]" />
         {(chartLoading || isFetching) && (
-          <div className={`absolute inset-0 z-10 flex items-center justify-center ${chartLoading ? 'bg-[#1a1a2e]' : 'bg-[#1a1a2e]/80'}`}>
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-600 border-t-blue-400" />
+          <div className={`absolute inset-0 z-10 flex items-center justify-center ${chartLoading ? 'bg-chart-bg' : 'bg-chart-bg/80'}`}>
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-border-strong border-t-accent" />
           </div>
         )}
         {!chartLoading && !hasData && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#1a1a2e] px-4 text-center text-sm text-gray-400">
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-chart-bg px-4 text-center text-sm text-secondary">
             No chart data available for the selected symbols
           </div>
         )}
@@ -261,7 +263,7 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
       {errors.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {errors.map((r) => (
-            <span key={r.symbol} className="rounded-full bg-red-900/30 px-3 py-1 text-xs text-red-400">
+            <span key={r.symbol} className="rounded-full border border-danger/30 bg-danger/10 px-3 py-1 text-xs text-danger">
               {r.symbol}: {r.error}
             </span>
           ))}
@@ -270,21 +272,21 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
 
       {/* Comparison table */}
       {tableLoading ? (
-        <div className="flex h-32 items-center justify-center rounded-lg border border-gray-800 bg-gray-900/50">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-600 border-t-blue-400" />
+        <div className="flex h-32 items-center justify-center rounded-xl border border-border bg-surface-raised">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-border-strong border-t-accent" />
         </div>
       ) : quotes.length > 0 && (
-        <div className="overflow-x-auto rounded-lg border border-gray-800">
+        <div className="overflow-x-auto rounded-xl border border-border bg-surface-raised shadow-sm">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-800 bg-gray-900/50">
-                <th className="px-3 py-2 text-left text-gray-400 font-medium">Metric</th>
+              <tr className="border-b border-border bg-surface/60">
+                <th className="px-3 py-2 text-left text-muted font-medium">Metric</th>
                 {quotes.map((q) => {
                   const idx = Math.max(0, symbols.findIndex((s) => s.toLowerCase() === q.symbol.toLowerCase()));
                   return (
                     <th key={q.symbol} className="px-3 py-2 text-right font-medium" style={{ color: COMPARE_COLORS[idx % COMPARE_COLORS.length] }}>
                       {q.symbol.toUpperCase()}
-                      {q.name && <span className="block text-xs text-gray-500 font-normal">{q.name}</span>}
+                      {q.name && <span className="block text-xs text-muted font-normal">{q.name}</span>}
                     </th>
                   );
                 })}
@@ -295,14 +297,14 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
                 const values = quotes.map((q) => m.get(q));
                 const bestIdx = m.best ? findBestIdx(values, m.best) : -1;
                 return (
-                  <tr key={m.label} className="border-b border-gray-800/50 hover:bg-gray-800/30">
-                    <td className="px-3 py-1.5 text-gray-400">{m.label}</td>
+                  <tr key={m.label} className="border-b border-border/60 hover:bg-surface/60">
+                    <td className="px-3 py-1.5 text-muted">{m.label}</td>
                     {values.map((v, i) => {
                       const formatted = m.fmt(v);
                       const isBest = i === bestIdx;
-                      const gainColor = m.gain && typeof v === 'number' && Number.isFinite(v) ? (v >= 0 ? 'text-green-400' : 'text-red-400') : 'text-gray-300';
+                      const gainColor = m.gain && typeof v === 'number' && Number.isFinite(v) ? (v >= 0 ? 'text-up' : 'text-down') : 'text-secondary';
                       return (
-                        <td key={i} className={`px-3 py-1.5 text-right ${isBest ? 'bg-amber-500/10 font-semibold text-amber-300' : gainColor}`}>
+                        <td key={i} className={`px-3 py-1.5 text-right ${isBest ? 'bg-highlight/10 font-semibold text-highlight' : gainColor}`}>
                           {formatted}
                         </td>
                       );

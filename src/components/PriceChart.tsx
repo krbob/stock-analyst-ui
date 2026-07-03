@@ -4,7 +4,15 @@ import type { HistoricalPrice, Indicators } from '../api/types';
 import { useStockHistory } from '../api/queries';
 import type { Interval, Period } from '../api/types';
 import { createHistoryRequest, matchesHistoryRequest } from '../api/history-utils';
-import { CHART_OPTIONS } from '../lib/chart-theme';
+import {
+  buildCandlestickOptions,
+  buildChartOptions,
+  buildLineSeriesOptions,
+  DIVIDEND_MARKER_COLOR,
+  INDICATOR_COLORS,
+  withAlpha,
+} from '../lib/chart-theme';
+import { useChartTheme } from '../hooks/useChartTheme';
 import { getPaneStretchFactors, type IndicatorPaneKind } from './price-chart-layout';
 
 // ---------------------------------------------------------------------------
@@ -61,30 +69,6 @@ function buildIndicatorLookup(ind: Indicators, active: Set<string>): Map<string,
 // Chart styling
 // ---------------------------------------------------------------------------
 
-const CANDLESTICK_OPTIONS = {
-  upColor: '#22c55e',
-  downColor: '#ef4444',
-  borderDownColor: '#ef4444',
-  borderUpColor: '#22c55e',
-  wickDownColor: '#ef4444',
-  wickUpColor: '#22c55e',
-} as const;
-
-const LINE_OPTIONS = {
-  color: '#3b82f6',
-  lineWidth: 2 as const,
-};
-
-const OVERLAY_COLORS: Record<string, string> = {
-  sma50: '#f59e0b',
-  sma200: '#3b82f6',
-  ema50: '#f97316',
-  ema200: '#6366f1',
-  bb_upper: '#8b5cf6',
-  bb_middle: '#a78bfa',
-  bb_lower: '#8b5cf6',
-};
-
 function fmtVol(n: number): string {
   if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
   if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
@@ -132,6 +116,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
   const [indLegend, setIndLegend] = useState<IndicatorSnapshot | null>(null);
   const fittingRef = useRef(false);
   const fitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const chartTheme = useChartTheme();
 
   const { data, isFetching, error } = useStockHistory(symbol, period, interval, indicators, currency, dividends);
   const request = createHistoryRequest(symbol, period, interval, indicators, currency, dividends);
@@ -153,7 +138,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
     const initialWidth = containerRef.current.clientWidth;
     const initialHeight = containerRef.current.clientHeight;
     const chart = createChart(containerRef.current, {
-      ...CHART_OPTIONS,
+      ...buildChartOptions(),
       width: Math.max(initialWidth, 1),
       height: Math.max(initialHeight, fallbackChartHeight(350, 500)),
     });
@@ -205,6 +190,11 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ---- Theme (background, grid, scales) — re-applied when tokens change ----
+  useEffect(() => {
+    chartRef.current?.applyOptions(buildChartOptions(chartTheme));
+  }, [chartTheme]);
+
   // ---- Base series + data (price, volume, dividend markers) ----
   useEffect(() => {
     const chart = chartRef.current;
@@ -233,12 +223,12 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
     // --- Price series (pane 0) ---
     let priceSeries: ISeriesApi<SeriesType>;
     if (lineChart) {
-      const series = chart.addSeries(LineSeries, LINE_OPTIONS);
+      const series = chart.addSeries(LineSeries, buildLineSeriesOptions(chartTheme));
       series.setData(currentData.prices.map((p) => ({ time: chartTime(p), value: p.close })));
       priceSeries = series;
       cleanups.push(() => chart.removeSeries(series));
     } else {
-      const series = chart.addSeries(CandlestickSeries, CANDLESTICK_OPTIONS);
+      const series = chart.addSeries(CandlestickSeries, buildCandlestickOptions(chartTheme));
       series.setData(
         currentData.prices.map((p) => ({
           time: chartTime(p),
@@ -260,7 +250,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
           time: chartTime(p),
           position: 'belowBar' as const,
           shape: 'circle' as const,
-          color: '#a78bfa',
+          color: DIVIDEND_MARKER_COLOR,
           text: `D ${p.dividend.toFixed(2)}`,
         }));
       if (divMarkers.length > 0) {
@@ -278,7 +268,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
       currentData.prices.map((p) => ({
         time: chartTime(p),
         value: p.volume,
-        color: p.close >= p.open ? '#22c55e40' : '#ef444440',
+        color: p.close >= p.open ? withAlpha(chartTheme.up, '40') : withAlpha(chartTheme.down, '40'),
       })),
     );
     chart.priceScale('volume').applyOptions({
@@ -313,7 +303,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
     return () => cleanups.forEach((fn) => fn());
   // onZoomChange/resetRef are stable refs from parent — including them causes infinite loops
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentData, lineChart, showDividends]);
+  }, [currentData, lineChart, showDividends, chartTheme]);
 
   // ---- Indicators (kept separate so toggles do not recreate price/volume series) ----
   useEffect(() => {
@@ -343,7 +333,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
       const values = ind[key];
       if (!values) continue;
       const series = chart.addSeries(LineSeries, {
-        color: OVERLAY_COLORS[key],
+        color: INDICATOR_COLORS[key],
         lineWidth: 1,
         priceScaleId: 'right',
       });
@@ -353,9 +343,9 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
 
     if (ind.bb && active.has('bb')) {
       const bbLines = [
-        { data: ind.bb.map((v) => ({ time: chartTime(v), value: v.upper })), color: OVERLAY_COLORS.bb_upper },
-        { data: ind.bb.map((v) => ({ time: chartTime(v), value: v.middle })), color: OVERLAY_COLORS.bb_middle, style: 2 },
-        { data: ind.bb.map((v) => ({ time: chartTime(v), value: v.lower })), color: OVERLAY_COLORS.bb_lower },
+        { data: ind.bb.map((v) => ({ time: chartTime(v), value: v.upper })), color: INDICATOR_COLORS.bb_upper },
+        { data: ind.bb.map((v) => ({ time: chartTime(v), value: v.middle })), color: INDICATOR_COLORS.bb_middle, style: 2 },
+        { data: ind.bb.map((v) => ({ time: chartTime(v), value: v.lower })), color: INDICATOR_COLORS.bb_lower },
       ];
       for (const line of bbLines) {
         const series = chart.addSeries(LineSeries, {
@@ -376,7 +366,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
       const rsiPaneIdx = rsiPane.paneIndex();
 
       const rsiSeries = chart.addSeries(LineSeries, {
-        color: '#eab308',
+        color: INDICATOR_COLORS.rsi,
         lineWidth: 1,
         priceFormat: { type: 'custom', formatter: (v: number) => v.toFixed(0) },
       }, rsiPaneIdx);
@@ -386,7 +376,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
       // Reference lines at 70 and 30
       for (const level of [70, 30]) {
         const refSeries = chart.addSeries(LineSeries, {
-          color: '#4b5563',
+          color: chartTheme.scaleBorder,
           lineWidth: 1,
           lineStyle: 2,
           priceScaleId: 'right',
@@ -411,7 +401,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
       const macdPaneIdx = macdPane.paneIndex();
 
       const macdSeries = chart.addSeries(LineSeries, {
-        color: '#3b82f6',
+        color: INDICATOR_COLORS.macd,
         lineWidth: 1,
         priceFormat: { type: 'custom', formatter: (v: number) => v.toFixed(2) },
       }, macdPaneIdx);
@@ -419,7 +409,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
       cleanups.push(() => chart.removeSeries(macdSeries));
 
       const signalSeries = chart.addSeries(LineSeries, {
-        color: '#f97316',
+        color: INDICATOR_COLORS.macd_signal,
         lineWidth: 1,
       }, macdPaneIdx);
       signalSeries.setData(ind.macd.map((v) => ({ time: chartTime(v), value: v.signal })));
@@ -431,7 +421,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
       histSeries.setData(ind.macd.map((v) => ({
         time: chartTime(v),
         value: v.histogram,
-        color: v.histogram >= 0 ? '#22c55e80' : '#ef444480',
+        color: v.histogram >= 0 ? withAlpha(chartTheme.up, '80') : withAlpha(chartTheme.down, '80'),
       })));
       cleanups.push(() => chart.removeSeries(histSeries));
 
@@ -449,7 +439,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
       cleanups.forEach((fn) => fn());
       if (indicatorCleanupRef.current === cleanups) indicatorCleanupRef.current = [];
     };
-  }, [currentData, activeIndicators, lineChart, showDividends]);
+  }, [currentData, activeIndicators, lineChart, showDividends, chartTheme]);
 
   // ---- Log scale (independent of series) ----
   useEffect(() => {
@@ -463,37 +453,37 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
   return (
     <div className="relative">
       {legend && (
-        <div className="absolute left-2 top-2 z-20 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-300 max-w-[calc(100%-70px)]">
-          <span>O <span className="text-white">{legend.open.toFixed(2)}</span></span>
-          <span>H <span className="text-white">{legend.high.toFixed(2)}</span></span>
-          <span>L <span className="text-white">{legend.low.toFixed(2)}</span></span>
-          <span>C <span className={legend.close >= legend.open ? 'text-green-400' : 'text-red-400'}>{legend.close.toFixed(2)}</span></span>
-          <span>V <span className="text-white">{fmtVol(legend.volume)}</span></span>
-          {legend.dividend > 0 && <span>Div <span className="text-purple-400">{legend.dividend.toFixed(2)}</span></span>}
-          {indLegend?.sma50 != null && <span>SMA50 <span style={{ color: OVERLAY_COLORS.sma50 }}>{indLegend.sma50.toFixed(2)}</span></span>}
-          {indLegend?.sma200 != null && <span>SMA200 <span style={{ color: OVERLAY_COLORS.sma200 }}>{indLegend.sma200.toFixed(2)}</span></span>}
-          {indLegend?.ema50 != null && <span>EMA50 <span style={{ color: OVERLAY_COLORS.ema50 }}>{indLegend.ema50.toFixed(2)}</span></span>}
-          {indLegend?.ema200 != null && <span>EMA200 <span style={{ color: OVERLAY_COLORS.ema200 }}>{indLegend.ema200.toFixed(2)}</span></span>}
-          {indLegend?.bb != null && <span style={{ color: OVERLAY_COLORS.bb_middle }}>BB <span>{indLegend.bb.lower.toFixed(2)} / {indLegend.bb.middle.toFixed(2)} / {indLegend.bb.upper.toFixed(2)}</span></span>}
-          {indLegend?.rsi != null && <span>RSI <span style={{ color: '#eab308' }}>{indLegend.rsi.toFixed(0)}</span></span>}
-          {indLegend?.macd != null && <span style={{ color: '#3b82f6' }}>MACD <span>{indLegend.macd.macd.toFixed(2)} / {indLegend.macd.signal.toFixed(2)} / {indLegend.macd.histogram.toFixed(2)}</span></span>}
+        <div className="absolute left-2 top-2 z-20 flex max-w-[calc(100%-70px)] flex-wrap gap-x-3 gap-y-0.5 rounded-lg border border-border bg-surface-raised/85 px-2.5 py-1.5 text-xs text-secondary shadow-sm backdrop-blur">
+          <span>O <span className="text-primary">{legend.open.toFixed(2)}</span></span>
+          <span>H <span className="text-primary">{legend.high.toFixed(2)}</span></span>
+          <span>L <span className="text-primary">{legend.low.toFixed(2)}</span></span>
+          <span>C <span className={legend.close >= legend.open ? 'text-up' : 'text-down'}>{legend.close.toFixed(2)}</span></span>
+          <span>V <span className="text-primary">{fmtVol(legend.volume)}</span></span>
+          {legend.dividend > 0 && <span>Div <span style={{ color: DIVIDEND_MARKER_COLOR }}>{legend.dividend.toFixed(2)}</span></span>}
+          {indLegend?.sma50 != null && <span>SMA50 <span style={{ color: INDICATOR_COLORS.sma50 }}>{indLegend.sma50.toFixed(2)}</span></span>}
+          {indLegend?.sma200 != null && <span>SMA200 <span style={{ color: INDICATOR_COLORS.sma200 }}>{indLegend.sma200.toFixed(2)}</span></span>}
+          {indLegend?.ema50 != null && <span>EMA50 <span style={{ color: INDICATOR_COLORS.ema50 }}>{indLegend.ema50.toFixed(2)}</span></span>}
+          {indLegend?.ema200 != null && <span>EMA200 <span style={{ color: INDICATOR_COLORS.ema200 }}>{indLegend.ema200.toFixed(2)}</span></span>}
+          {indLegend?.bb != null && <span style={{ color: INDICATOR_COLORS.bb_middle }}>BB <span>{indLegend.bb.lower.toFixed(2)} / {indLegend.bb.middle.toFixed(2)} / {indLegend.bb.upper.toFixed(2)}</span></span>}
+          {indLegend?.rsi != null && <span>RSI <span style={{ color: INDICATOR_COLORS.rsi }}>{indLegend.rsi.toFixed(0)}</span></span>}
+          {indLegend?.macd != null && <span style={{ color: INDICATOR_COLORS.macd }}>MACD <span>{indLegend.macd.macd.toFixed(2)} / {indLegend.macd.signal.toFixed(2)} / {indLegend.macd.histogram.toFixed(2)}</span></span>}
         </div>
       )}
       <div ref={containerRef} className="h-[350px] w-full sm:h-[500px]" />
       {isFetching && (
         <div className={`absolute inset-0 z-10 flex items-center justify-center ${
-          currentData ? 'bg-[#1a1a2e]/80' : 'bg-[#1a1a2e]'
+          currentData ? 'bg-chart-bg/80' : 'bg-chart-bg'
         }`}>
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-600 border-t-blue-400" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-border-strong border-t-accent" />
         </div>
       )}
       {error && !currentData && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center text-red-400 bg-[#1a1a2e]/80">
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-chart-bg/80 text-danger">
           {error instanceof Error ? error.message : 'Failed to load chart data'}
         </div>
       )}
       {error && currentData && (
-        <div className="absolute bottom-2 right-2 z-20 rounded-md bg-red-900/70 px-2 py-1 text-xs text-red-100">
+        <div className="absolute bottom-2 right-2 z-20 rounded-md border border-danger/30 bg-surface-raised/90 px-2 py-1 text-xs text-danger backdrop-blur">
           {error instanceof Error ? error.message : 'Failed to refresh chart data'}
         </div>
       )}

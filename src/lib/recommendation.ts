@@ -7,11 +7,11 @@ export const RECOMMENDATION_LABELS: Record<string, string> = {
 };
 
 export const RECOMMENDATION_COLORS: Record<string, string> = {
-  strong_buy: 'text-green-400',
-  buy: 'text-green-400',
-  hold: 'text-yellow-400',
-  sell: 'text-red-400',
-  strong_sell: 'text-red-400',
+  strong_buy: 'text-up',
+  buy: 'text-up',
+  hold: 'text-highlight',
+  sell: 'text-down',
+  strong_sell: 'text-down',
 };
 
 export function formatRecommendation(value: string | null | undefined): string {

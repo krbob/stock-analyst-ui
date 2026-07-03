@@ -57,7 +57,7 @@ const ALL_INDICATOR_KEYS = ['bb', 'ema50', 'ema200', 'macd', 'rsi', 'sma50', 'sm
 
 function Spinner() {
   return (
-    <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-600 border-t-blue-400" />
+    <div className="h-5 w-5 animate-spin rounded-full border-2 border-border-strong border-t-accent" />
   );
 }
 
@@ -71,7 +71,7 @@ const GAIN_PERIODS = [
 function GainChip({ label, value }: { label: string; value: number | null }) {
   if (value == null || !Number.isFinite(value)) return null;
   return (
-    <span className={`text-xs ${value >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+    <span className={`text-xs ${value >= 0 ? 'text-up' : 'text-down'}`}>
       {formatGain(value)} ({label})
     </span>
   );
@@ -103,22 +103,22 @@ function StockInfo({ symbol, currency, onCurrencyChange, livePrice, hideGain }: 
   return (
     <div className="min-w-0">
       <div className="flex h-8 items-baseline gap-3">
-        <h2 className="text-2xl font-bold text-white">{symbol.toUpperCase()}</h2>
+        <h2 className="text-2xl font-bold text-primary">{symbol.toUpperCase()}</h2>
         {isLoading && <Spinner />}
-        {error && <span className="text-sm text-red-400">{errorMessage}</span>}
+        {error && <span className="text-sm text-danger">{errorMessage}</span>}
         {data && (
-          <span className="text-xl text-gray-300">{displayPrice?.toFixed(2)}</span>
+          <span className="text-xl text-secondary">{displayPrice?.toFixed(2)}</span>
         )}
         {nativeCurrency && (
           <CurrencyPicker nativeCurrency={nativeCurrency} value={currency} onChange={onCurrencyChange} />
         )}
         {data && data.gain.daily != null && Number.isFinite(data.gain.daily) && (
-          <span className={`text-lg font-medium transition-opacity duration-300 ${hideGain ? 'opacity-0' : 'opacity-100'} ${data.gain.daily >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+          <span className={`text-lg font-medium transition-opacity duration-300 ${hideGain ? 'opacity-0' : 'opacity-100'} ${data.gain.daily >= 0 ? 'text-up' : 'text-down'}`}>
             {formatGain(data.gain.daily)}
           </span>
         )}
       </div>
-      <p className="h-5 text-sm text-gray-500">{data?.name ?? '\u00A0'}</p>
+      <p className="h-5 text-sm text-muted">{data?.name ?? '\u00A0'}</p>
       <div className="mt-1 flex min-h-5 flex-wrap gap-3">
         {data && GAIN_PERIODS.map((p) => (
           <GainChip key={p.key} label={p.label} value={data.gain[p.key]} />
@@ -216,12 +216,12 @@ export default function App() {
 
   const btnClass = (active: boolean) =>
     `rounded-md px-2.5 py-1 text-xs font-medium transition-colors sm:px-3 sm:text-sm ${
-      active ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'
+      active ? 'bg-accent text-accent-foreground' : 'text-muted hover:text-primary hover:bg-surface'
     }`;
 
   return (
-    <div className="min-h-screen bg-[#0f0f1a] text-white">
-      <header className="border-b border-gray-800 px-4 py-3 sm:px-6 sm:py-4">
+    <div className="min-h-screen bg-page text-primary">
+      <header className="border-b border-border px-4 py-3 sm:px-6 sm:py-4">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
           <h1 className="text-lg font-bold tracking-tight sm:text-xl">Stock Analyst</h1>
           <TickerSearch onSelect={handleSelect} />
@@ -242,12 +242,12 @@ export default function App() {
                     style={{ backgroundColor: COMPARE_COLORS[i % COMPARE_COLORS.length] + '22', color: COMPARE_COLORS[i % COMPARE_COLORS.length] }}
                   >
                     {sym.toUpperCase()}
-                    <button type="button" onClick={() => removeFromCompare(sym)} className="ml-0.5 hover:text-white" aria-label={`Remove ${sym.toUpperCase()} from compare`}>&times;</button>
+                    <button type="button" onClick={() => removeFromCompare(sym)} className="ml-0.5 hover:text-primary" aria-label={`Remove ${sym.toUpperCase()} from compare`}>&times;</button>
                   </span>
                 ))}
                 <CurrencyPicker nativeCurrency={null} value={currency} onChange={setCurrency} />
                 {compareSymbols.length < 6 && (
-                  <span className="text-xs text-gray-500">Search to add more</span>
+                  <span className="text-xs text-muted">Search to add more</span>
                 )}
               </div>
             ) : (
@@ -267,7 +267,7 @@ export default function App() {
               ))}
               {/* Line/Log/Div — collapses in compare mode */}
               <div className={`flex items-center gap-1 overflow-hidden transition-all duration-300 ease-in-out ${inCompareMode ? 'max-w-0 opacity-0' : 'max-w-64 opacity-100'}`}>
-                <div className="mx-1 h-5 w-px shrink-0 bg-gray-700" />
+                <div className="mx-1 h-5 w-px shrink-0 bg-border-strong" />
                 <button onClick={() => setLineChart(!lineChart)} className={btnClass(lineChart)}>
                   Line
                 </button>
@@ -278,10 +278,10 @@ export default function App() {
                   Div
                 </button>
               </div>
-              <div className="mx-1 h-5 w-px shrink-0 bg-gray-700" />
+              <div className="mx-1 h-5 w-px shrink-0 bg-border-strong" />
               <button
                 onClick={inCompareMode ? exitCompare : enterCompare}
-                className={`w-[8rem] shrink-0 whitespace-nowrap rounded-md border px-2.5 py-1 text-xs font-medium transition-colors sm:px-3 sm:text-sm ${inCompareMode ? 'border-transparent text-red-400 hover:text-white hover:bg-red-900/50' : 'border-blue-800/50 text-blue-400 hover:text-white hover:bg-blue-900/40'}`}
+                className={`w-[8rem] shrink-0 whitespace-nowrap rounded-md border px-2.5 py-1 text-xs font-medium transition-colors sm:px-3 sm:text-sm ${inCompareMode ? 'border-transparent text-danger hover:bg-danger/15' : 'border-accent/40 text-accent hover:bg-accent/15'}`}
               >
                 {inCompareMode ? 'Exit Compare' : 'Compare'}
               </button>
@@ -310,7 +310,7 @@ export default function App() {
                   </button>
                 );
               })}
-              <div className="mx-1 h-5 w-px bg-gray-700" />
+              <div className="mx-1 h-5 w-px bg-border-strong" />
               <div className="relative flex gap-1">
                 <div className={`flex gap-1 transition-all duration-300 ${isIntradayPeriod ? 'opacity-0 pointer-events-none absolute' : 'opacity-100'}`}>
                   {DAILY_INTERVALS.map((i) => (
@@ -345,7 +345,7 @@ export default function App() {
               <StockDetails symbol={symbol} currency={currency} prices={currencyHistory?.prices ?? nativeHistory?.prices} indicators={currencyHistory?.indicators ?? nativeHistory?.indicators} showDividends={showDividends} />
             </div>
         ) : !inCompareMode && (
-          <div className="flex h-[500px] items-center justify-center text-gray-500 px-4 text-center">
+          <div className="flex h-[500px] items-center justify-center text-muted px-4 text-center">
             Enter a stock ticker to view the chart
           </div>
         )}

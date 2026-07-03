@@ -8,16 +8,16 @@ function Item({ label, value, tooltip }: { label: string; value: string; tooltip
   return (
     <div className="flex justify-between gap-2 py-1">
       {tooltip ? (
-        <span tabIndex={0} className="group relative shrink-0 cursor-help text-gray-500 underline decoration-dotted decoration-gray-600 underline-offset-2">
+        <span tabIndex={0} className="group relative shrink-0 cursor-help text-muted underline decoration-dotted decoration-border-strong underline-offset-2">
           {label}
-          <span className="pointer-events-none absolute bottom-full left-0 z-30 mb-1.5 hidden w-56 rounded bg-gray-800 px-2.5 py-1.5 text-xs leading-relaxed text-gray-200 shadow-lg group-hover:block group-focus:block">
+          <span className="pointer-events-none absolute bottom-full left-0 z-30 mb-1.5 hidden w-56 rounded-md border border-border bg-surface-raised px-2.5 py-1.5 text-xs leading-relaxed text-secondary shadow-lg group-hover:block group-focus:block">
             {tooltip}
           </span>
         </span>
       ) : (
-        <span className="shrink-0 text-gray-500">{label}</span>
+        <span className="shrink-0 text-muted">{label}</span>
       )}
-      <span className="truncate text-white">{value}</span>
+      <span className="truncate text-primary">{value}</span>
     </div>
   );
 }
@@ -28,13 +28,13 @@ function Recommendation({ value, count }: { value: string | null; count: number 
   const countStr = count != null ? ` (${count})` : '';
   return (
     <div className="flex justify-between gap-2 py-1">
-      <span tabIndex={0} className="group relative cursor-help text-gray-500 underline decoration-dotted decoration-gray-600 underline-offset-2">
+      <span tabIndex={0} className="group relative cursor-help text-muted underline decoration-dotted decoration-border-strong underline-offset-2">
         Rating
-        <span className="pointer-events-none absolute bottom-full left-0 z-30 mb-1.5 hidden w-56 rounded bg-gray-800 px-2.5 py-1.5 text-xs leading-relaxed text-gray-200 shadow-lg group-hover:block group-focus:block">
+        <span className="pointer-events-none absolute bottom-full left-0 z-30 mb-1.5 hidden w-56 rounded-md border border-border bg-surface-raised px-2.5 py-1.5 text-xs leading-relaxed text-secondary shadow-lg group-hover:block group-focus:block">
           {tip}
         </span>
       </span>
-      <span className={RECOMMENDATION_COLORS[value] ?? 'text-white'}>{formatRecommendation(value)}{countStr}</span>
+      <span className={RECOMMENDATION_COLORS[value] ?? 'text-primary'}>{formatRecommendation(value)}{countStr}</span>
     </div>
   );
 }
@@ -57,20 +57,20 @@ function DividendTable({ dividends }: { dividends: DividendEntry[] }) {
   const shown = expanded ? dividends : dividends.slice(0, 6);
 
   return (
-    <div className="rounded-lg border border-gray-800 bg-gray-900/50 px-4 py-3">
-      <h3 className="mb-2 text-sm font-medium text-gray-400">Dividends</h3>
+    <div className="rounded-xl border border-border bg-surface-raised px-4 py-3 shadow-sm">
+      <h3 className="mb-2 text-sm font-medium text-muted">Dividends</h3>
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-gray-800 text-gray-500">
+          <tr className="border-b border-border text-muted">
             <th className="pb-1 text-left font-medium">Date</th>
             <th className="pb-1 text-right font-medium">Amount</th>
           </tr>
         </thead>
         <tbody>
           {shown.map((p) => (
-            <tr key={p.date} className="border-b border-gray-800/50">
-              <td className="py-1 text-gray-300">{p.date}</td>
-              <td className="py-1 text-right text-white">{p.amount.toFixed(4)}</td>
+            <tr key={p.date} className="border-b border-border/60">
+              <td className="py-1 text-secondary">{p.date}</td>
+              <td className="py-1 text-right text-primary">{p.amount.toFixed(4)}</td>
             </tr>
           ))}
         </tbody>
@@ -78,7 +78,7 @@ function DividendTable({ dividends }: { dividends: DividendEntry[] }) {
       {dividends.length > 6 && (
         <button
           onClick={() => setExpanded(!expanded)}
-          className="mt-2 text-xs text-gray-400 hover:text-white transition-colors"
+          className="mt-2 text-xs text-muted transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           {expanded ? 'Show less' : `Show all ${dividends.length} payments`}
         </button>
@@ -101,7 +101,7 @@ export default function StockDetails({ symbol, currency, prices, indicators, sho
   if (isLoading) {
     return (
       <div className="mt-4 flex justify-center py-8">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-600 border-t-blue-400" />
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-border-strong border-t-accent" />
       </div>
     );
   }
@@ -109,9 +109,9 @@ export default function StockDetails({ symbol, currency, prices, indicators, sho
   if (error || !data) {
     const message = error instanceof Error ? error.message : `No quote data returned for ${symbol.toUpperCase()}.`;
     return (
-      <div role="alert" className="mt-4 rounded-lg border border-red-900/60 bg-red-950/30 px-4 py-3 text-sm text-red-100">
+      <div role="alert" className="mt-4 rounded-xl border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-primary">
         <div className="font-medium">Unable to load stock details</div>
-        <div className="mt-1 break-words text-red-200">{message}</div>
+        <div className="mt-1 break-words text-danger">{message}</div>
       </div>
     );
   }
@@ -132,8 +132,8 @@ export default function StockDetails({ symbol, currency, prices, indicators, sho
   return (
     <div className="mt-4 space-y-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="rounded-lg border border-gray-800 bg-gray-900/50 px-4 py-3">
-          <h3 className="mb-2 text-sm font-medium text-gray-400">Fundamentals</h3>
+        <div className="rounded-xl border border-border bg-surface-raised px-4 py-3 shadow-sm">
+          <h3 className="mb-2 text-sm font-medium text-muted">Fundamentals</h3>
           <div className="grid grid-cols-2 gap-x-6 text-sm">
             <Item label="P/E" value={formatNumber(data.peRatio)} tooltip="Price-to-Earnings ratio. Compares stock price to earnings per share. Lower P/E may indicate undervaluation; higher P/E suggests growth expectations. Compare within the same sector." />
             <Item label="EPS" value={formatNumber(data.eps)} tooltip="Earnings Per Share. Company's net profit divided by shares outstanding. Higher is better. Negative EPS means the company is losing money." />
@@ -152,8 +152,8 @@ export default function StockDetails({ symbol, currency, prices, indicators, sho
           </div>
         </div>
 
-        <div className="rounded-lg border border-gray-800 bg-gray-900/50 px-4 py-3">
-          <h3 className="mb-2 text-sm font-medium text-gray-400">Technicals</h3>
+        <div className="rounded-xl border border-border bg-surface-raised px-4 py-3 shadow-sm">
+          <h3 className="mb-2 text-sm font-medium text-muted">Technicals</h3>
           <div className="grid grid-cols-2 gap-x-6 text-sm">
             <Item label="RSI" value={formatNumber(rsiVal, 1)} tooltip="RSI (14-period). 0–100 scale. Above 70 = overbought, below 30 = oversold. Measures the speed and magnitude of recent price changes." />
             <div />
