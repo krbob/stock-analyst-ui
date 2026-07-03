@@ -165,11 +165,11 @@ Multi-stage build: Node 24 for compilation, Nginx Alpine for serving.
 # Build
 docker build -t stock-analyst-ui .
 
-# Run (API_URL defaults to http://localhost:8080)
+# Run
 docker run -p 3001:8080 -e API_URL=http://your-api:8080 stock-analyst-ui
 ```
 
-The `API_URL` environment variable is substituted into the Nginx config at container startup.
+The `API_URL` environment variable is required and is substituted into the Nginx config at container startup.
 
 ## CI/CD
 

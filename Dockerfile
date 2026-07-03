@@ -9,8 +9,6 @@ FROM nginxinc/nginx-unprivileged:1.31-alpine
 
 USER root
 
-ENV API_URL=http://localhost:8080
-
 COPY --chown=101:101 nginx.conf /etc/nginx/conf.d/default.conf.template
 COPY --chown=101:101 docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh \

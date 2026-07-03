@@ -49,6 +49,11 @@ jobs:
 
       - name: Smoke test
         run: |
+          if docker run --rm stock-analyst-ui:test; then
+            echo "Container started without required API_URL"
+            exit 1
+          fi
+
           docker run -d --name ui -p 3000:8080 \
             -e API_URL=http://localhost:8080 \
             stock-analyst-ui:test
