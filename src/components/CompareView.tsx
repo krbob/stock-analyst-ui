@@ -330,7 +330,7 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
                       const isBest = i === bestIdx;
                       const gainColor = m.gain && typeof v === 'number' ? (v >= 0 ? 'text-green-400' : 'text-red-400') : 'text-gray-300';
                       return (
-                        <td key={i} className={`px-3 py-1.5 text-right ${isBest ? 'font-semibold text-green-400' : gainColor}`}>
+                        <td key={i} className={`px-3 py-1.5 text-right ${isBest ? 'bg-amber-500/10 font-semibold text-amber-300' : gainColor}`}>
                           {formatted}
                         </td>
                       );

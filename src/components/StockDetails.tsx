@@ -134,7 +134,15 @@ export default function StockDetails({ symbol, currency, prices, indicators, sho
     );
   }
 
-  if (error || !data) return null;
+  if (error || !data) {
+    const message = error instanceof Error ? error.message : `No quote data returned for ${symbol.toUpperCase()}.`;
+    return (
+      <div role="alert" className="mt-4 rounded-lg border border-red-900/60 bg-red-950/30 px-4 py-3 text-sm text-red-100">
+        <div className="font-medium">Unable to load stock details</div>
+        <div className="mt-1 break-words text-red-200">{message}</div>
+      </div>
+    );
+  }
 
   // Derive technicals from the last point of each indicator series
   const rsiVal = lastValue(indicators?.rsi);

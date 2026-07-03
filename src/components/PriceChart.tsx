@@ -139,6 +139,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
   const chartRef = useRef<IChartApi | null>(null);
   const pricesRef = useRef<Map<string, HistoricalPrice>>(new Map());
   const indRef = useRef<Map<string, IndicatorSnapshot>>(new Map());
+  const indicatorCleanupRef = useRef<(() => void)[]>([]);
   const [legend, setLegend] = useState<HistoricalPrice | null>(null);
   const [indLegend, setIndLegend] = useState<IndicatorSnapshot | null>(null);
   const fittingRef = useRef(false);
@@ -148,8 +149,6 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
   const request = createHistoryRequest(symbol, period, interval, indicators, currency, dividends);
   const currentData = matchesHistoryRequest(data, request) ? data : undefined;
   const prevDataRef = useRef(currentData);
-
-  const active = activeIndicators ?? new Set<string>();
 
   const scheduleFitReset = () => {
     if (fitTimerRef.current) clearTimeout(fitTimerRef.current);
@@ -218,14 +217,12 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ---- Series + data (recreated on type or data change) ----
+  // ---- Base series + data (price, volume, dividend markers) ----
   useEffect(() => {
     const chart = chartRef.current;
     if (!chart || !currentData) {
       pricesRef.current = new Map();
-      indRef.current = new Map();
       setLegend(null);
-      setIndLegend(null);
       if (resetRef) resetRef.current = null;
       return;
     }
@@ -233,9 +230,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
     const priceMap = new Map<string, HistoricalPrice>();
     for (const p of currentData.prices) priceMap.set(timeKey(p), p);
     pricesRef.current = priceMap;
-    indRef.current = currentData.indicators ? buildIndicatorLookup(currentData.indicators, active) : new Map();
     setLegend(null);
-    setIndLegend(null);
 
     const isIntraday = currentData.prices.some((p) => p.timestamp != null);
     chart.applyOptions({
@@ -304,118 +299,6 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
     });
     cleanups.push(() => chart.removeSeries(volumeSeries));
 
-    // --- Overlay indicators (SMA, EMA, BB on pane 0) ---
-    const ind = currentData.indicators;
-    if (ind) {
-      const indicatorPanes: IndicatorPaneKind[] = [];
-      const overlayKeys = ['sma50', 'sma200', 'ema50', 'ema200'] as const;
-      for (const key of overlayKeys) {
-        if (!active.has(key)) continue;
-        const values = ind[key];
-        if (!values) continue;
-        const series = chart.addSeries(LineSeries, {
-          color: OVERLAY_COLORS[key],
-          lineWidth: 1,
-          priceScaleId: 'right',
-        });
-        series.setData(values.map((v) => ({ time: chartTime(v), value: v.value })));
-        cleanups.push(() => chart.removeSeries(series));
-      }
-
-      if (ind.bb && active.has('bb')) {
-        const bbLines = [
-          { data: ind.bb.map((v) => ({ time: chartTime(v), value: v.upper })), color: OVERLAY_COLORS.bb_upper },
-          { data: ind.bb.map((v) => ({ time: chartTime(v), value: v.middle })), color: OVERLAY_COLORS.bb_middle, style: 2 },
-          { data: ind.bb.map((v) => ({ time: chartTime(v), value: v.lower })), color: OVERLAY_COLORS.bb_lower },
-        ];
-        for (const line of bbLines) {
-          const series = chart.addSeries(LineSeries, {
-            color: line.color,
-            lineWidth: 1,
-            lineStyle: (line as { style?: number }).style,
-            priceScaleId: 'right',
-          });
-          series.setData(line.data);
-          cleanups.push(() => chart.removeSeries(series));
-        }
-      }
-
-      // --- RSI pane ---
-      if (ind.rsi && active.has('rsi')) {
-        indicatorPanes.push('rsi');
-        const rsiPane = chart.addPane();
-        const rsiPaneIdx = rsiPane.paneIndex();
-
-        const rsiSeries = chart.addSeries(LineSeries, {
-          color: '#eab308',
-          lineWidth: 1,
-          priceFormat: { type: 'custom', formatter: (v: number) => v.toFixed(0) },
-        }, rsiPaneIdx);
-        rsiSeries.setData(ind.rsi.map((v) => ({ time: chartTime(v), value: v.value })));
-        cleanups.push(() => chart.removeSeries(rsiSeries));
-
-        // Reference lines at 70 and 30
-        for (const level of [70, 30]) {
-          const refSeries = chart.addSeries(LineSeries, {
-            color: '#4b5563',
-            lineWidth: 1,
-            lineStyle: 2,
-            priceScaleId: 'right',
-            crosshairMarkerVisible: false,
-            lastValueVisible: false,
-          }, rsiPaneIdx);
-          refSeries.setData(ind.rsi.map((v) => ({ time: chartTime(v), value: level })));
-          cleanups.push(() => chart.removeSeries(refSeries));
-        }
-
-        chart.priceScale('right', rsiPaneIdx).applyOptions({
-          autoScale: true,
-          mode: PriceScaleMode.Normal,
-          scaleMargins: { top: 0.05, bottom: 0.05 },
-        });
-      }
-
-      // --- MACD pane ---
-      if (ind.macd && active.has('macd')) {
-        indicatorPanes.push('macd');
-        const macdPane = chart.addPane();
-        const macdPaneIdx = macdPane.paneIndex();
-
-        const macdSeries = chart.addSeries(LineSeries, {
-          color: '#3b82f6',
-          lineWidth: 1,
-          priceFormat: { type: 'custom', formatter: (v: number) => v.toFixed(2) },
-        }, macdPaneIdx);
-        macdSeries.setData(ind.macd.map((v) => ({ time: chartTime(v), value: v.macd })));
-        cleanups.push(() => chart.removeSeries(macdSeries));
-
-        const signalSeries = chart.addSeries(LineSeries, {
-          color: '#f97316',
-          lineWidth: 1,
-        }, macdPaneIdx);
-        signalSeries.setData(ind.macd.map((v) => ({ time: chartTime(v), value: v.signal })));
-        cleanups.push(() => chart.removeSeries(signalSeries));
-
-        const histSeries = chart.addSeries(HistogramSeries, {
-          priceScaleId: 'right',
-        }, macdPaneIdx);
-        histSeries.setData(ind.macd.map((v) => ({
-          time: chartTime(v),
-          value: v.histogram,
-          color: v.histogram >= 0 ? '#22c55e80' : '#ef444480',
-        })));
-        cleanups.push(() => chart.removeSeries(histSeries));
-
-        chart.priceScale('right', macdPaneIdx).applyOptions({
-          autoScale: true,
-          mode: PriceScaleMode.Normal,
-          scaleMargins: { top: 0.05, bottom: 0.05 },
-        });
-      }
-
-      rebalancePanes(chart, indicatorPanes);
-    }
-
     chart.priceScale('right').applyOptions({
       autoScale: true,
       mode: logScale ? PriceScaleMode.Logarithmic : PriceScaleMode.Normal,
@@ -440,9 +323,145 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
     onZoomChange?.(false);
 
     return () => cleanups.forEach((fn) => fn());
-  // onZoomChange/resetRef/active are stable refs from parent — including them causes infinite loops
+  // onZoomChange/resetRef are stable refs from parent — including them causes infinite loops
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentData, lineChart, activeIndicators, showDividends]);
+  }, [currentData, lineChart, showDividends]);
+
+  // ---- Indicators (kept separate so toggles do not recreate price/volume series) ----
+  useEffect(() => {
+    const chart = chartRef.current;
+    indicatorCleanupRef.current.forEach((fn) => fn());
+    indicatorCleanupRef.current = [];
+
+    const ind = currentData?.indicators;
+    const active = activeIndicators ?? new Set<string>();
+    if (!chart || !ind) {
+      indRef.current = new Map();
+      setIndLegend(null);
+      chart?.panes()[0]?.setStretchFactor(1);
+      return;
+    }
+
+    indRef.current = buildIndicatorLookup(ind, active);
+    setIndLegend(null);
+
+    const cleanups: (() => void)[] = [];
+    const indicatorPanes: IndicatorPaneKind[] = [];
+
+    // --- Overlay indicators (SMA, EMA, BB on pane 0) ---
+    const overlayKeys = ['sma50', 'sma200', 'ema50', 'ema200'] as const;
+    for (const key of overlayKeys) {
+      if (!active.has(key)) continue;
+      const values = ind[key];
+      if (!values) continue;
+      const series = chart.addSeries(LineSeries, {
+        color: OVERLAY_COLORS[key],
+        lineWidth: 1,
+        priceScaleId: 'right',
+      });
+      series.setData(values.map((v) => ({ time: chartTime(v), value: v.value })));
+      cleanups.push(() => chart.removeSeries(series));
+    }
+
+    if (ind.bb && active.has('bb')) {
+      const bbLines = [
+        { data: ind.bb.map((v) => ({ time: chartTime(v), value: v.upper })), color: OVERLAY_COLORS.bb_upper },
+        { data: ind.bb.map((v) => ({ time: chartTime(v), value: v.middle })), color: OVERLAY_COLORS.bb_middle, style: 2 },
+        { data: ind.bb.map((v) => ({ time: chartTime(v), value: v.lower })), color: OVERLAY_COLORS.bb_lower },
+      ];
+      for (const line of bbLines) {
+        const series = chart.addSeries(LineSeries, {
+          color: line.color,
+          lineWidth: 1,
+          lineStyle: (line as { style?: number }).style,
+          priceScaleId: 'right',
+        });
+        series.setData(line.data);
+        cleanups.push(() => chart.removeSeries(series));
+      }
+    }
+
+    // --- RSI pane ---
+    if (ind.rsi && active.has('rsi')) {
+      indicatorPanes.push('rsi');
+      const rsiPane = chart.addPane();
+      const rsiPaneIdx = rsiPane.paneIndex();
+
+      const rsiSeries = chart.addSeries(LineSeries, {
+        color: '#eab308',
+        lineWidth: 1,
+        priceFormat: { type: 'custom', formatter: (v: number) => v.toFixed(0) },
+      }, rsiPaneIdx);
+      rsiSeries.setData(ind.rsi.map((v) => ({ time: chartTime(v), value: v.value })));
+      cleanups.push(() => chart.removeSeries(rsiSeries));
+
+      // Reference lines at 70 and 30
+      for (const level of [70, 30]) {
+        const refSeries = chart.addSeries(LineSeries, {
+          color: '#4b5563',
+          lineWidth: 1,
+          lineStyle: 2,
+          priceScaleId: 'right',
+          crosshairMarkerVisible: false,
+          lastValueVisible: false,
+        }, rsiPaneIdx);
+        refSeries.setData(ind.rsi.map((v) => ({ time: chartTime(v), value: level })));
+        cleanups.push(() => chart.removeSeries(refSeries));
+      }
+
+      chart.priceScale('right', rsiPaneIdx).applyOptions({
+        autoScale: true,
+        mode: PriceScaleMode.Normal,
+        scaleMargins: { top: 0.05, bottom: 0.05 },
+      });
+    }
+
+    // --- MACD pane ---
+    if (ind.macd && active.has('macd')) {
+      indicatorPanes.push('macd');
+      const macdPane = chart.addPane();
+      const macdPaneIdx = macdPane.paneIndex();
+
+      const macdSeries = chart.addSeries(LineSeries, {
+        color: '#3b82f6',
+        lineWidth: 1,
+        priceFormat: { type: 'custom', formatter: (v: number) => v.toFixed(2) },
+      }, macdPaneIdx);
+      macdSeries.setData(ind.macd.map((v) => ({ time: chartTime(v), value: v.macd })));
+      cleanups.push(() => chart.removeSeries(macdSeries));
+
+      const signalSeries = chart.addSeries(LineSeries, {
+        color: '#f97316',
+        lineWidth: 1,
+      }, macdPaneIdx);
+      signalSeries.setData(ind.macd.map((v) => ({ time: chartTime(v), value: v.signal })));
+      cleanups.push(() => chart.removeSeries(signalSeries));
+
+      const histSeries = chart.addSeries(HistogramSeries, {
+        priceScaleId: 'right',
+      }, macdPaneIdx);
+      histSeries.setData(ind.macd.map((v) => ({
+        time: chartTime(v),
+        value: v.histogram,
+        color: v.histogram >= 0 ? '#22c55e80' : '#ef444480',
+      })));
+      cleanups.push(() => chart.removeSeries(histSeries));
+
+      chart.priceScale('right', macdPaneIdx).applyOptions({
+        autoScale: true,
+        mode: PriceScaleMode.Normal,
+        scaleMargins: { top: 0.05, bottom: 0.05 },
+      });
+    }
+
+    rebalancePanes(chart, indicatorPanes);
+    indicatorCleanupRef.current = cleanups;
+
+    return () => {
+      cleanups.forEach((fn) => fn());
+      if (indicatorCleanupRef.current === cleanups) indicatorCleanupRef.current = [];
+    };
+  }, [currentData, activeIndicators, lineChart, showDividends]);
 
   // ---- Log scale (independent of series) ----
   useEffect(() => {
