@@ -131,7 +131,7 @@ function StockInfo({ symbol, currency, onCurrencyChange, livePrice, hideGain }: 
 export default function App() {
   const [symbol, setSymbol] = useState(URL_INIT.symbol);
   const [period, setPeriod] = useState<Period>(URL_INIT.period);
-  const [interval, setInterval] = useState<Interval | undefined>(URL_INIT.interval);
+  const [interval, setSelectedInterval] = useState<Interval | undefined>(URL_INIT.interval);
   const [lineChart, setLineChart] = useState(URL_INIT.lineChart);
   const [logScale, setLogScale] = useState(URL_INIT.logScale);
   const [indicators, setIndicators] = useState<Set<string>>(URL_INIT.indicators);
@@ -185,7 +185,7 @@ export default function App() {
 
   const handlePeriod = (p: Period) => {
     setPeriod(p);
-    if (!inCompareMode) setInterval(DEFAULT_INTRADAY[p] ?? undefined);
+    if (!inCompareMode) setSelectedInterval(DEFAULT_INTRADAY[p] ?? undefined);
   };
 
   const handleSelect = (sym: string) => {
@@ -197,7 +197,7 @@ export default function App() {
     } else {
       setSymbol(sym);
       setPeriod('1y');
-      setInterval(undefined);
+      setSelectedInterval(undefined);
       setCurrency(undefined);
     }
   };
@@ -316,7 +316,7 @@ export default function App() {
                   {DAILY_INTERVALS.map((i) => (
                     <button
                       key={i.value}
-                      onClick={() => { if (activeInterval !== i.value) setInterval(i.value); }}
+                      onClick={() => { if (activeInterval !== i.value) setSelectedInterval(i.value); }}
                       className={btnClass(activeInterval === i.value)}
                     >
                       {i.label}
@@ -327,7 +327,7 @@ export default function App() {
                   {INTRADAY_INTERVALS.map((i) => (
                     <button
                       key={i.value}
-                      onClick={() => { if (activeInterval !== i.value) setInterval(i.value); }}
+                      onClick={() => { if (activeInterval !== i.value) setSelectedInterval(i.value); }}
                       className={btnClass(activeInterval === i.value)}
                     >
                       {i.label}
