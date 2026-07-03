@@ -1,46 +1,11 @@
 import { useState, useRef, useCallback, type FormEvent, type KeyboardEvent } from 'react';
 import { useDebounce } from '../hooks/useDebounce';
 import { useTickerSearch } from '../api/queries';
-import { addRecentItem, loadRecentItems, removeRecentItem } from '../lib/recents';
-
-const RECENTS_KEY = 'recentTickers';
-const MAX_RECENTS = 8;
-
-interface RecentTicker {
-  symbol: string;
-  name: string;
-  exchange: string;
-}
-
-const recentTickerOptions = {
-  maxItems: MAX_RECENTS,
-  normalize: (value: unknown): RecentTicker | null => {
-    if (!value || typeof value !== 'object') return null;
-    const item = value as Partial<RecentTicker>;
-    if (typeof item.symbol !== 'string' || item.symbol.trim() === '') return null;
-    return {
-      symbol: item.symbol.trim().toUpperCase(),
-      name: typeof item.name === 'string' ? item.name : '',
-      exchange: typeof item.exchange === 'string' ? item.exchange : '',
-    };
-  },
-  keyOf: (item: RecentTicker) => item.symbol.toLowerCase(),
-  mergeDuplicate: (current: RecentTicker, next: RecentTicker) => (
-    !current.name && next.name ? next : current
-  ),
-};
-
-function loadRecents(): RecentTicker[] {
-  return loadRecentItems(RECENTS_KEY, recentTickerOptions);
-}
-
-function addRecent(ticker: RecentTicker): RecentTicker[] {
-  return addRecentItem(RECENTS_KEY, recentTickerOptions.normalize(ticker) ?? ticker, recentTickerOptions);
-}
-
-function removeRecent(symbol: string): RecentTicker[] {
-  return removeRecentItem(RECENTS_KEY, symbol.toLowerCase(), recentTickerOptions);
-}
+import {
+  addRecentTicker as addRecent,
+  loadRecentTickers as loadRecents,
+  removeRecentTicker as removeRecent,
+} from '../lib/ticker-recents';
 
 interface TickerSearchProps {
   onSelect: (symbol: string) => void;

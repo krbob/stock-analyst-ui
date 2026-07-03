@@ -24,6 +24,21 @@ export function formatGain(value: number | null | undefined, decimals = 2): stri
   return formatRatioPercent(value, { signed: true, decimals });
 }
 
+/**
+ * Position of `value` within [min, max] as a 0..1 fraction (clamped).
+ * Returns null when any bound is missing/non-finite or the range is empty.
+ */
+export function rangeFraction(
+  value: number | null | undefined,
+  min: number | null | undefined,
+  max: number | null | undefined,
+): number | null {
+  if (value == null || min == null || max == null) return null;
+  if (!Number.isFinite(value) || !Number.isFinite(min) || !Number.isFinite(max)) return null;
+  if (max <= min) return null;
+  return Math.min(1, Math.max(0, (value - min) / (max - min)));
+}
+
 export function formatMarketCap(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value)) return EMPTY_VALUE;
   if (value >= 1e12) return `${(value / 1e12).toFixed(1)}T`;

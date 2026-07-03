@@ -5,6 +5,7 @@ import CompareView from './components/CompareView';
 import TickerSearch from './components/TickerSearch';
 import CurrencyPicker from './components/CurrencyPicker';
 import SegmentedControl, { type SegmentedOption } from './components/SegmentedControl';
+import EmptyState from './components/EmptyState';
 import ToggleButton from './components/ToggleButton';
 import ThemeToggle from './components/ThemeToggle';
 import IndicatorsPopover from './components/IndicatorsPopover';
@@ -332,7 +333,8 @@ export default function App() {
 
         {/* Single-stock content (hidden but mounted in compare to avoid chart.remove() crash) */}
         {symbol ? (
-          <div className={inCompareMode ? 'hidden' : ''}>
+          <div className={inCompareMode ? 'hidden' : 'xl:grid xl:grid-cols-[minmax(0,1fr)_380px] xl:items-start xl:gap-6'}>
+            <section className="min-w-0">
             <div className="mb-4">
               <StockInfo symbol={symbol} currency={currency} livePrice={isIntradayPeriod && !currency ? nativeHistory?.prices.at(-1)?.close : undefined} hideGain={isIntradayPeriod} />
             </div>
@@ -379,15 +381,28 @@ export default function App() {
             <div className="overflow-hidden rounded-xl border border-border bg-chart-bg shadow-sm">
               <PriceChart symbol={symbol} period={period} interval={interval} lineChart={lineChart} logScale={logScale} indicators={indicatorArray} activeIndicators={indicators} currency={currency} dividends={dividendsParam} showDividends={showDividends} onZoomChange={setChartZoomed} resetRef={resetViewRef} />
             </div>
+            </section>
 
-            <StockDetails symbol={symbol} currency={currency} prices={currencyHistory?.prices ?? nativeHistory?.prices} indicators={currencyHistory?.indicators ?? nativeHistory?.indicators} showDividends={showDividends} />
+            <aside className="min-w-0 xl:sticky xl:top-[4.25rem] xl:max-h-[calc(100vh-5.25rem)] xl:overflow-y-auto xl:pb-2">
+              <StockDetails symbol={symbol} currency={currency} prices={currencyHistory?.prices ?? nativeHistory?.prices} indicators={currencyHistory?.indicators ?? nativeHistory?.indicators} showDividends={showDividends} />
+            </aside>
           </div>
         ) : !inCompareMode && (
-          <div className="flex h-[500px] items-center justify-center text-muted px-4 text-center">
-            Enter a stock ticker to view the chart
-          </div>
+          <EmptyState onSelect={handleSelect} />
         )}
       </main>
+
+      <footer className="mx-auto max-w-7xl px-4 pb-6 pt-2 text-xs text-muted sm:px-6">
+        Charts powered by{' '}
+        <a
+          href="https://www.tradingview.com/lightweight-charts/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline decoration-dotted underline-offset-2 outline-none transition-colors hover:text-secondary focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          TradingView Lightweight Charts
+        </a>
+      </footer>
     </div>
   );
 }
