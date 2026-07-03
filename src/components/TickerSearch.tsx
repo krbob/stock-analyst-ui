@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, type FormEvent, type KeyboardEvent } from 'react';
 import { useDebounce } from '../hooks/useDebounce';
 import { useTickerSearch } from '../api/queries';
+import { addRecentItem, loadRecentItems, removeRecentItem } from '../lib/recents';
 
 const RECENTS_KEY = 'recentTickers';
 const MAX_RECENTS = 8;
@@ -11,42 +12,34 @@ interface RecentTicker {
   exchange: string;
 }
 
-function loadRecents(): RecentTicker[] {
-  try {
-    const stored = localStorage.getItem(RECENTS_KEY);
-    if (!stored) return [];
-    const items: RecentTicker[] = JSON.parse(stored);
-    // Deduplicate case-insensitively, keeping the entry with more metadata
-    const seen = new Map<string, RecentTicker>();
-    for (const item of items) {
-      const key = item.symbol.toLowerCase();
-      const prev = seen.get(key);
-      if (!prev || (!prev.name && item.name)) {
-        seen.set(key, item);
-      }
-    }
-    return [...seen.values()];
-  } catch {
-    return [];
-  }
-}
+const recentTickerOptions = {
+  maxItems: MAX_RECENTS,
+  normalize: (value: unknown): RecentTicker | null => {
+    if (!value || typeof value !== 'object') return null;
+    const item = value as Partial<RecentTicker>;
+    if (typeof item.symbol !== 'string' || item.symbol.trim() === '') return null;
+    return {
+      symbol: item.symbol.trim().toUpperCase(),
+      name: typeof item.name === 'string' ? item.name : '',
+      exchange: typeof item.exchange === 'string' ? item.exchange : '',
+    };
+  },
+  keyOf: (item: RecentTicker) => item.symbol.toLowerCase(),
+  mergeDuplicate: (current: RecentTicker, next: RecentTicker) => (
+    !current.name && next.name ? next : current
+  ),
+};
 
-function saveRecents(items: RecentTicker[]) {
-  localStorage.setItem(RECENTS_KEY, JSON.stringify(items));
+function loadRecents(): RecentTicker[] {
+  return loadRecentItems(RECENTS_KEY, recentTickerOptions);
 }
 
 function addRecent(ticker: RecentTicker): RecentTicker[] {
-  const recents = loadRecents().filter((t) => t.symbol.toLowerCase() !== ticker.symbol.toLowerCase());
-  recents.unshift(ticker);
-  const trimmed = recents.slice(0, MAX_RECENTS);
-  saveRecents(trimmed);
-  return trimmed;
+  return addRecentItem(RECENTS_KEY, recentTickerOptions.normalize(ticker) ?? ticker, recentTickerOptions);
 }
 
 function removeRecent(symbol: string): RecentTicker[] {
-  const recents = loadRecents().filter((t) => t.symbol.toLowerCase() !== symbol.toLowerCase());
-  saveRecents(recents);
-  return recents;
+  return removeRecentItem(RECENTS_KEY, symbol.toLowerCase(), recentTickerOptions);
 }
 
 interface TickerSearchProps {

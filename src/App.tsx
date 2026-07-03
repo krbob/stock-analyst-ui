@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import PriceChart from './components/PriceChart';
 import StockDetails from './components/StockDetails';
-import CompareView, { COMPARE_COLORS } from './components/CompareView';
+import CompareView from './components/CompareView';
 import TickerSearch from './components/TickerSearch';
 import CurrencyPicker from './components/CurrencyPicker';
 import { useQuote, useStockHistory } from './api/queries';
 import type { Interval, Period } from './api/types';
 import { parseUrlParams, buildUrlParams } from './url-state';
 import { createHistoryRequest, matchesHistoryRequest } from './api/history-utils';
-
-const fmtPct = (n: number) => (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
+import { COMPARE_COLORS } from './lib/chart-theme';
+import { formatGain } from './lib/format';
 
 const URL_INIT = parseUrlParams(window.location.search);
 
@@ -69,11 +69,10 @@ const GAIN_PERIODS = [
 ] as const;
 
 function GainChip({ label, value }: { label: string; value: number | null }) {
-  if (value == null) return null;
-  const pct = value * 100;
+  if (value == null || !Number.isFinite(value)) return null;
   return (
-    <span className={`text-xs ${pct >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-      {fmtPct(pct)} ({label})
+    <span className={`text-xs ${value >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+      {formatGain(value)} ({label})
     </span>
   );
 }
@@ -113,9 +112,9 @@ function StockInfo({ symbol, currency, onCurrencyChange, livePrice, hideGain }: 
         {nativeCurrency && (
           <CurrencyPicker nativeCurrency={nativeCurrency} value={currency} onChange={onCurrencyChange} />
         )}
-        {data && data.gain.daily != null && (
+        {data && data.gain.daily != null && Number.isFinite(data.gain.daily) && (
           <span className={`text-lg font-medium transition-opacity duration-300 ${hideGain ? 'opacity-0' : 'opacity-100'} ${data.gain.daily >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-            {fmtPct(data.gain.daily)}
+            {formatGain(data.gain.daily)}
           </span>
         )}
       </div>

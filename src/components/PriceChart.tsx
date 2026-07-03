@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { createChart, createSeriesMarkers, CandlestickSeries, LineSeries, HistogramSeries, ColorType, PriceScaleMode, type IChartApi, type ISeriesApi, type SeriesType, type Time, type UTCTimestamp } from 'lightweight-charts';
+import { createChart, createSeriesMarkers, CandlestickSeries, LineSeries, HistogramSeries, PriceScaleMode, type IChartApi, type ISeriesApi, type SeriesType, type Time, type UTCTimestamp } from 'lightweight-charts';
 import type { HistoricalPrice, Indicators } from '../api/types';
 import { useStockHistory } from '../api/queries';
 import type { Interval, Period } from '../api/types';
 import { createHistoryRequest, matchesHistoryRequest } from '../api/history-utils';
+import { CHART_OPTIONS } from '../lib/chart-theme';
 import { getPaneStretchFactors, type IndicatorPaneKind } from './price-chart-layout';
 
 // ---------------------------------------------------------------------------
@@ -59,19 +60,6 @@ function buildIndicatorLookup(ind: Indicators, active: Set<string>): Map<string,
 // ---------------------------------------------------------------------------
 // Chart styling
 // ---------------------------------------------------------------------------
-
-const CHART_OPTIONS = {
-  layout: {
-    background: { type: ColorType.Solid as const, color: '#1a1a2e' },
-    textColor: '#e0e0e0',
-  },
-  grid: {
-    vertLines: { color: '#2a2a3e' },
-    horzLines: { color: '#2a2a3e' },
-  },
-  timeScale: { borderColor: '#3a3a4e' },
-  rightPriceScale: { borderColor: '#3a3a4e' },
-} as const;
 
 const CANDLESTICK_OPTIONS = {
   upColor: '#22c55e',

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { Time } from 'lightweight-charts';
+import { formatGain, formatMarketCap, formatNumber, formatRatioPercent } from '../lib/format';
 import { normalizeFromTime, findBaseIndexByTime, findBestIdx } from './compare-utils';
 import type { HistoricalPrice } from '../api/types';
 
@@ -185,63 +186,53 @@ describe('findBestIdx', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Formatting functions (kept inline as they are not exported from compare-utils)
+// Formatting functions
 // ---------------------------------------------------------------------------
 
-const fmtNum = (d: number) => d.toFixed(2);
-const fmtPct = (d: number) => (d >= 0 ? '+' : '') + (d * 100).toFixed(2) + '%';
-const fmtRate = (d: number) => (d * 100).toFixed(2) + '%';
-const fmtBig = (d: number) => {
-  if (d >= 1e12) return (d / 1e12).toFixed(1) + 'T';
-  if (d >= 1e9) return (d / 1e9).toFixed(1) + 'B';
-  if (d >= 1e6) return (d / 1e6).toFixed(1) + 'M';
-  return d.toFixed(0);
-};
-
 describe('formatting functions', () => {
-  describe('fmtNum', () => {
+  describe('formatNumber', () => {
     it('formats to 2 decimal places', () => {
-      expect(fmtNum(123.456)).toBe('123.46');
-      expect(fmtNum(0)).toBe('0.00');
+      expect(formatNumber(123.456)).toBe('123.46');
+      expect(formatNumber(0)).toBe('0.00');
     });
   });
 
-  describe('fmtPct', () => {
+  describe('formatGain', () => {
     it('adds + for positive', () => {
-      expect(fmtPct(0.2)).toBe('+20.00%');
+      expect(formatGain(0.2)).toBe('+20.00%');
     });
 
     it('shows - for negative', () => {
-      expect(fmtPct(-0.05)).toBe('-5.00%');
+      expect(formatGain(-0.05)).toBe('-5.00%');
     });
 
     it('handles zero', () => {
-      expect(fmtPct(0)).toBe('+0.00%');
+      expect(formatGain(0)).toBe('+0.00%');
     });
   });
 
-  describe('fmtRate', () => {
+  describe('formatRatioPercent', () => {
     it('formats rate as percentage without +', () => {
-      expect(fmtRate(0.15)).toBe('15.00%');
-      expect(fmtRate(0.004)).toBe('0.40%');
+      expect(formatRatioPercent(0.15)).toBe('15.00%');
+      expect(formatRatioPercent(0.004)).toBe('0.40%');
     });
   });
 
-  describe('fmtBig', () => {
+  describe('formatMarketCap', () => {
     it('formats trillions', () => {
-      expect(fmtBig(3.8e12)).toBe('3.8T');
+      expect(formatMarketCap(3.8e12)).toBe('3.8T');
     });
 
     it('formats billions', () => {
-      expect(fmtBig(1.5e9)).toBe('1.5B');
+      expect(formatMarketCap(1.5e9)).toBe('1.5B');
     });
 
     it('formats millions', () => {
-      expect(fmtBig(42e6)).toBe('42.0M');
+      expect(formatMarketCap(42e6)).toBe('42.0M');
     });
 
     it('formats small numbers', () => {
-      expect(fmtBig(1234)).toBe('1234');
+      expect(formatMarketCap(1234)).toBe('1234');
     });
   });
 });

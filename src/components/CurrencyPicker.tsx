@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { CURRENCIES, getCurrencyName } from '../data/currencies';
+import { addRecentItem, loadRecentItems, removeRecentItem } from '../lib/recents';
 
 const RECENTS_KEY = 'recentCurrencies';
 const MAX_RECENTS = 5;
@@ -8,46 +9,24 @@ function normalizeCurrencyCode(code: string): string {
   return code.trim().toUpperCase();
 }
 
+const recentCurrencyOptions = {
+  maxItems: MAX_RECENTS,
+  normalize: (value: unknown): string | null => (
+    typeof value === 'string' && value.trim() !== '' ? normalizeCurrencyCode(value) : null
+  ),
+  keyOf: (code: string) => code,
+};
+
 function loadRecents(): string[] {
-  try {
-    const stored = localStorage.getItem(RECENTS_KEY);
-    if (!stored) return [];
-
-    const codes = JSON.parse(stored);
-    if (!Array.isArray(codes)) return [];
-
-    const seen = new Set<string>();
-    return codes
-      .filter((code): code is string => typeof code === 'string')
-      .map((code) => normalizeCurrencyCode(code))
-      .filter((code) => {
-        if (seen.has(code)) return false;
-        seen.add(code);
-        return true;
-      });
-  } catch {
-    return [];
-  }
-}
-
-function saveRecents(codes: string[]) {
-  localStorage.setItem(RECENTS_KEY, JSON.stringify(codes));
+  return loadRecentItems(RECENTS_KEY, recentCurrencyOptions);
 }
 
 function addRecent(code: string): string[] {
-  const normalizedCode = normalizeCurrencyCode(code);
-  const recents = loadRecents().filter((c) => c !== normalizedCode);
-  recents.unshift(normalizedCode);
-  const trimmed = recents.slice(0, MAX_RECENTS);
-  saveRecents(trimmed);
-  return trimmed;
+  return addRecentItem(RECENTS_KEY, normalizeCurrencyCode(code), recentCurrencyOptions);
 }
 
 function removeRecent(code: string): string[] {
-  const normalizedCode = normalizeCurrencyCode(code);
-  const recents = loadRecents().filter((c) => c !== normalizedCode);
-  saveRecents(recents);
-  return recents;
+  return removeRecentItem(RECENTS_KEY, normalizeCurrencyCode(code), recentCurrencyOptions);
 }
 
 interface CurrencyPickerProps {

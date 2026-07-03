@@ -1,76 +1,59 @@
 import { describe, it, expect } from 'vitest';
+import { formatMarketCap, formatNumber, formatRatioPercent } from '../lib/format';
 
-// Test the formatting functions used in StockDetails.
-// These are local to the module, so we replicate them here for validation.
-
-function fmtMktCap(n: number): string {
-  if (n >= 1e12) return (n / 1e12).toFixed(2) + 'T';
-  if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
-  if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
-  return n.toFixed(0);
-}
-
-function fmtRate(n: number): string {
-  return (n * 100).toFixed(2) + '%';
-}
-
-function fmtNum(n: number | null, decimals = 2): string {
-  return n != null ? n.toFixed(decimals) : '—';
-}
-
-describe('fmtMktCap', () => {
+describe('formatMarketCap', () => {
   it('formats trillions', () => {
-    expect(fmtMktCap(3.8e12)).toBe('3.80T');
-    expect(fmtMktCap(1e12)).toBe('1.00T');
+    expect(formatMarketCap(3.8e12)).toBe('3.8T');
+    expect(formatMarketCap(1e12)).toBe('1.0T');
   });
 
   it('formats billions', () => {
-    expect(fmtMktCap(250e9)).toBe('250.00B');
-    expect(fmtMktCap(1.5e9)).toBe('1.50B');
+    expect(formatMarketCap(250e9)).toBe('250.0B');
+    expect(formatMarketCap(1.5e9)).toBe('1.5B');
   });
 
   it('formats millions', () => {
-    expect(fmtMktCap(42e6)).toBe('42.0M');
-    expect(fmtMktCap(1e6)).toBe('1.0M');
+    expect(formatMarketCap(42e6)).toBe('42.0M');
+    expect(formatMarketCap(1e6)).toBe('1.0M');
   });
 
   it('formats small numbers', () => {
-    expect(fmtMktCap(999999)).toBe('999999');
-    expect(fmtMktCap(0)).toBe('0');
+    expect(formatMarketCap(999999)).toBe('999999');
+    expect(formatMarketCap(0)).toBe('0');
   });
 });
 
-describe('fmtRate', () => {
+describe('formatRatioPercent', () => {
   it('converts decimal to percentage', () => {
-    expect(fmtRate(0.15)).toBe('15.00%');
-    expect(fmtRate(0.004)).toBe('0.40%');
-    expect(fmtRate(1.52)).toBe('152.00%');
+    expect(formatRatioPercent(0.15)).toBe('15.00%');
+    expect(formatRatioPercent(0.004)).toBe('0.40%');
+    expect(formatRatioPercent(1.52)).toBe('152.00%');
   });
 
   it('handles zero', () => {
-    expect(fmtRate(0)).toBe('0.00%');
+    expect(formatRatioPercent(0)).toBe('0.00%');
   });
 
   it('handles negative', () => {
-    expect(fmtRate(-0.05)).toBe('-5.00%');
+    expect(formatRatioPercent(-0.05)).toBe('-5.00%');
   });
 });
 
-describe('fmtNum', () => {
+describe('formatNumber', () => {
   it('formats number with default 2 decimals', () => {
-    expect(fmtNum(123.456)).toBe('123.46');
+    expect(formatNumber(123.456)).toBe('123.46');
   });
 
   it('formats with custom decimals', () => {
-    expect(fmtNum(55.123, 1)).toBe('55.1');
+    expect(formatNumber(55.123, 1)).toBe('55.1');
   });
 
   it('returns dash for null', () => {
-    expect(fmtNum(null)).toBe('—');
+    expect(formatNumber(null)).toBe('—');
   });
 
   it('formats zero', () => {
-    expect(fmtNum(0)).toBe('0.00');
+    expect(formatNumber(0)).toBe('0.00');
   });
 });
 

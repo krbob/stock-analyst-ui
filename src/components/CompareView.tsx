@@ -1,25 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { createChart, LineSeries, ColorType, type IChartApi, type ISeriesApi, type SeriesType, type Time } from 'lightweight-charts';
+import { createChart, LineSeries, type IChartApi, type ISeriesApi, type SeriesType, type Time } from 'lightweight-charts';
 import { useStockHistory, useCompare } from '../api/queries';
 import type { CompareResult, HistoricalPrice, Period, Quote } from '../api/types';
 import { createHistoryRequest, matchesHistoryRequest } from '../api/history-utils';
+import { CHART_OPTIONS, COMPARE_COLORS } from '../lib/chart-theme';
+import { formatGain, formatMarketCap, formatNumber, formatRatioPercent } from '../lib/format';
+import { formatRecommendation } from '../lib/recommendation';
 import { normalizeFromTime, findBestIdx } from './compare-utils';
-
-// eslint-disable-next-line react-refresh/only-export-components
-export const COMPARE_COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899'];
-
-const CHART_OPTIONS = {
-  layout: {
-    background: { type: ColorType.Solid as const, color: '#1a1a2e' },
-    textColor: '#e0e0e0',
-  },
-  grid: {
-    vertLines: { color: '#2a2a3e' },
-    horzLines: { color: '#2a2a3e' },
-  },
-  timeScale: { borderColor: '#3a3a4e' },
-  rightPriceScale: { borderColor: '#3a3a4e' },
-} as const;
 
 // ---------------------------------------------------------------------------
 // Table helpers
@@ -35,40 +22,25 @@ interface Metric {
   gain?: boolean;
 }
 
-const fmtNum = (d: number) => d.toFixed(2);
-const fmtPct = (d: number) => (d >= 0 ? '+' : '') + (d * 100).toFixed(2) + '%';
-const fmtRate = (d: number) => (d * 100).toFixed(2) + '%';
-
-const REC_LABELS: Record<string, string> = {
-  strong_buy: 'Strong Buy', buy: 'Buy', hold: 'Hold', sell: 'Sell', strong_sell: 'Strong Sell',
-};
-
-const fmtBig = (d: number) => {
-  if (d >= 1e12) return (d / 1e12).toFixed(1) + 'T';
-  if (d >= 1e9) return (d / 1e9).toFixed(1) + 'B';
-  if (d >= 1e6) return (d / 1e6).toFixed(1) + 'M';
-  return d.toFixed(0);
-};
-
 const METRICS: Metric[] = [
-  { label: 'Price', get: (q) => q.lastPrice, fmt: (v) => v != null ? fmtNum(v as number) : '—', best: 'max' },
-  { label: 'Market Cap', get: (q) => q.marketCap, fmt: (v) => v != null ? fmtBig(v as number) : '—', best: 'max' },
-  { label: 'P/E', get: (q) => q.peRatio, fmt: (v) => v != null ? fmtNum(v as number) : '—', best: 'min' },
-  { label: 'P/B', get: (q) => q.pbRatio, fmt: (v) => v != null ? fmtNum(v as number) : '—', best: 'min' },
-  { label: 'EPS', get: (q) => q.eps, fmt: (v) => v != null ? fmtNum(v as number) : '—', best: 'max' },
-  { label: 'ROE', get: (q) => q.roe, fmt: (v) => v != null ? fmtRate(v as number) : '—', best: 'max' },
-  { label: 'Beta', get: (q) => q.beta, fmt: (v) => v != null ? fmtNum(v as number) : '—' },
-  { label: 'Div Yield', get: (q) => q.dividendYield, fmt: (v) => v != null ? fmtRate(v as number) : '—', best: 'max' },
-  { label: 'Div Growth', get: (q) => q.dividendGrowth, fmt: (v) => v != null ? fmtRate(v as number) : '—', best: 'max' },
-  { label: 'Daily', get: (q) => q.gain.daily, fmt: (v) => v != null ? fmtPct(v as number) : '—', best: 'max', gain: true },
-  { label: 'Monthly', get: (q) => q.gain.monthly, fmt: (v) => v != null ? fmtPct(v as number) : '—', best: 'max', gain: true },
-  { label: 'YTD', get: (q) => q.gain.ytd, fmt: (v) => v != null ? fmtPct(v as number) : '—', best: 'max', gain: true },
-  { label: '1Y', get: (q) => q.gain.yearly, fmt: (v) => v != null ? fmtPct(v as number) : '—', best: 'max', gain: true },
-  { label: '5Y', get: (q) => q.gain.fiveYear, fmt: (v) => v != null ? fmtPct(v as number) : '—', best: 'max', gain: true },
-  { label: '52W High', get: (q) => q.fiftyTwoWeekHigh, fmt: (v) => v != null ? fmtNum(v as number) : '—' },
-  { label: '52W Low', get: (q) => q.fiftyTwoWeekLow, fmt: (v) => v != null ? fmtNum(v as number) : '—' },
+  { label: 'Price', get: (q) => q.lastPrice, fmt: (v) => formatNumber(v as number | null), best: 'max' },
+  { label: 'Market Cap', get: (q) => q.marketCap, fmt: (v) => formatMarketCap(v as number | null), best: 'max' },
+  { label: 'P/E', get: (q) => q.peRatio, fmt: (v) => formatNumber(v as number | null), best: 'min' },
+  { label: 'P/B', get: (q) => q.pbRatio, fmt: (v) => formatNumber(v as number | null), best: 'min' },
+  { label: 'EPS', get: (q) => q.eps, fmt: (v) => formatNumber(v as number | null), best: 'max' },
+  { label: 'ROE', get: (q) => q.roe, fmt: (v) => formatRatioPercent(v as number | null), best: 'max' },
+  { label: 'Beta', get: (q) => q.beta, fmt: (v) => formatNumber(v as number | null) },
+  { label: 'Div Yield', get: (q) => q.dividendYield, fmt: (v) => formatRatioPercent(v as number | null), best: 'max' },
+  { label: 'Div Growth', get: (q) => q.dividendGrowth, fmt: (v) => formatRatioPercent(v as number | null), best: 'max' },
+  { label: 'Daily', get: (q) => q.gain.daily, fmt: (v) => formatGain(v as number | null), best: 'max', gain: true },
+  { label: 'Monthly', get: (q) => q.gain.monthly, fmt: (v) => formatGain(v as number | null), best: 'max', gain: true },
+  { label: 'YTD', get: (q) => q.gain.ytd, fmt: (v) => formatGain(v as number | null), best: 'max', gain: true },
+  { label: '1Y', get: (q) => q.gain.yearly, fmt: (v) => formatGain(v as number | null), best: 'max', gain: true },
+  { label: '5Y', get: (q) => q.gain.fiveYear, fmt: (v) => formatGain(v as number | null), best: 'max', gain: true },
+  { label: '52W High', get: (q) => q.fiftyTwoWeekHigh, fmt: (v) => formatNumber(v as number | null) },
+  { label: '52W Low', get: (q) => q.fiftyTwoWeekLow, fmt: (v) => formatNumber(v as number | null) },
   { label: 'Sector', get: (q) => q.sector, fmt: (v) => v != null ? String(v) : '—' },
-  { label: 'Recommendation', get: (q) => q.recommendation, fmt: (v) => v != null ? (REC_LABELS[v as string] ?? String(v)) : '—' },
+  { label: 'Recommendation', get: (q) => q.recommendation, fmt: (v) => formatRecommendation(v as string | null) },
 ];
 
 function fallbackChartHeight(): number {
@@ -328,7 +300,7 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
                     {values.map((v, i) => {
                       const formatted = m.fmt(v);
                       const isBest = i === bestIdx;
-                      const gainColor = m.gain && typeof v === 'number' ? (v >= 0 ? 'text-green-400' : 'text-red-400') : 'text-gray-300';
+                      const gainColor = m.gain && typeof v === 'number' && Number.isFinite(v) ? (v >= 0 ? 'text-green-400' : 'text-red-400') : 'text-gray-300';
                       return (
                         <td key={i} className={`px-3 py-1.5 text-right ${isBest ? 'bg-amber-500/10 font-semibold text-amber-300' : gainColor}`}>
                           {formatted}
