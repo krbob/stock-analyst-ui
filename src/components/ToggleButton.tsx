@@ -17,7 +17,7 @@ export default function ToggleButton({ pressed, onClick, icon, children, title, 
       aria-pressed={pressed}
       title={title}
       onClick={onClick}
-      className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2 py-1 text-xs font-medium whitespace-nowrap outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent sm:px-2.5 sm:text-sm ${
+      className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2 py-1.5 text-xs font-medium whitespace-nowrap outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent sm:px-2.5 sm:text-sm ${
         pressed
           ? 'border-accent/40 bg-accent/15 text-accent'
           : 'border-border bg-surface text-muted hover:text-primary'

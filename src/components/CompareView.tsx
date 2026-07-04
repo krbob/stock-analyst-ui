@@ -234,7 +234,7 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
       {/* Overlay chart */}
       <div className="relative overflow-hidden rounded-xl border border-border bg-chart-bg shadow-sm">
         {/* Legend */}
-        <div className="absolute left-2 top-2 z-20 flex flex-wrap gap-x-3 gap-y-0.5 rounded-lg border border-border bg-surface-raised/85 px-2.5 py-1.5 text-xs shadow-sm backdrop-blur">
+        <div className="absolute left-2 top-2 z-20 flex flex-wrap gap-x-3 gap-y-0.5 rounded-lg border border-border bg-surface-raised/85 px-2.5 py-1.5 text-xs tabular-nums shadow-sm backdrop-blur">
           {symbols.map((sym, i) => {
             const color = COMPARE_COLORS[i % COMPARE_COLORS.length];
             const val = legendValues.get(sym);
@@ -277,7 +277,7 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
         </div>
       ) : quotes.length > 0 && (
         <div className="overflow-x-auto rounded-xl border border-border bg-surface-raised shadow-sm">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm tabular-nums">
             <thead>
               <tr className="border-b border-border bg-surface/60">
                 <th className="px-3 py-2 text-left text-muted font-medium">Metric</th>

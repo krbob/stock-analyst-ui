@@ -107,7 +107,7 @@ export default function CurrencyPicker({ nativeCurrency, value, onChange }: Curr
         aria-expanded={isOpen}
         aria-haspopup="dialog"
         aria-label="Select currency"
-        className="rounded-md border border-border-strong bg-surface-raised px-2 py-0.5 text-sm text-secondary transition-colors hover:border-border-strong hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        className="inline-flex h-8 shrink-0 items-center rounded-md border border-border-strong bg-surface-raised px-2.5 text-sm text-secondary transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         {displayCode}
       </button>

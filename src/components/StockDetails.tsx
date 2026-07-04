@@ -141,7 +141,7 @@ function DividendTable({ dividends }: { dividends: DividendEntry[] }) {
   return (
     <div className="rounded-xl border border-border bg-surface-raised px-4 py-3 shadow-sm">
       <h3 className="mb-2 text-sm font-medium text-muted">Dividends</h3>
-      <table className="w-full text-sm">
+      <table className="w-full text-sm tabular-nums">
         <thead>
           <tr className="border-b border-border text-muted">
             <th className="pb-1 text-left font-medium">Date</th>
@@ -215,7 +215,7 @@ export default function StockDetails({ symbol, currency, prices, indicators, sho
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-1">
         <div className="rounded-xl border border-border bg-surface-raised px-4 py-3 shadow-sm">
           <h3 className="mb-2 text-sm font-medium text-muted">Fundamentals</h3>
-          <div className="grid grid-cols-2 gap-x-6 text-sm">
+          <div className="grid grid-cols-2 gap-x-6 text-sm tabular-nums">
             <Item label="P/E" value={formatNumber(data.peRatio)} tooltip="Price-to-Earnings ratio. Compares stock price to earnings per share. Lower P/E may indicate undervaluation; higher P/E suggests growth expectations. Compare within the same sector." />
             <Item label="EPS" value={formatNumber(data.eps)} tooltip="Earnings Per Share. Company's net profit divided by shares outstanding. Higher is better. Negative EPS means the company is losing money." />
             <Item label="P/B" value={formatNumber(data.pbRatio)} tooltip="Price-to-Book ratio. Compares stock price to book value (assets minus liabilities). Below 1.0 may indicate undervaluation; above 3.0 is typical for growth stocks." />
@@ -240,7 +240,7 @@ export default function StockDetails({ symbol, currency, prices, indicators, sho
 
         <div className="rounded-xl border border-border bg-surface-raised px-4 py-3 shadow-sm">
           <h3 className="mb-2 text-sm font-medium text-muted">Technicals</h3>
-          <div className="grid grid-cols-2 gap-x-6 text-sm">
+          <div className="grid grid-cols-2 gap-x-6 text-sm tabular-nums">
             <Item label="RSI" value={formatNumber(rsiVal, 1)} tooltip="RSI (14-period). 0–100 scale. Above 70 = overbought, below 30 = oversold. Measures the speed and magnitude of recent price changes." />
             <div />
             <RsiBar value={rsiVal} />

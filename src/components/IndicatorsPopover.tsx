@@ -67,7 +67,7 @@ export default function IndicatorsPopover({ groups, active, onToggleGroup }: Ind
         aria-expanded={open}
         aria-controls={panelId}
         aria-haspopup="true"
-        className={`inline-flex items-center gap-1.5 rounded-lg border px-2 py-1 text-xs font-medium whitespace-nowrap outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent sm:px-2.5 sm:text-sm ${
+        className={`inline-flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-xs font-medium whitespace-nowrap outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent sm:px-2.5 sm:text-sm ${
           activeCount > 0
             ? 'border-accent/40 bg-accent/15 text-accent'
             : 'border-border bg-surface text-muted hover:text-primary'

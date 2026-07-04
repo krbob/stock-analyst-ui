@@ -85,6 +85,10 @@ export function buildChartOptions(theme: ChartTheme = readChartTheme()) {
       background: { type: ColorType.Solid as const, color: theme.background },
       textColor: theme.text,
       attributionLogo: false,
+      panes: {
+        separatorColor: theme.scaleBorder,
+        separatorHoverColor: withAlpha(theme.accent, '33'),
+      },
     },
     grid: {
       vertLines: { color: theme.grid },

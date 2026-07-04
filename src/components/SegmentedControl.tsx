@@ -112,7 +112,7 @@ export default function SegmentedControl<T extends string>({
             aria-label={option.ariaLabel}
             tabIndex={active || (activeIndex < 0 && index === 0) ? 0 : -1}
             onClick={() => onChange(option.value)}
-            className={`relative z-10 rounded-md px-2 py-1 text-xs font-medium whitespace-nowrap outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent sm:px-2.5 sm:text-sm ${
+            className={`relative z-10 inline-flex items-center justify-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium whitespace-nowrap outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent sm:px-2.5 sm:text-sm ${
               active
                 ? `text-accent-foreground ${pill ? '' : 'bg-accent'}`
                 : 'text-muted hover:text-primary'

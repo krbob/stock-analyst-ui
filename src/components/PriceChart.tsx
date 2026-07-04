@@ -166,6 +166,9 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
       if (containerRef.current) {
         const rawWidth = containerRef.current.clientWidth;
         const rawHeight = containerRef.current.clientHeight;
+        // Resizing shifts the visible logical range; suppress the zoom-change
+        // callback so the Reset affordance only appears for user zoom/pan.
+        fittingRef.current = true;
         chart.applyOptions({
           width: Math.max(rawWidth, 1),
           height: Math.max(rawHeight, fallbackChartHeight(350, 500)),
@@ -173,6 +176,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
         if ((prevSize.width === 0 || prevSize.height === 0) && rawWidth > 0 && rawHeight > 0) {
           chart.timeScale().fitContent();
         }
+        scheduleFitReset();
         prevSize = { width: rawWidth, height: rawHeight };
       }
     };
@@ -244,18 +248,47 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
 
     // --- Dividend markers ---
     if (showDividends) {
-      const divMarkers = currentData.prices
-        .filter((p) => p.dividend > 0)
-        .map((p) => ({
-          time: chartTime(p),
+      const divPoints = currentData.prices
+        .map((price, index) => ({ price, index }))
+        .filter(({ price }) => price.dividend > 0);
+      if (divPoints.length > 0) {
+        const buildMarkers = (withText: boolean) => divPoints.map(({ price }) => ({
+          time: chartTime(price),
           position: 'belowBar' as const,
           shape: 'circle' as const,
           color: DIVIDEND_MARKER_COLOR,
-          text: `D ${p.dividend.toFixed(2)}`,
+          text: withText ? `D ${price.dividend.toFixed(2)}` : undefined,
         }));
-      if (divMarkers.length > 0) {
-        const markers = createSeriesMarkers(priceSeries, divMarkers);
-        cleanups.push(() => markers.detach());
+
+        // Smallest distance between two consecutive dividends, in bars.
+        let minGapBars = Infinity;
+        for (let i = 1; i < divPoints.length; i++) {
+          minGapBars = Math.min(minGapBars, divPoints[i].index - divPoints[i - 1].index);
+        }
+
+        // Hide the "D 0.00" labels once neighbouring labels would collide
+        // (~48px per label at the current zoom); dots always stay visible.
+        const MIN_LABEL_SPACE_PX = 48;
+        const markers = createSeriesMarkers(priceSeries, []);
+        let textVisible: boolean | null = null;
+        const updateMarkerText = () => {
+          const range = chart.timeScale().getVisibleLogicalRange();
+          const width = chart.timeScale().width();
+          const barSpacing = range && width > 0 && range.to > range.from
+            ? width / (range.to - range.from)
+            : 0;
+          const show = minGapBars === Infinity || barSpacing * minGapBars >= MIN_LABEL_SPACE_PX;
+          if (show !== textVisible) {
+            textVisible = show;
+            markers.setMarkers(buildMarkers(show));
+          }
+        };
+        updateMarkerText();
+        chart.timeScale().subscribeVisibleLogicalRangeChange(updateMarkerText);
+        cleanups.push(() => {
+          chart.timeScale().unsubscribeVisibleLogicalRangeChange(updateMarkerText);
+          markers.detach();
+        });
       }
     }
 
@@ -453,7 +486,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
   return (
     <div className="relative">
       {legend && (
-        <div className="absolute left-2 top-2 z-20 flex max-w-[calc(100%-70px)] flex-wrap gap-x-3 gap-y-0.5 rounded-lg border border-border bg-surface-raised/85 px-2.5 py-1.5 text-xs text-secondary shadow-sm backdrop-blur">
+        <div className="absolute left-2 top-2 z-20 flex max-w-[calc(100%-70px)] flex-wrap gap-x-3 gap-y-0.5 rounded-lg border border-border bg-surface-raised/85 px-2.5 py-1.5 text-xs tabular-nums text-secondary shadow-sm backdrop-blur">
           <span>O <span className="text-primary">{legend.open.toFixed(2)}</span></span>
           <span>H <span className="text-primary">{legend.high.toFixed(2)}</span></span>
           <span>L <span className="text-primary">{legend.low.toFixed(2)}</span></span>

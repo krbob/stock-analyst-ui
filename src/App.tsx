@@ -128,9 +128,9 @@ const DETAILS_PANEL_KEY = 'detailsPanel';
 
 function readStoredDetailsOpen(): boolean {
   try {
-    return localStorage.getItem(DETAILS_PANEL_KEY) !== 'collapsed';
+    return localStorage.getItem(DETAILS_PANEL_KEY) === 'open';
   } catch {
-    return true;
+    return false;
   }
 }
 
@@ -322,7 +322,7 @@ export default function App() {
                 type="button"
                 onClick={inCompareMode ? exitCompare : enterCompare}
                 aria-pressed={inCompareMode}
-                className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent ${
+                className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent ${
                   inCompareMode
                     ? 'border-accent/40 bg-accent/15 text-accent'
                     : 'border-border bg-surface text-secondary hover:text-primary'
@@ -382,8 +382,8 @@ export default function App() {
               />
               <SegmentedControl
                 options={[
-                  { value: 'candles', label: <span className="inline-flex items-center gap-1.5"><CandlesIcon />Candles</span>, ariaLabel: 'Candlestick chart' },
-                  { value: 'line', label: <span className="inline-flex items-center gap-1.5"><LineIcon />Line</span>, ariaLabel: 'Line chart' },
+                  { value: 'candles', label: <><CandlesIcon />Candles</>, ariaLabel: 'Candlestick chart' },
+                  { value: 'line', label: <><LineIcon />Line</>, ariaLabel: 'Line chart' },
                 ]}
                 value={lineChart ? 'line' : 'candles'}
                 onChange={(v) => setLineChart(v === 'line')}
@@ -411,7 +411,7 @@ export default function App() {
                   type="button"
                   onClick={() => resetViewRef.current?.()}
                   tabIndex={chartZoomed ? 0 : -1}
-                  className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium text-muted outline-none transition-colors hover:bg-surface hover:text-primary focus-visible:ring-2 focus-visible:ring-accent sm:text-sm"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-transparent px-2.5 py-1.5 text-xs font-medium text-muted outline-none transition-colors hover:bg-surface hover:text-primary focus-visible:ring-2 focus-visible:ring-accent sm:text-sm"
                 >
                   <ResetIcon />
                   Reset
