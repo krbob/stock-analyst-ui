@@ -8,6 +8,14 @@ test.use({
 
 const SCREENSHOT_DIR = './docs';
 
+// The details panel defaults to collapsed; open it so the gallery
+// shows the full two-column layout.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('detailsPanel', 'open');
+  });
+});
+
 async function waitForChart(page: Page) {
   // Wait for all loading spinners to disappear (data loaded)
   await page.waitForFunction(
