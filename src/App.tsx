@@ -115,6 +115,25 @@ function ResetIcon() {
   );
 }
 
+function PanelIcon() {
+  return (
+    <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M15 4v16" />
+    </svg>
+  );
+}
+
+const DETAILS_PANEL_KEY = 'detailsPanel';
+
+function readStoredDetailsOpen(): boolean {
+  try {
+    return localStorage.getItem(DETAILS_PANEL_KEY) !== 'collapsed';
+  } catch {
+    return true;
+  }
+}
+
 const GAIN_PERIODS = [
   { label: '1M', key: 'monthly' },
   { label: 'YTD', key: 'ytd' },
@@ -191,6 +210,19 @@ export default function App() {
   const [showDividends, setShowDividends] = useState(URL_INIT.showDividends);
   const [currency, setCurrency] = useState<string | undefined>(URL_INIT.currency);
   const [chartZoomed, setChartZoomed] = useState(false);
+  const [showDetails, setShowDetails] = useState(readStoredDetailsOpen);
+
+  const toggleDetails = () => {
+    setShowDetails((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(DETAILS_PANEL_KEY, next ? 'open' : 'collapsed');
+      } catch {
+        /* localStorage unavailable — preference just won't persist */
+      }
+      return next;
+    });
+  };
   const [compareSymbols, setCompareSymbols] = useState<string[]>(URL_INIT.compareSymbols);
   const resetViewRef = useRef<(() => void) | null>(null);
 
@@ -333,7 +365,7 @@ export default function App() {
 
         {/* Single-stock content (hidden but mounted in compare to avoid chart.remove() crash) */}
         {symbol ? (
-          <div className={inCompareMode ? 'hidden' : 'xl:grid xl:grid-cols-[minmax(0,1fr)_380px] xl:items-start xl:gap-6'}>
+          <div className={inCompareMode ? 'hidden' : showDetails ? 'xl:grid xl:grid-cols-[minmax(0,1fr)_380px] xl:items-start xl:gap-6' : ''}>
             <section className="min-w-0">
             <div className="mb-4">
               <StockInfo symbol={symbol} currency={currency} livePrice={isIntradayPeriod && !currency ? nativeHistory?.prices.at(-1)?.close : undefined} hideGain={isIntradayPeriod} />
@@ -364,7 +396,17 @@ export default function App() {
                 Div
               </ToggleButton>
               <IndicatorsPopover groups={INDICATORS} active={indicators} onToggleGroup={toggleIndicatorGroup} />
-              <div className={`ml-auto transition-opacity duration-200 ${chartZoomed ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+              <div className="ml-auto hidden xl:block">
+                <ToggleButton
+                  pressed={showDetails}
+                  onClick={toggleDetails}
+                  icon={<PanelIcon />}
+                  title={showDetails ? 'Hide the details panel to widen the chart' : 'Show the details panel'}
+                >
+                  Details
+                </ToggleButton>
+              </div>
+              <div className={`transition-opacity duration-200 xl:ml-0 ml-auto ${chartZoomed ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                 <button
                   type="button"
                   onClick={() => resetViewRef.current?.()}
@@ -383,7 +425,7 @@ export default function App() {
             </div>
             </section>
 
-            <aside className="min-w-0 xl:sticky xl:top-[4.25rem] xl:max-h-[calc(100vh-5.25rem)] xl:overflow-y-auto xl:pb-2">
+            <aside className={`min-w-0 xl:sticky xl:top-[4.25rem] xl:max-h-[calc(100vh-5.25rem)] xl:overflow-y-auto xl:pb-2 ${showDetails ? '' : 'xl:hidden'}`}>
               <StockDetails symbol={symbol} currency={currency} prices={currencyHistory?.prices ?? nativeHistory?.prices} indicators={currencyHistory?.indicators ?? nativeHistory?.indicators} showDividends={showDividends} />
             </aside>
           </div>
