@@ -371,8 +371,9 @@ export default function App() {
               <StockInfo symbol={symbol} currency={currency} livePrice={isIntradayPeriod && !currency ? nativeHistory?.prices.at(-1)?.close : undefined} hideGain={isIntradayPeriod} />
             </div>
 
-            {/* Toolbar */}
-            <div className="mb-3 flex flex-wrap items-center gap-2">
+            {/* Toolbar: wrapping controls on the left, non-wrapping Reset/Details anchor pinned top-right */}
+            <div className="mb-3 flex items-start gap-2">
+              <div className="flex min-w-0 grow flex-wrap items-center gap-2">
               <SegmentedControl options={PERIODS} value={period} onChange={handlePeriod} ariaLabel="Time period" className="max-w-full overflow-x-auto" />
               <SegmentedControl
                 options={intervalOptions}
@@ -396,26 +397,29 @@ export default function App() {
                 Div
               </ToggleButton>
               <IndicatorsPopover groups={INDICATORS} active={indicators} onToggleGroup={toggleIndicatorGroup} />
-              <div className="ml-auto hidden xl:block">
-                <ToggleButton
-                  pressed={showDetails}
-                  onClick={toggleDetails}
-                  icon={<PanelIcon />}
-                  title={showDetails ? 'Hide the details panel to widen the chart' : 'Show the details panel'}
-                >
-                  Details
-                </ToggleButton>
               </div>
-              <div className={`transition-opacity duration-200 xl:ml-0 ml-auto ${chartZoomed ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                <button
-                  type="button"
-                  onClick={() => resetViewRef.current?.()}
-                  tabIndex={chartZoomed ? 0 : -1}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-transparent px-2.5 py-1.5 text-xs font-medium text-muted outline-none transition-colors hover:bg-surface hover:text-primary focus-visible:ring-2 focus-visible:ring-accent sm:text-sm"
-                >
-                  <ResetIcon />
-                  Reset
-                </button>
+              <div className="ml-auto flex shrink-0 items-center gap-2">
+                <div className={`transition-opacity duration-200 ${chartZoomed ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                  <button
+                    type="button"
+                    onClick={() => resetViewRef.current?.()}
+                    tabIndex={chartZoomed ? 0 : -1}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-transparent px-2.5 py-1.5 text-xs font-medium text-muted outline-none transition-colors hover:bg-surface hover:text-primary focus-visible:ring-2 focus-visible:ring-accent sm:text-sm"
+                  >
+                    <ResetIcon />
+                    Reset
+                  </button>
+                </div>
+                <div className="hidden xl:block">
+                  <ToggleButton
+                    pressed={showDetails}
+                    onClick={toggleDetails}
+                    icon={<PanelIcon />}
+                    title={showDetails ? 'Hide the details panel to widen the chart' : 'Show the details panel'}
+                  >
+                    Details
+                  </ToggleButton>
+                </div>
               </div>
             </div>
 
