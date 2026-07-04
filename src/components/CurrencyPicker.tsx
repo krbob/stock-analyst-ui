@@ -107,14 +107,14 @@ export default function CurrencyPicker({ nativeCurrency, value, onChange }: Curr
         aria-expanded={isOpen}
         aria-haspopup="dialog"
         aria-label="Select currency"
-        className="rounded-md border border-gray-700 bg-gray-900 px-2 py-0.5 text-sm text-gray-300 hover:border-gray-500 hover:text-white transition-colors"
+        className="rounded-md border border-border-strong bg-surface-raised px-2 py-0.5 text-sm text-secondary transition-colors hover:border-border-strong hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         {displayCode}
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 top-full z-50 mt-1 w-64 overflow-hidden rounded-md border border-gray-700 bg-gray-900 shadow-lg">
-          <div className="border-b border-gray-700 p-2">
+        <div className="absolute left-0 top-full z-50 mt-1 w-64 overflow-hidden rounded-lg border border-border bg-surface-raised shadow-lg">
+          <div className="border-b border-border p-2">
             <input
               ref={searchRef}
               type="text"
@@ -122,7 +122,7 @@ export default function CurrencyPicker({ nativeCurrency, value, onChange }: Curr
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search currency..."
               aria-label="Search currency"
-              className="w-full rounded border border-gray-700 bg-gray-800 px-2 py-1 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+              className="w-full rounded border border-border-strong bg-surface px-2 py-1 text-sm text-primary placeholder-muted focus:border-accent focus:outline-none"
             />
           </div>
 
@@ -131,44 +131,44 @@ export default function CurrencyPicker({ nativeCurrency, value, onChange }: Curr
             {nativeCurrency && (!query || nativeCurrency.toLowerCase().includes(query) || getCurrencyName(nativeCurrency).toLowerCase().includes(query)) && (
               <div
                 onMouseDown={(e) => { e.preventDefault(); select(nativeCurrency); }}
-                className={`flex cursor-pointer items-center justify-between px-3 py-2 text-sm hover:bg-gray-800 ${
-                  !value ? 'bg-gray-800/50 text-white' : 'text-gray-300'
+                className={`flex cursor-pointer items-center justify-between px-3 py-2 text-sm hover:bg-surface ${
+                  !value ? 'bg-surface/70 text-primary' : 'text-secondary'
                 }`}
               >
                 <span>
-                  <span className="font-bold text-white">{nativeCurrency}</span>
-                  <span className="ml-2 text-gray-400">{getCurrencyName(nativeCurrency)}</span>
+                  <span className="font-bold text-primary">{nativeCurrency}</span>
+                  <span className="ml-2 text-secondary">{getCurrencyName(nativeCurrency)}</span>
                 </span>
-                <span className="text-xs text-blue-400">default</span>
+                <span className="text-xs text-accent">default</span>
               </div>
             )}
             {/* No conversion option — when no native currency */}
             {!nativeCurrency && (
               <div
                 onMouseDown={(e) => { e.preventDefault(); onChange(undefined); setIsOpen(false); }}
-                className={`flex cursor-pointer items-center justify-between px-3 py-2 text-sm hover:bg-gray-800 ${
-                  !value ? 'bg-gray-800/50 text-white' : 'text-gray-300'
+                className={`flex cursor-pointer items-center justify-between px-3 py-2 text-sm hover:bg-surface ${
+                  !value ? 'bg-surface/70 text-primary' : 'text-secondary'
                 }`}
               >
-                <span className="text-gray-400">No conversion</span>
+                <span className="text-secondary">No conversion</span>
               </div>
             )}
 
             {/* Recent currencies */}
             {recentCurrencies.length > 0 && (
               <>
-                <div className="border-t border-gray-700/50 px-3 py-1 text-xs text-gray-500">Recent</div>
+                <div className="border-t border-border/70 px-3 py-1 text-xs text-muted">Recent</div>
                 {recentCurrencies.map((code) => (
                   <div
                     key={`recent-${code}`}
                     onMouseDown={(e) => { e.preventDefault(); select(code); }}
-                    className={`flex cursor-pointer items-center justify-between px-3 py-1.5 text-sm hover:bg-gray-800 ${
-                      value === code ? 'bg-gray-800/50 text-white' : 'text-gray-300'
+                    className={`flex cursor-pointer items-center justify-between px-3 py-1.5 text-sm hover:bg-surface ${
+                      value === code ? 'bg-surface/70 text-primary' : 'text-secondary'
                     }`}
                   >
                     <div className="min-w-0 truncate">
                       <span className="font-medium">{code}</span>
-                      <span className="ml-2 text-gray-400">{getCurrencyName(code)}</span>
+                      <span className="ml-2 text-secondary">{getCurrencyName(code)}</span>
                     </div>
                     <button
                       type="button"
@@ -177,7 +177,7 @@ export default function CurrencyPicker({ nativeCurrency, value, onChange }: Curr
                         e.stopPropagation();
                         setRecents(removeRecent(code));
                       }}
-                      className="ml-1 shrink-0 rounded p-0.5 text-gray-600 hover:bg-gray-700 hover:text-gray-300"
+                      className="ml-1 shrink-0 rounded p-0.5 text-muted hover:bg-border hover:text-primary"
                       aria-label={`Remove ${code}`}
                     >
                       <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
@@ -190,20 +190,20 @@ export default function CurrencyPicker({ nativeCurrency, value, onChange }: Curr
             )}
 
             {/* All currencies */}
-            <div className="border-t border-gray-700/50 px-3 py-1 text-xs text-gray-500">All currencies</div>
+            <div className="border-t border-border/70 px-3 py-1 text-xs text-muted">All currencies</div>
             {showNoResults && (
-              <div className="px-3 py-2 text-sm text-gray-400">No currencies found</div>
+              <div className="px-3 py-2 text-sm text-muted">No currencies found</div>
             )}
             {filtered.map((c) => (
               <div
                 key={c.code}
                 onMouseDown={(e) => { e.preventDefault(); select(c.code); }}
-                className={`flex cursor-pointer items-center px-3 py-1.5 text-sm hover:bg-gray-800 ${
-                  (value === c.code || (!value && c.code === nativeCurrency)) ? 'bg-gray-800/50 text-white' : 'text-gray-300'
+                className={`flex cursor-pointer items-center px-3 py-1.5 text-sm hover:bg-surface ${
+                  (value === c.code || (!value && c.code === nativeCurrency)) ? 'bg-surface/70 text-primary' : 'text-secondary'
                 }`}
               >
                 <span className="font-medium">{c.code}</span>
-                <span className="ml-2 truncate text-gray-400">{c.name}</span>
+                <span className="ml-2 truncate text-secondary">{c.name}</span>
               </div>
             ))}
           </div>

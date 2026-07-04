@@ -4,6 +4,11 @@ import StockDetails from './components/StockDetails';
 import CompareView from './components/CompareView';
 import TickerSearch from './components/TickerSearch';
 import CurrencyPicker from './components/CurrencyPicker';
+import SegmentedControl, { type SegmentedOption } from './components/SegmentedControl';
+import EmptyState from './components/EmptyState';
+import ToggleButton from './components/ToggleButton';
+import ThemeToggle from './components/ThemeToggle';
+import IndicatorsPopover from './components/IndicatorsPopover';
 import { useQuote, useStockHistory } from './api/queries';
 import type { Interval, Period } from './api/types';
 import { parseUrlParams, buildUrlParams } from './url-state';
@@ -15,7 +20,7 @@ const URL_INIT = parseUrlParams(window.location.search);
 
 // ---------------------------------------------------------------------------
 
-const PERIODS: { label: string; value: Period }[] = [
+const PERIODS: SegmentedOption<Period>[] = [
   { label: '1D', value: '1d' },
   { label: '5D', value: '5d' },
   { label: '1M', value: '1mo' },
@@ -26,7 +31,7 @@ const PERIODS: { label: string; value: Period }[] = [
   { label: 'Max', value: 'max' },
 ];
 
-const INTRADAY_INTERVALS: { label: string; value: Interval }[] = [
+const INTRADAY_INTERVALS: SegmentedOption<Interval>[] = [
   { label: '1m', value: '1m' },
   { label: '5m', value: '5m' },
   { label: '15m', value: '15m' },
@@ -34,7 +39,7 @@ const INTRADAY_INTERVALS: { label: string; value: Interval }[] = [
   { label: '1h', value: '1h' },
 ];
 
-const DAILY_INTERVALS: { label: string; value: Interval }[] = [
+const DAILY_INTERVALS: SegmentedOption<Interval>[] = [
   { label: '1D', value: '1d' },
   { label: '1W', value: '1wk' },
   { label: '1M', value: '1mo' },
@@ -46,9 +51,9 @@ const DEFAULT_INTRADAY: Record<string, Interval> = {
 };
 
 const INDICATORS = [
-  { label: 'SMA', keys: ['sma50', 'sma200'] },
-  { label: 'EMA', keys: ['ema50', 'ema200'] },
-  { label: 'BB', keys: ['bb'] },
+  { label: 'SMA 50/200', keys: ['sma50', 'sma200'] },
+  { label: 'EMA 50/200', keys: ['ema50', 'ema200'] },
+  { label: 'Bollinger Bands', keys: ['bb'] },
   { label: 'RSI', keys: ['rsi'] },
   { label: 'MACD', keys: ['macd'] },
 ];
@@ -57,7 +62,56 @@ const ALL_INDICATOR_KEYS = ['bb', 'ema50', 'ema200', 'macd', 'rsi', 'sma50', 'sm
 
 function Spinner() {
   return (
-    <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-600 border-t-blue-400" />
+    <div className="h-5 w-5 animate-spin rounded-full border-2 border-border-strong border-t-accent" />
+  );
+}
+
+function CandlesIcon() {
+  return (
+    <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <path d="M8 5v3m0 8v3M8 8H5.5v8H8m0-8h2.5v8H8M16 3v3m0 10v3m0-13h-2.5v10H16m0-10h2.5v10H16" />
+    </svg>
+  );
+}
+
+function LineIcon() {
+  return (
+    <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 17l6-6 4 4 8-8" />
+    </svg>
+  );
+}
+
+function LogIcon() {
+  return (
+    <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 20c0-6 2-13 16-16M4 20h16M4 20V4" />
+    </svg>
+  );
+}
+
+function DividendIcon() {
+  return (
+    <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v10m2.5-8.2c-.5-.8-1.4-1.3-2.5-1.3-1.7 0-2.8.9-2.8 2.25S10.5 12 12 12s2.8.9 2.8 2.25-1.1 2.25-2.8 2.25c-1.1 0-2-.5-2.5-1.3" />
+    </svg>
+  );
+}
+
+function CompareIcon() {
+  return (
+    <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 15l5-5 4 3 9-8M3 21l5-5 4 3 9-8" />
+    </svg>
+  );
+}
+
+function ResetIcon() {
+  return (
+    <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 12a9 9 0 1 0 2.6-6.3L3 8m0-5v5h5" />
+    </svg>
   );
 }
 
@@ -71,16 +125,15 @@ const GAIN_PERIODS = [
 function GainChip({ label, value }: { label: string; value: number | null }) {
   if (value == null || !Number.isFinite(value)) return null;
   return (
-    <span className={`text-xs ${value >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+    <span className={`text-xs ${value >= 0 ? 'text-up' : 'text-down'}`}>
       {formatGain(value)} ({label})
     </span>
   );
 }
 
-function StockInfo({ symbol, currency, onCurrencyChange, livePrice, hideGain }: {
+function StockInfo({ symbol, currency, livePrice, hideGain }: {
   symbol: string;
   currency?: string;
-  onCurrencyChange: (c: string | undefined) => void;
   livePrice?: number;
   hideGain?: boolean;
 }) {
@@ -94,7 +147,7 @@ function StockInfo({ symbol, currency, onCurrencyChange, livePrice, hideGain }: 
   const isLoading = currency
     ? convertedQuote.isLoading && !convertedQuote.data
     : nativeQuote.isLoading && !nativeQuote.data;
-  const nativeCurrency = nativeQuote.data?.currency ?? data?.currency ?? null;
+  const displayCurrency = currency ?? nativeQuote.data?.currency ?? data?.currency ?? null;
   const displayPrice = livePrice ?? data?.lastPrice;
   const errorMessage = error instanceof Error
     ? error.message
@@ -103,22 +156,22 @@ function StockInfo({ symbol, currency, onCurrencyChange, livePrice, hideGain }: 
   return (
     <div className="min-w-0">
       <div className="flex h-8 items-baseline gap-3">
-        <h2 className="text-2xl font-bold text-white">{symbol.toUpperCase()}</h2>
+        <h2 className="text-2xl font-bold text-primary">{symbol.toUpperCase()}</h2>
         {isLoading && <Spinner />}
-        {error && <span className="text-sm text-red-400">{errorMessage}</span>}
+        {error && <span className="text-sm text-danger">{errorMessage}</span>}
         {data && (
-          <span className="text-xl text-gray-300">{displayPrice?.toFixed(2)}</span>
-        )}
-        {nativeCurrency && (
-          <CurrencyPicker nativeCurrency={nativeCurrency} value={currency} onChange={onCurrencyChange} />
+          <span className="text-xl text-secondary">
+            {displayPrice?.toFixed(2)}
+            {displayCurrency && <span className="ml-1.5 text-sm text-muted">{displayCurrency}</span>}
+          </span>
         )}
         {data && data.gain.daily != null && Number.isFinite(data.gain.daily) && (
-          <span className={`text-lg font-medium transition-opacity duration-300 ${hideGain ? 'opacity-0' : 'opacity-100'} ${data.gain.daily >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+          <span className={`text-lg font-medium transition-opacity duration-300 ${hideGain ? 'opacity-0' : 'opacity-100'} ${data.gain.daily >= 0 ? 'text-up' : 'text-down'}`}>
             {formatGain(data.gain.daily)}
           </span>
         )}
       </div>
-      <p className="h-5 text-sm text-gray-500">{data?.name ?? '\u00A0'}</p>
+      <p className="h-5 text-sm text-muted">{data?.name ?? ' '}</p>
       <div className="mt-1 flex min-h-5 flex-wrap gap-3">
         {data && GAIN_PERIODS.map((p) => (
           <GainChip key={p.key} label={p.label} value={data.gain[p.key]} />
@@ -161,6 +214,8 @@ export default function App() {
   const { data: historyData } = useStockHistory(symbol, period, interval, indicatorArray, undefined, dividendsParam);
   // Currency-converted history — shares cache with PriceChart's query.
   const { data: convertedHistory } = useStockHistory(symbol, period, interval, indicatorArray, currency, dividendsParam);
+  // Native quote for the header currency picker (shares its cache with StockInfo).
+  const { data: headerQuote } = useQuote(inCompareMode ? '' : symbol);
   const nativeHistory = matchesHistoryRequest(historyData, nativeHistoryRequest) ? historyData : undefined;
   const currencyHistory = matchesHistoryRequest(convertedHistory, convertedHistoryRequest) ? convertedHistory : undefined;
   const activeInterval = interval ?? (
@@ -214,26 +269,47 @@ export default function App() {
     setCompareSymbols(prev => prev.filter(s => s.toLowerCase() !== sym.toLowerCase()));
   };
 
-  const btnClass = (active: boolean) =>
-    `rounded-md px-2.5 py-1 text-xs font-medium transition-colors sm:px-3 sm:text-sm ${
-      active ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'
-    }`;
+  const intervalOptions = isIntradayPeriod ? INTRADAY_INTERVALS : DAILY_INTERVALS;
 
   return (
-    <div className="min-h-screen bg-[#0f0f1a] text-white">
-      <header className="border-b border-gray-800 px-4 py-3 sm:px-6 sm:py-4">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
+    <div className="min-h-screen bg-page text-primary">
+      <header className="sticky top-0 z-40 border-b border-border bg-surface-raised/90 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 sm:px-6">
           <h1 className="text-lg font-bold tracking-tight sm:text-xl">Stock Analyst</h1>
-          <TickerSearch onSelect={handleSelect} />
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+            <TickerSearch onSelect={handleSelect} />
+            {(symbol || inCompareMode) && (
+              <CurrencyPicker
+                nativeCurrency={inCompareMode ? null : headerQuote?.currency ?? null}
+                value={currency}
+                onChange={setCurrency}
+              />
+            )}
+            {(symbol || inCompareMode) && (
+              <button
+                type="button"
+                onClick={inCompareMode ? exitCompare : enterCompare}
+                aria-pressed={inCompareMode}
+                className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent ${
+                  inCompareMode
+                    ? 'border-accent/40 bg-accent/15 text-accent'
+                    : 'border-border bg-surface text-secondary hover:text-primary'
+                }`}
+              >
+                <CompareIcon />
+                Compare
+              </button>
+            )}
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-4 sm:px-6 sm:py-6">
-        {/* Toolbar — one bar, buttons animate */}
-        {symbol && (
-          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-            {/* Left: StockInfo or compare chips */}
-            {inCompareMode ? (
+      <main className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
+        {/* Compare mode — symbol chips + period + overlay chart + table */}
+        {inCompareMode && (
+          <>
+            <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex flex-wrap items-center gap-2">
                 {compareSymbols.map((sym, i) => (
                   <span
@@ -242,114 +318,91 @@ export default function App() {
                     style={{ backgroundColor: COMPARE_COLORS[i % COMPARE_COLORS.length] + '22', color: COMPARE_COLORS[i % COMPARE_COLORS.length] }}
                   >
                     {sym.toUpperCase()}
-                    <button type="button" onClick={() => removeFromCompare(sym)} className="ml-0.5 hover:text-white" aria-label={`Remove ${sym.toUpperCase()} from compare`}>&times;</button>
+                    <button type="button" onClick={() => removeFromCompare(sym)} className="ml-0.5 rounded outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-accent" aria-label={`Remove ${sym.toUpperCase()} from compare`}>&times;</button>
                   </span>
                 ))}
-                <CurrencyPicker nativeCurrency={null} value={currency} onChange={setCurrency} />
                 {compareSymbols.length < 6 && (
-                  <span className="text-xs text-gray-500">Search to add more</span>
+                  <span className="text-xs text-muted">Search to add more</span>
                 )}
               </div>
-            ) : (
-              <StockInfo symbol={symbol} currency={currency} onCurrencyChange={setCurrency} livePrice={isIntradayPeriod && !currency ? nativeHistory?.prices.at(-1)?.close : undefined} hideGain={isIntradayPeriod} />
-            )}
-
-            {/* Right: periods + animated button groups */}
-            <div className="flex shrink-0 flex-wrap items-center gap-1">
-              {PERIODS.map((p) => (
-                <button
-                  key={p.value}
-                  onClick={() => handlePeriod(p.value)}
-                  className={btnClass(period === p.value)}
-                >
-                  {p.label}
-                </button>
-              ))}
-              {/* Line/Log/Div — collapses in compare mode */}
-              <div className={`flex items-center gap-1 overflow-hidden transition-all duration-300 ease-in-out ${inCompareMode ? 'max-w-0 opacity-0' : 'max-w-64 opacity-100'}`}>
-                <div className="mx-1 h-5 w-px shrink-0 bg-gray-700" />
-                <button onClick={() => setLineChart(!lineChart)} className={btnClass(lineChart)}>
-                  Line
-                </button>
-                <button onClick={() => setLogScale(!logScale)} className={btnClass(logScale)}>
-                  Log
-                </button>
-                <button onClick={() => setShowDividends(!showDividends)} className={btnClass(showDividends)}>
-                  Div
-                </button>
-              </div>
-              <div className="mx-1 h-5 w-px shrink-0 bg-gray-700" />
-              <button
-                onClick={inCompareMode ? exitCompare : enterCompare}
-                className={`w-[8rem] shrink-0 whitespace-nowrap rounded-md border px-2.5 py-1 text-xs font-medium transition-colors sm:px-3 sm:text-sm ${inCompareMode ? 'border-transparent text-red-400 hover:text-white hover:bg-red-900/50' : 'border-blue-800/50 text-blue-400 hover:text-white hover:bg-blue-900/40'}`}
-              >
-                {inCompareMode ? 'Exit Compare' : 'Compare'}
-              </button>
+              <SegmentedControl options={PERIODS} value={period} onChange={handlePeriod} ariaLabel="Time period" className="max-w-full overflow-x-auto" />
             </div>
-          </div>
-        )}
-
-        {/* Compare chart + table */}
-        {inCompareMode && (
-          <CompareView symbols={compareSymbols} period={period} currency={currency} />
+            <CompareView symbols={compareSymbols} period={period} currency={currency} />
+          </>
         )}
 
         {/* Single-stock content (hidden but mounted in compare to avoid chart.remove() crash) */}
         {symbol ? (
-          <div className={inCompareMode ? 'hidden' : ''}>
-            <div className="mb-2 flex flex-wrap items-center gap-1">
-              {INDICATORS.map((ind) => {
-                const active = ind.keys.every((k) => indicators.has(k));
-                return (
-                  <button
-                    key={ind.label}
-                    onClick={() => toggleIndicatorGroup(ind.keys)}
-                    className={btnClass(active)}
-                  >
-                    {ind.label}
-                  </button>
-                );
-              })}
-              <div className="mx-1 h-5 w-px bg-gray-700" />
-              <div className="relative flex gap-1">
-                <div className={`flex gap-1 transition-all duration-300 ${isIntradayPeriod ? 'opacity-0 pointer-events-none absolute' : 'opacity-100'}`}>
-                  {DAILY_INTERVALS.map((i) => (
-                    <button
-                      key={i.value}
-                      onClick={() => { if (activeInterval !== i.value) setSelectedInterval(i.value); }}
-                      className={btnClass(activeInterval === i.value)}
-                    >
-                      {i.label}
-                    </button>
-                  ))}
-                </div>
-                <div className={`flex gap-1 transition-all duration-300 ${isIntradayPeriod ? 'opacity-100' : 'opacity-0 pointer-events-none absolute'}`}>
-                  {INTRADAY_INTERVALS.map((i) => (
-                    <button
-                      key={i.value}
-                      onClick={() => { if (activeInterval !== i.value) setSelectedInterval(i.value); }}
-                      className={btnClass(activeInterval === i.value)}
-                    >
-                      {i.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+          <div className={inCompareMode ? 'hidden' : 'xl:grid xl:grid-cols-[minmax(0,1fr)_380px] xl:items-start xl:gap-6'}>
+            <section className="min-w-0">
+            <div className="mb-4">
+              <StockInfo symbol={symbol} currency={currency} livePrice={isIntradayPeriod && !currency ? nativeHistory?.prices.at(-1)?.close : undefined} hideGain={isIntradayPeriod} />
+            </div>
+
+            {/* Toolbar */}
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <SegmentedControl options={PERIODS} value={period} onChange={handlePeriod} ariaLabel="Time period" className="max-w-full overflow-x-auto" />
+              <SegmentedControl
+                options={intervalOptions}
+                value={activeInterval && intervalOptions.some((o) => o.value === activeInterval) ? activeInterval : undefined}
+                onChange={(v) => { if (activeInterval !== v) setSelectedInterval(v); }}
+                ariaLabel="Chart interval"
+              />
+              <SegmentedControl
+                options={[
+                  { value: 'candles', label: <span className="inline-flex items-center gap-1.5"><CandlesIcon />Candles</span>, ariaLabel: 'Candlestick chart' },
+                  { value: 'line', label: <span className="inline-flex items-center gap-1.5"><LineIcon />Line</span>, ariaLabel: 'Line chart' },
+                ]}
+                value={lineChart ? 'line' : 'candles'}
+                onChange={(v) => setLineChart(v === 'line')}
+                ariaLabel="Chart type"
+              />
+              <ToggleButton pressed={logScale} onClick={() => setLogScale(!logScale)} icon={<LogIcon />} title="Logarithmic price scale">
+                Log
+              </ToggleButton>
+              <ToggleButton pressed={showDividends} onClick={() => setShowDividends(!showDividends)} icon={<DividendIcon />} title="Show dividends">
+                Div
+              </ToggleButton>
+              <IndicatorsPopover groups={INDICATORS} active={indicators} onToggleGroup={toggleIndicatorGroup} />
               <div className={`ml-auto transition-opacity duration-200 ${chartZoomed ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                <button onClick={() => resetViewRef.current?.()} className={btnClass(false)}>
+                <button
+                  type="button"
+                  onClick={() => resetViewRef.current?.()}
+                  tabIndex={chartZoomed ? 0 : -1}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium text-muted outline-none transition-colors hover:bg-surface hover:text-primary focus-visible:ring-2 focus-visible:ring-accent sm:text-sm"
+                >
+                  <ResetIcon />
                   Reset
                 </button>
               </div>
-              </div>
-              <PriceChart symbol={symbol} period={period} interval={interval} lineChart={lineChart} logScale={logScale} indicators={indicatorArray} activeIndicators={indicators} currency={currency} dividends={dividendsParam} showDividends={showDividends} onZoomChange={setChartZoomed} resetRef={resetViewRef} />
-              <StockDetails symbol={symbol} currency={currency} prices={currencyHistory?.prices ?? nativeHistory?.prices} indicators={currencyHistory?.indicators ?? nativeHistory?.indicators} showDividends={showDividends} />
             </div>
-        ) : !inCompareMode && (
-          <div className="flex h-[500px] items-center justify-center text-gray-500 px-4 text-center">
-            Enter a stock ticker to view the chart
+
+            {/* Chart card */}
+            <div className="overflow-hidden rounded-xl border border-border bg-chart-bg shadow-sm">
+              <PriceChart symbol={symbol} period={period} interval={interval} lineChart={lineChart} logScale={logScale} indicators={indicatorArray} activeIndicators={indicators} currency={currency} dividends={dividendsParam} showDividends={showDividends} onZoomChange={setChartZoomed} resetRef={resetViewRef} />
+            </div>
+            </section>
+
+            <aside className="min-w-0 xl:sticky xl:top-[4.25rem] xl:max-h-[calc(100vh-5.25rem)] xl:overflow-y-auto xl:pb-2">
+              <StockDetails symbol={symbol} currency={currency} prices={currencyHistory?.prices ?? nativeHistory?.prices} indicators={currencyHistory?.indicators ?? nativeHistory?.indicators} showDividends={showDividends} />
+            </aside>
           </div>
+        ) : !inCompareMode && (
+          <EmptyState onSelect={handleSelect} />
         )}
       </main>
+
+      <footer className="mx-auto max-w-7xl px-4 pb-6 pt-2 text-xs text-muted sm:px-6">
+        Charts powered by{' '}
+        <a
+          href="https://www.tradingview.com/lightweight-charts/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline decoration-dotted underline-offset-2 outline-none transition-colors hover:text-secondary focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          TradingView Lightweight Charts
+        </a>
+      </footer>
     </div>
   );
 }

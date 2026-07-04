@@ -8,6 +8,8 @@ Interactive stock analysis dashboard built with React and [lightweight-charts](h
   <a href="docs/screenshot-main.png"><img src="docs/screenshot-main.png" width="270" alt="Stock Analyst UI"></a>
   <a href="docs/screenshot-indicators.png"><img src="docs/screenshot-indicators.png" width="270" alt="Technical Indicators"></a>
   <a href="docs/screenshot-compare.png"><img src="docs/screenshot-compare.png" width="270" alt="Compare Mode"></a>
+  <a href="docs/screenshot-dividends.png"><img src="docs/screenshot-dividends.png" width="270" alt="Dividend Markers"></a>
+  <a href="docs/screenshot-light.png"><img src="docs/screenshot-light.png" width="270" alt="Light Theme"></a>
 </p>
 
 ## Features

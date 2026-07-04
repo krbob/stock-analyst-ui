@@ -39,4 +39,20 @@ test.describe.serial('generate README screenshots', () => {
     await waitForChart(page);
     await page.screenshot({ path: `${SCREENSHOT_DIR}/screenshot-compare.png`, fullPage: false });
   });
+
+  test('dividends — KO 5Y with dividend markers', async ({ page }) => {
+    await page.goto('/?s=KO&p=5y&div=1');
+    await waitForChart(page);
+    await page.screenshot({ path: `${SCREENSHOT_DIR}/screenshot-dividends.png`, fullPage: false });
+  });
+});
+
+test.describe.serial('generate README screenshots (light theme)', () => {
+  test.use({ colorScheme: 'light' });
+
+  test('light theme — MSFT 1Y with EMA', async ({ page }) => {
+    await page.goto('/?s=MSFT&p=1y&ind=ema50,ema200');
+    await waitForChart(page);
+    await page.screenshot({ path: `${SCREENSHOT_DIR}/screenshot-light.png`, fullPage: false });
+  });
 });

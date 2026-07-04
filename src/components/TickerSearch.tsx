@@ -1,46 +1,11 @@
 import { useState, useRef, useCallback, type FormEvent, type KeyboardEvent } from 'react';
 import { useDebounce } from '../hooks/useDebounce';
 import { useTickerSearch } from '../api/queries';
-import { addRecentItem, loadRecentItems, removeRecentItem } from '../lib/recents';
-
-const RECENTS_KEY = 'recentTickers';
-const MAX_RECENTS = 8;
-
-interface RecentTicker {
-  symbol: string;
-  name: string;
-  exchange: string;
-}
-
-const recentTickerOptions = {
-  maxItems: MAX_RECENTS,
-  normalize: (value: unknown): RecentTicker | null => {
-    if (!value || typeof value !== 'object') return null;
-    const item = value as Partial<RecentTicker>;
-    if (typeof item.symbol !== 'string' || item.symbol.trim() === '') return null;
-    return {
-      symbol: item.symbol.trim().toUpperCase(),
-      name: typeof item.name === 'string' ? item.name : '',
-      exchange: typeof item.exchange === 'string' ? item.exchange : '',
-    };
-  },
-  keyOf: (item: RecentTicker) => item.symbol.toLowerCase(),
-  mergeDuplicate: (current: RecentTicker, next: RecentTicker) => (
-    !current.name && next.name ? next : current
-  ),
-};
-
-function loadRecents(): RecentTicker[] {
-  return loadRecentItems(RECENTS_KEY, recentTickerOptions);
-}
-
-function addRecent(ticker: RecentTicker): RecentTicker[] {
-  return addRecentItem(RECENTS_KEY, recentTickerOptions.normalize(ticker) ?? ticker, recentTickerOptions);
-}
-
-function removeRecent(symbol: string): RecentTicker[] {
-  return removeRecentItem(RECENTS_KEY, symbol.toLowerCase(), recentTickerOptions);
-}
+import {
+  addRecentTicker as addRecent,
+  loadRecentTickers as loadRecents,
+  removeRecentTicker as removeRecent,
+} from '../lib/ticker-recents';
 
 interface TickerSearchProps {
   onSelect: (symbol: string) => void;
@@ -159,13 +124,13 @@ export default function TickerSearch({ onSelect }: TickerSearchProps) {
           aria-activedescendant={
             activeIndex >= 0 ? `ticker-option-${activeIndex}` : undefined
           }
-          className="w-24 rounded-md border border-gray-700 bg-gray-900 px-3 py-1.5 text-base text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none sm:w-auto sm:text-sm"
+          className="w-24 rounded-md border border-border-strong bg-surface-raised px-3 py-1.5 text-base text-primary placeholder-muted focus:border-accent focus:outline-none sm:w-auto sm:text-sm"
         />
 
         {showDropdown && (
-          <div className="absolute right-0 top-full z-50 mt-1 w-72 overflow-hidden rounded-md border border-gray-700 bg-gray-900 shadow-lg">
+          <div className="absolute right-0 top-full z-50 mt-1 w-72 overflow-hidden rounded-lg border border-border bg-surface-raised shadow-lg">
             {showRecents && (
-              <div className="px-3 py-1.5 text-xs text-gray-500">Recent</div>
+              <div className="px-3 py-1.5 text-xs text-muted">Recent</div>
             )}
             <ul
               id="ticker-search-listbox"
@@ -173,10 +138,10 @@ export default function TickerSearch({ onSelect }: TickerSearchProps) {
               className="max-h-60 overflow-y-auto"
             >
               {showSearching && (
-                <li className="px-3 py-2 text-sm text-gray-400">Searching...</li>
+                <li className="px-3 py-2 text-sm text-muted">Searching...</li>
               )}
               {showNoResults && (
-                <li className="px-3 py-2 text-sm text-gray-400">No tickers found</li>
+                <li className="px-3 py-2 text-sm text-muted">No tickers found</li>
               )}
               {items.map((item, index) => (
                 <li
@@ -191,23 +156,23 @@ export default function TickerSearch({ onSelect }: TickerSearchProps) {
                   onMouseEnter={() => setActiveIndex(index)}
                   className={`flex cursor-pointer items-center justify-between px-3 py-2 text-sm ${
                     index === activeIndex
-                      ? 'bg-gray-800 text-white'
-                      : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                      ? 'bg-surface text-primary'
+                      : 'text-secondary hover:bg-surface hover:text-primary'
                   }`}
                 >
                   <div className="min-w-0 truncate">
-                    <span className="font-medium text-white">{item.symbol}</span>
-                    {item.name && <span className="ml-2 text-gray-400">{item.name}</span>}
+                    <span className="font-medium text-primary">{item.symbol}</span>
+                    {item.name && <span className="ml-2 text-secondary">{item.name}</span>}
                   </div>
                   <div className="ml-2 flex shrink-0 items-center gap-1">
                     {item.exchange && (
-                      <span className="text-xs text-gray-500">{item.exchange}</span>
+                      <span className="text-xs text-muted">{item.exchange}</span>
                     )}
                     {showRecents && (
                       <button
                         type="button"
                         onMouseDown={(e) => handleRemoveRecent(item.symbol, e)}
-                        className="ml-1 rounded p-0.5 text-gray-600 hover:bg-gray-700 hover:text-gray-300"
+                        className="ml-1 rounded p-0.5 text-muted hover:bg-border hover:text-primary"
                         aria-label={`Remove ${item.symbol}`}
                       >
                         <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
@@ -225,7 +190,7 @@ export default function TickerSearch({ onSelect }: TickerSearchProps) {
 
       <button
         type="submit"
-        className="rounded-md bg-blue-600 px-4 py-1.5 text-sm font-medium hover:bg-blue-500 transition-colors"
+        className="rounded-md bg-accent px-4 py-1.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         Go
       </button>

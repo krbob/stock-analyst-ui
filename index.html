@@ -11,8 +11,24 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Stock Analyst" />
     <title>Stock Analyst</title>
+    <script src="/theme-init.js"></script>
+    <style>
+      /* Pre-stylesheet page background mirroring the --color-page token,
+         so first paint matches the resolved theme. */
+      html {
+        background-color: #f4f5f8;
+      }
+      html[data-theme='dark'] {
+        background-color: #0f0f1a;
+      }
+      @media (prefers-color-scheme: dark) {
+        html:not([data-theme='light']) {
+          background-color: #0f0f1a;
+        }
+      }
+    </style>
   </head>
-  <body style="background-color: #0f0f1a">
+  <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

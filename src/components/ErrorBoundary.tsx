@@ -30,16 +30,16 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
     if (!this.state.hasError) return this.props.children;
 
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0f0f1a] px-4 text-white">
-        <div role="alert" className="w-full max-w-md rounded-lg border border-red-900/60 bg-gray-900 px-5 py-4 shadow-xl">
+      <div className="flex min-h-screen items-center justify-center bg-page px-4 text-primary">
+        <div role="alert" className="w-full max-w-md rounded-xl border border-danger/40 bg-surface-raised px-5 py-4 shadow-xl">
           <h1 className="text-lg font-semibold">Something went wrong</h1>
           {this.state.message && (
-            <p className="mt-2 break-words text-sm text-red-200">{this.state.message}</p>
+            <p className="mt-2 break-words text-sm text-danger">{this.state.message}</p>
           )}
           <button
             type="button"
             onClick={() => window.location.reload()}
-            className="mt-4 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-500"
+            className="mt-4 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
             Reload
           </button>
