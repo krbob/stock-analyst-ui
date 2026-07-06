@@ -63,6 +63,8 @@ services:
       - stock-analyst
     environment:
       - API_URL=http://stock-analyst:8080
+      # Optional: hide the chart attribution footer on a private local stack.
+      - SHOW_CHART_ATTRIBUTION=${SHOW_CHART_ATTRIBUTION:-true}
     restart: unless-stopped
 
   stock-analyst:
@@ -96,6 +98,8 @@ npm install
 npm run dev
 # Open http://localhost:5173
 ```
+
+For a private local Vite session, create `.env.local` with `VITE_SHOW_CHART_ATTRIBUTION=false` to hide the chart attribution footer.
 
 ## URL parameters
 
@@ -172,6 +176,7 @@ docker run -p 3001:8080 -e API_URL=http://your-api:8080 stock-analyst-ui
 ```
 
 The `API_URL` environment variable is required and is substituted into the Nginx config at container startup.
+Set `SHOW_CHART_ATTRIBUTION=false` on a private local container if you want to hide the chart attribution footer without rebuilding the image.
 
 ## CI/CD
 

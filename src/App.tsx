@@ -45,6 +45,18 @@ const DAILY_INTERVALS: SegmentedOption<Interval>[] = [
   { label: '1M', value: '1mo' },
 ];
 
+function isDisabledEnvFlag(value: string | undefined): boolean {
+  return ['false', '0', 'no', 'off'].includes(value?.trim().toLowerCase() ?? '');
+}
+
+function shouldShowChartAttribution(): boolean {
+  const runtimeValue = window.__STOCK_ANALYST_CONFIG__?.showChartAttribution;
+  if (typeof runtimeValue === 'boolean') return runtimeValue;
+  return !isDisabledEnvFlag(import.meta.env.VITE_SHOW_CHART_ATTRIBUTION);
+}
+
+const SHOW_CHART_ATTRIBUTION = shouldShowChartAttribution();
+
 const DEFAULT_INTRADAY: Record<string, Interval> = {
   '1d': '5m',
   '5d': '15m',
@@ -438,17 +450,19 @@ export default function App() {
         )}
       </main>
 
-      <footer className="mx-auto max-w-7xl px-4 pb-6 pt-2 text-xs text-muted sm:px-6">
-        Charts powered by{' '}
-        <a
-          href="https://www.tradingview.com/lightweight-charts/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline decoration-dotted underline-offset-2 outline-none transition-colors hover:text-secondary focus-visible:ring-2 focus-visible:ring-accent"
-        >
-          TradingView Lightweight Charts
-        </a>
-      </footer>
+      {SHOW_CHART_ATTRIBUTION ? (
+        <footer className="mx-auto max-w-7xl px-4 pb-6 pt-2 text-xs text-muted sm:px-6">
+          Charts powered by{' '}
+          <a
+            href="https://www.tradingview.com/lightweight-charts/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline decoration-dotted underline-offset-2 outline-none transition-colors hover:text-secondary focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            TradingView Lightweight Charts
+          </a>
+        </footer>
+      ) : null}
     </div>
   );
 }
