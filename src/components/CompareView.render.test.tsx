@@ -31,6 +31,10 @@ describe('CompareView rendering', () => {
 
     render(<CompareView symbols={['AAPL', 'MSFT']} period="1y" />);
 
+    const chart = screen.getByRole('img', { name: 'Percentage comparison chart for AAPL, MSFT' });
+    const description = document.getElementById(chart.getAttribute('aria-describedby')!);
+    expect(chart).toHaveAttribute('tabindex', '0');
+    expect(description).toHaveTextContent('0 of 2 series loaded');
     expect(screen.getByRole('alert')).toHaveTextContent('Unable to load comparison data');
     expect(screen.getByText('503 upstream unavailable')).toBeInTheDocument();
     expect(screen.queryByRole('status', { name: 'Loading comparison data' })).not.toBeInTheDocument();

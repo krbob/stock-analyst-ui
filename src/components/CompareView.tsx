@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { createChart, LineSeries, type IChartApi, type ISeriesApi, type SeriesType, type Time } from 'lightweight-charts';
 import { useStockHistory, useCompare } from '../api/queries';
 import type { CompareResult, HistoricalPrice, Period, Quote } from '../api/types';
@@ -8,6 +8,7 @@ import { useChartTheme } from '../hooks/useChartTheme';
 import { formatGain, formatMarketCap, formatNumber, formatRatioPercent } from '../lib/format';
 import { formatRecommendation } from '../lib/recommendation';
 import { normalizeFromTime, findBestIdx } from './compare-utils';
+import { describeComparisonChart } from './chart-accessibility';
 
 // ---------------------------------------------------------------------------
 // Table helpers
@@ -63,6 +64,7 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
   const chartRef = useRef<IChartApi | null>(null);
   const [legendValues, setLegendValues] = useState<Map<string, number>>(new Map());
   const chartTheme = useChartTheme();
+  const accessibleDescriptionId = useId();
 
   // 6 fixed hook slots — hooks cannot be called conditionally
   const h0 = useStockHistory(symbols[0] ?? '', period, undefined, undefined, currency);
@@ -238,6 +240,7 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
     : compareError
       ? String(compareError)
       : null;
+  const accessibleChartDescription = describeComparisonChart(symbols, chartSeries.length, period);
 
   return (
     <div className="space-y-4">
@@ -256,10 +259,17 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
             );
           })}
         </div>
-        <div ref={containerRef} className="h-[300px] w-full sm:h-[400px]" />
+        <div
+          ref={containerRef}
+          role="img"
+          tabIndex={0}
+          aria-label={`Percentage comparison chart for ${symbols.map((symbol) => symbol.toUpperCase()).join(', ')}`}
+          aria-describedby={accessibleDescriptionId}
+          className="h-[300px] w-full outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent sm:h-[400px]"
+        />
         {(chartLoading || isFetching) && (
           <div className={`absolute inset-0 z-10 flex items-center justify-center ${chartLoading ? 'bg-chart-bg' : 'bg-chart-bg/80'}`}>
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-border-strong border-t-accent" />
+            <div role="status" aria-label="Loading comparison chart data" className="h-8 w-8 animate-spin rounded-full border-2 border-border-strong border-t-accent" />
           </div>
         )}
         {!chartLoading && !hasData && (
@@ -267,6 +277,7 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
             No chart data available for the selected symbols
           </div>
         )}
+        <p id={accessibleDescriptionId} className="sr-only">{accessibleChartDescription}</p>
       </div>
 
       {/* Error badges for failed symbols */}

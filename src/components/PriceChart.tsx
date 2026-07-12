@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { createChart, createSeriesMarkers, CandlestickSeries, LineSeries, HistogramSeries, PriceScaleMode, type IChartApi, type ISeriesApi, type SeriesType, type Time, type UTCTimestamp } from 'lightweight-charts';
 import type { HistoricalPrice, Indicators } from '../api/types';
 import { useStockHistory } from '../api/queries';
@@ -14,6 +14,7 @@ import {
 } from '../lib/chart-theme';
 import { useChartTheme } from '../hooks/useChartTheme';
 import { getPaneStretchFactors, type IndicatorPaneKind } from './price-chart-layout';
+import { describePriceChart } from './chart-accessibility';
 
 // ---------------------------------------------------------------------------
 // Time helpers
@@ -117,6 +118,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
   const fittingRef = useRef(false);
   const fitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const chartTheme = useChartTheme();
+  const accessibleDescriptionId = useId();
 
   const { data, isFetching, error } = useStockHistory(symbol, period, interval, indicators, currency, dividends);
   const request = createHistoryRequest(symbol, period, interval, indicators, currency, dividends);
@@ -483,8 +485,15 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
 
   if (!symbol) return null;
 
+  const accessibleDescription = describePriceChart(
+    symbol,
+    currentData?.prices ?? [],
+    currentData?.interval ?? interval,
+    currentData?.currency ?? currency,
+  );
+
   return (
-    <div className="relative">
+    <figure className="relative">
       {legend && (
         <div className="absolute left-2 top-2 z-20 flex max-w-[calc(100%-70px)] flex-wrap gap-x-3 gap-y-0.5 rounded-lg border border-border bg-surface-raised/85 px-2.5 py-1.5 text-xs tabular-nums text-secondary shadow-sm backdrop-blur">
           <span>O <span className="text-primary">{legend.open.toFixed(2)}</span></span>
@@ -502,16 +511,23 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
           {indLegend?.macd != null && <span style={{ color: INDICATOR_COLORS.macd }}>MACD <span>{indLegend.macd.macd.toFixed(2)} / {indLegend.macd.signal.toFixed(2)} / {indLegend.macd.histogram.toFixed(2)}</span></span>}
         </div>
       )}
-      <div ref={containerRef} className="h-[350px] w-full sm:h-[500px]" />
+      <div
+        ref={containerRef}
+        role="img"
+        tabIndex={0}
+        aria-label={`${symbol.toUpperCase()} price chart`}
+        aria-describedby={accessibleDescriptionId}
+        className="h-[350px] w-full outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent sm:h-[500px]"
+      />
       {isFetching && (
         <div className={`absolute inset-0 z-10 flex items-center justify-center ${
           currentData ? 'bg-chart-bg/80' : 'bg-chart-bg'
         }`}>
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-border-strong border-t-accent" />
+          <div role="status" aria-label={`Loading ${symbol.toUpperCase()} chart data`} className="h-8 w-8 animate-spin rounded-full border-2 border-border-strong border-t-accent" />
         </div>
       )}
       {error && !currentData && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-chart-bg/80 text-danger">
+        <div role="alert" className="absolute inset-0 z-10 flex items-center justify-center bg-chart-bg/80 text-danger">
           {error instanceof Error ? error.message : 'Failed to load chart data'}
         </div>
       )}
@@ -520,6 +536,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
           {error instanceof Error ? error.message : 'Failed to refresh chart data'}
         </div>
       )}
-    </div>
+      <figcaption id={accessibleDescriptionId} className="sr-only">{accessibleDescription}</figcaption>
+    </figure>
   );
 }
