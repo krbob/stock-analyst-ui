@@ -111,7 +111,12 @@ test('keeps request fan-out scoped to the active analysis view', async ({ page }
   await expect(singleProvenance).toContainText('Market status: Fresh');
   await expect(singleProvenance).toContainText('Adjustment: Split Adjusted');
   await expect.poll(() => calls.filter((call) => call.startsWith('/api/v1/quote/')).length).toBe(1);
-  await expect.poll(() => calls.filter((call) => call.startsWith('/api/v1/history/') && call.includes('indicators=')).length).toBe(1);
+  expect(calls.filter((call) => call.startsWith('/api/v1/history/AAPL'))).toHaveLength(1);
+  expect(calls.some((call) => call.includes('indicators='))).toBe(false);
+
+  await page.getByRole('button', { name: /indicators/i }).click();
+  await page.getByRole('checkbox', { name: 'RSI' }).check();
+  await expect.poll(() => calls.filter((call) => call === '/api/v1/history/AAPL?period=1y&indicators=rsi').length).toBe(1);
 
   const beforeDetails = calls.filter((call) => !call.startsWith('/api/v1/search/')).length;
   await page.getByRole('button', { name: 'Details' }).click();
@@ -122,6 +127,7 @@ test('keeps request fan-out scoped to the active analysis view', async ({ page }
   await page.getByRole('button', { name: 'Go', exact: true }).click();
   await expect(page.getByRole('img', { name: 'MSFT price chart' })).toBeVisible();
   await expect.poll(() => calls.filter((call) => call.startsWith('/api/v1/history/MSFT')).length).toBe(1);
+  expect(calls).toContain('/api/v1/history/MSFT?period=1y&indicators=rsi');
   await expect.poll(() => calls.filter((call) => call.startsWith('/api/v1/quote/MSFT')).length).toBe(1);
 
   await page.getByRole('button', { name: 'Enter comparison mode' }).click();

@@ -27,6 +27,7 @@ Interactive stock analysis dashboard built with React and [lightweight-charts](h
 - Bollinger Bands (upper, middle, lower)
 - RSI (14-period) in a separate pane with 70/30 reference lines
 - MACD (line, signal, histogram) in a separate pane
+- History requests compute only indicators enabled in the active view; the details panel reuses the same cached result
 
 **Fundamentals & technicals panel**
 - P/E, EPS, P/B, Market Cap, ROE, Beta, Dividend Yield/Growth

@@ -46,7 +46,7 @@ describe('getHistory generated contract', () => {
   it('includes each supported query parameter', async () => {
     mockFetch.mockReturnValue(response({ prices: [] }));
     await getHistory('AAPL', '5y', '1wk', ['sma50', 'bb'], 'GBP', true);
-    expectLastUrl('/api/v1/history/AAPL?period=5y&interval=1wk&indicators=sma50%2Cbb&currency=GBP&dividends=true');
+    expectLastUrl('/api/v1/history/AAPL?period=5y&interval=1wk&indicators=bb%2Csma50&currency=GBP&dividends=true');
   });
 
   it('omits disabled optional parameters', async () => {

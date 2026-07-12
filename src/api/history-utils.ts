@@ -10,7 +10,9 @@ function normalizeCurrency(currency?: string): string | null {
 
 export function buildIndicatorsKey(indicators?: string[]): string {
   if (!indicators || indicators.length === 0) return '';
-  return [...new Set(indicators)].join(',');
+  return [...new Set(indicators.map((indicator) => indicator.trim()).filter(Boolean))]
+    .sort()
+    .join(',');
 }
 
 export function createHistoryRequest(

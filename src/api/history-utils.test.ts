@@ -8,10 +8,18 @@ describe('createHistoryRequest', () => {
       symbol: 'AAPL',
       period: '1y',
       interval: '1d',
-      indicatorsKey: 'sma50,rsi',
+      indicatorsKey: 'rsi,sma50',
       currency: 'EUR',
       dividends: true,
     });
+  });
+
+  it('uses one stable indicator identity regardless of selection order and whitespace', () => {
+    const first = createHistoryRequest('AAPL', '1y', undefined, [' sma50 ', 'rsi']);
+    const second = createHistoryRequest('AAPL', '1y', undefined, ['rsi', 'sma50']);
+
+    expect(first.indicatorsKey).toBe('rsi,sma50');
+    expect(second.indicatorsKey).toBe(first.indicatorsKey);
   });
 });
 

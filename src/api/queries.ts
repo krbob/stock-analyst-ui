@@ -3,24 +3,24 @@ import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { getHistory, getQuote, compareStocks, searchTickers } from './client';
 import type { Interval, Period } from './types';
 import { INTRADAY_INTERVALS } from './types';
-import { buildHistorySnapshotKey, buildIndicatorsKey, createHistoryRequest } from './history-utils';
+import { buildHistorySnapshotKey, createHistoryRequest } from './history-utils';
 
 export function useStockHistory(symbol: string, period: Period = '1y', interval?: Interval, indicators?: string[], currency?: string, dividends?: boolean) {
   const request = createHistoryRequest(symbol, period, interval, indicators, currency, dividends);
+  const requestedIndicators = request.indicatorsKey ? request.indicatorsKey.split(',') : undefined;
   const intraday = interval != null && INTRADAY_INTERVALS.includes(interval);
   const staleCountRef = useRef(0);
   const prevSnapshotRef = useRef('');
-  const indicatorsKey = buildIndicatorsKey(indicators);
 
   useEffect(() => {
     staleCountRef.current = 0;
     prevSnapshotRef.current = '';
-  }, [request.symbol, request.period, request.interval, request.currency, request.dividends, indicatorsKey]);
+  }, [request.symbol, request.period, request.interval, request.currency, request.dividends, request.indicatorsKey]);
 
   return useQuery({
-    queryKey: ['history', request.symbol, request.period, request.interval ?? null, indicatorsKey, request.currency, request.dividends],
+    queryKey: ['history', request.symbol, request.period, request.interval ?? null, request.indicatorsKey, request.currency, request.dividends],
     queryFn: async ({ signal }) => {
-      const result = await getHistory(request.symbol, request.period, request.interval, indicators, request.currency ?? undefined, request.dividends, signal);
+      const result = await getHistory(request.symbol, request.period, request.interval, requestedIndicators, request.currency ?? undefined, request.dividends, signal);
       const snapshot = buildHistorySnapshotKey(result.prices);
       if (snapshot === prevSnapshotRef.current) {
         staleCountRef.current++;

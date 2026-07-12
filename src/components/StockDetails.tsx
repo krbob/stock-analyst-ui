@@ -4,6 +4,16 @@ import type { HistoricalPrice, Indicators, Interval, Quote } from '../api/types'
 import { formatMarketCap, formatNumber, formatRatioPercent, rangeFraction } from '../lib/format';
 import { formatRecommendation, RECOMMENDATION_COLORS } from '../lib/recommendation';
 
+const ALL_TECHNICAL_INDICATORS: ReadonlySet<string> = new Set([
+  'bb',
+  'ema50',
+  'ema200',
+  'macd',
+  'rsi',
+  'sma50',
+  'sma200',
+]);
+
 /** Horizontal RSI gauge (0–100) with 30/70 zone marks and a value marker. */
 function RsiBar({ value }: { value?: number }) {
   if (value == null || !Number.isFinite(value)) return null;
@@ -190,6 +200,7 @@ export interface StockDetailsProps {
   currency?: string;
   prices?: HistoricalPrice[];
   indicators?: Indicators;
+  activeIndicators?: ReadonlySet<string>;
   interval?: Interval;
   showDividends?: boolean;
   quoteState?: {
@@ -199,7 +210,7 @@ export interface StockDetailsProps {
   };
 }
 
-export default function StockDetails({ symbol, currency, prices, indicators, interval = '1d', showDividends, quoteState }: StockDetailsProps) {
+export default function StockDetails({ symbol, currency, prices, indicators, activeIndicators = ALL_TECHNICAL_INDICATORS, interval = '1d', showDividends, quoteState }: StockDetailsProps) {
   const fallbackQuote = useQuote(quoteState ? '' : symbol, currency);
   const { data, isLoading, error } = quoteState ?? fallbackQuote;
   const dividends = showDividends ? extractDividends(prices) : [];
@@ -265,22 +276,40 @@ export default function StockDetails({ symbol, currency, prices, indicators, int
 
         <div className="rounded-xl border border-border bg-surface-raised px-4 py-3 shadow-sm">
           <h3 className="mb-2 text-sm font-medium text-muted">Technicals</h3>
-          <div className="grid grid-cols-2 gap-x-6 text-sm tabular-nums">
-            <Item label="RSI" value={formatNumber(rsiVal, 1)} tooltip="RSI (14-period). 0–100 scale. Above 70 = overbought, below 30 = oversold. Measures the speed and magnitude of recent price changes." />
-            <div />
-            <RsiBar value={rsiVal} />
-            <Item label="MACD" value={formatNumber(macdLine)} tooltip="MACD Line (12/26 EMA difference). When MACD crosses above the signal line = bullish signal; below = bearish." />
-            <Item label="Signal" value={formatNumber(macdSignal)} tooltip="MACD Signal Line (9-period EMA of MACD). Acts as a trigger for buy/sell signals when crossed by the MACD line." />
-            <Item label="Histogram" value={formatNumber(macdHist)} tooltip="MACD Histogram (MACD minus Signal). Positive and growing = strengthening bullish momentum. Negative and growing = strengthening bearish momentum." />
-            <div />
-            <Item label={`SMA 50 · ${interval}`} value={formatNumber(sma50)} tooltip={`${windowDescription(50, interval)} Simple Moving Average. It averages the last 50 closing-price candles at the selected interval.`} />
-            <Item label={`SMA 200 · ${interval}`} value={formatNumber(sma200)} tooltip={`${windowDescription(200, interval)} Simple Moving Average. It describes 200 candles at the selected interval, not necessarily 200 trading days.`} />
-            <Item label={`EMA 50 · ${interval}`} value={formatNumber(ema50)} tooltip={`${windowDescription(50, interval)} Exponential Moving Average. It gives more weight to recent candles at the selected interval.`} />
-            <Item label={`EMA 200 · ${interval}`} value={formatNumber(ema200)} tooltip={`${windowDescription(200, interval)} Exponential Moving Average. It describes 200 candles at the selected interval.`} />
-            <Item label={`BB Upper · ${interval}`} value={formatNumber(bbUpper)} tooltip={`Upper Bollinger Band based on a ${windowDescription(20, interval)} moving average plus two standard deviations.`} />
-            <Item label={`BB Mid · ${interval}`} value={formatNumber(bbMiddle)} tooltip={`Middle Bollinger Band: the ${windowDescription(20, interval)} moving average.`} />
-            <Item label={`BB Lower · ${interval}`} value={formatNumber(bbLower)} tooltip={`Lower Bollinger Band based on a ${windowDescription(20, interval)} moving average minus two standard deviations.`} />
-          </div>
+          {activeIndicators.size === 0 ? (
+            <p className="text-sm leading-relaxed text-muted">
+              Enable a chart indicator to load and inspect its latest values.
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 gap-x-6 text-sm tabular-nums">
+              {activeIndicators.has('rsi') && (
+                <>
+                  <Item label="RSI" value={formatNumber(rsiVal, 1)} tooltip="RSI (14-period). 0–100 scale. Above 70 = overbought, below 30 = oversold. Measures the speed and magnitude of recent price changes." />
+                  <div />
+                  <RsiBar value={rsiVal} />
+                </>
+              )}
+              {activeIndicators.has('macd') && (
+                <>
+                  <Item label="MACD" value={formatNumber(macdLine)} tooltip="MACD Line (12/26 EMA difference). When MACD crosses above the signal line = bullish signal; below = bearish." />
+                  <Item label="Signal" value={formatNumber(macdSignal)} tooltip="MACD Signal Line (9-period EMA of MACD). Acts as a trigger for buy/sell signals when crossed by the MACD line." />
+                  <Item label="Histogram" value={formatNumber(macdHist)} tooltip="MACD Histogram (MACD minus Signal). Positive and growing = strengthening bullish momentum. Negative and growing = strengthening bearish momentum." />
+                  <div />
+                </>
+              )}
+              {activeIndicators.has('sma50') && <Item label={`SMA 50 · ${interval}`} value={formatNumber(sma50)} tooltip={`${windowDescription(50, interval)} Simple Moving Average. It averages the last 50 closing-price candles at the selected interval.`} />}
+              {activeIndicators.has('sma200') && <Item label={`SMA 200 · ${interval}`} value={formatNumber(sma200)} tooltip={`${windowDescription(200, interval)} Simple Moving Average. It describes 200 candles at the selected interval, not necessarily 200 trading days.`} />}
+              {activeIndicators.has('ema50') && <Item label={`EMA 50 · ${interval}`} value={formatNumber(ema50)} tooltip={`${windowDescription(50, interval)} Exponential Moving Average. It gives more weight to recent candles at the selected interval.`} />}
+              {activeIndicators.has('ema200') && <Item label={`EMA 200 · ${interval}`} value={formatNumber(ema200)} tooltip={`${windowDescription(200, interval)} Exponential Moving Average. It describes 200 candles at the selected interval.`} />}
+              {activeIndicators.has('bb') && (
+                <>
+                  <Item label={`BB Upper · ${interval}`} value={formatNumber(bbUpper)} tooltip={`Upper Bollinger Band based on a ${windowDescription(20, interval)} moving average plus two standard deviations.`} />
+                  <Item label={`BB Mid · ${interval}`} value={formatNumber(bbMiddle)} tooltip={`Middle Bollinger Band: the ${windowDescription(20, interval)} moving average.`} />
+                  <Item label={`BB Lower · ${interval}`} value={formatNumber(bbLower)} tooltip={`Lower Bollinger Band based on a ${windowDescription(20, interval)} moving average minus two standard deviations.`} />
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

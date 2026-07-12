@@ -256,9 +256,9 @@ export default function App() {
   // React Query can then abort an in-flight request once its final observer is gone.
   const singleSymbol = inCompareMode ? '' : symbol;
 
-  // The active single-stock view fetches all indicators — StockDetails derives technicals from the last data point,
-  // and the chart shows only the ones toggled on via `activeIndicators`.
-  const indicatorArray = ALL_INDICATOR_KEYS;
+  // Keep one canonical request for the chart and details panel. Disabled
+  // indicators are not computed by the API or split into duplicate queries.
+  const indicatorArray = ALL_INDICATOR_KEYS.filter((key) => indicators.has(key));
 
   const dividendsParam = showDividends || undefined;
   const nativeHistoryRequest = createHistoryRequest(symbol, period, interval, indicatorArray, undefined, dividendsParam);
@@ -491,7 +491,7 @@ export default function App() {
             </section>
 
             <aside className={`min-w-0 xl:sticky xl:top-[4.25rem] xl:max-h-[calc(100vh-5.25rem)] xl:overflow-y-auto xl:pb-2 ${showDetails ? '' : 'xl:hidden'}`}>
-              <LazyStockDetails symbol={symbol} currency={currency} prices={currencyHistory?.prices ?? nativeHistory?.prices} indicators={currencyHistory?.indicators ?? nativeHistory?.indicators} interval={activeInterval} showDividends={showDividends} quoteState={activeQuoteQuery} />
+              <LazyStockDetails symbol={symbol} currency={currency} prices={currencyHistory?.prices ?? nativeHistory?.prices} indicators={currencyHistory?.indicators ?? nativeHistory?.indicators} activeIndicators={indicators} interval={activeInterval} showDividends={showDividends} quoteState={activeQuoteQuery} />
             </aside>
           </div>
         ) : (

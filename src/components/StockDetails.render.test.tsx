@@ -162,6 +162,40 @@ describe('StockDetails', () => {
     expect(screen.queryByRole('meter', { name: 'RSI gauge' })).not.toBeInTheDocument();
   });
 
+  it('explains disabled technicals instead of rendering unrequested placeholder metrics', () => {
+    vi.mocked(useQuote).mockReturnValue({
+      data: makeQuote(),
+      isLoading: false,
+      error: null,
+    } as ReturnType<typeof useQuote>);
+
+    render(<StockDetails symbol="AAPL" activeIndicators={new Set()} />);
+
+    expect(screen.getByText(/enable a chart indicator/i)).toBeInTheDocument();
+    expect(screen.queryByText('RSI')).not.toBeInTheDocument();
+    expect(screen.queryByText('MACD')).not.toBeInTheDocument();
+  });
+
+  it('renders only technicals included in the active request', () => {
+    vi.mocked(useQuote).mockReturnValue({
+      data: makeQuote(),
+      isLoading: false,
+      error: null,
+    } as ReturnType<typeof useQuote>);
+
+    render(
+      <StockDetails
+        symbol="AAPL"
+        activeIndicators={new Set(['rsi'])}
+        indicators={{ rsi: [{ date: '2026-07-03', value: 55 }] }}
+      />,
+    );
+
+    expect(screen.getByText('RSI')).toBeInTheDocument();
+    expect(screen.queryByText('MACD')).not.toBeInTheDocument();
+    expect(screen.queryByText(/SMA 50/)).not.toBeInTheDocument();
+  });
+
   it('wires metric tooltips via role=tooltip and aria-describedby', () => {
     vi.mocked(useQuote).mockReturnValue({
       data: makeQuote(),

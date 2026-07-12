@@ -96,7 +96,7 @@ describe('query option contracts', () => {
       'AAPL',
       '1d',
       '1m',
-      ['sma50', 'sma50'],
+      ['sma50'],
       'EUR',
       true,
       signal,
