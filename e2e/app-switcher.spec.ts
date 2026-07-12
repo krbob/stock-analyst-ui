@@ -13,6 +13,7 @@ test('exposes a keyboard-safe Portfolio hand-off without leaking analysis state'
 
   const switcher = page.getByRole('link', { name: 'Open Portfolio application' });
   await expect(switcher).toBeVisible();
+  await expect(switcher).toContainText('Portfolio');
   await expect(switcher).toHaveAttribute(
     'href',
     'https://portfolio.example/app?tenant=personal&uiTheme=dark&uiLocale=en',

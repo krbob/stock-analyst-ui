@@ -33,7 +33,7 @@ export default function AppSwitcher({ configuredUrl = configuredPortfolioUrl() }
       className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-2 text-sm font-medium text-secondary outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-accent sm:px-2.5"
     >
       <PortfolioIcon />
-      <span className="hidden sm:inline">Portfolio</span>
+      <span>Portfolio</span>
     </a>
   );
 }
