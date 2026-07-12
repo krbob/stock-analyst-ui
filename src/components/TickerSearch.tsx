@@ -20,14 +20,22 @@ export default function TickerSearch({ onSelect, className = '' }: TickerSearchP
   const inputRef = useRef<HTMLInputElement>(null);
 
   const debouncedQuery = useDebounce(input.trim(), 300);
-  const { data: results = [], isFetching } = useTickerSearch(debouncedQuery);
+  const {
+    data: results = [],
+    isFetching,
+    isError,
+    error,
+    refetch,
+  } = useTickerSearch(debouncedQuery);
 
   const hasQuery = input.trim().length > 0;
-  const showSearchResults = isOpen && hasQuery && results.length > 0;
+  const isCurrentQuery = debouncedQuery === input.trim();
+  const showSearchError = isOpen && hasQuery && isCurrentQuery && !isFetching && isError;
+  const showSearchResults = isOpen && hasQuery && !showSearchError && results.length > 0;
   const showRecents = isOpen && !hasQuery && recents.length > 0;
-  const showSearching = isOpen && hasQuery && debouncedQuery === input.trim() && isFetching;
-  const showNoResults = isOpen && hasQuery && debouncedQuery === input.trim() && !isFetching && results.length === 0;
-  const showDropdown = showSearchResults || showRecents || showSearching || showNoResults;
+  const showSearching = isOpen && hasQuery && isCurrentQuery && isFetching;
+  const showNoResults = isOpen && hasQuery && isCurrentQuery && !isFetching && !isError && results.length === 0;
+  const showDropdown = showSearchResults || showRecents || showSearching || showNoResults || showSearchError;
 
   const items = showSearchResults ? results : showRecents ? recents : [];
 
@@ -121,7 +129,9 @@ export default function TickerSearch({ onSelect, className = '' }: TickerSearchP
           aria-autocomplete="list"
           aria-label="Search ticker"
           aria-busy={showSearching}
-          aria-controls="ticker-search-listbox"
+          aria-invalid={showSearchError || undefined}
+          aria-describedby={showSearchError ? 'ticker-search-error' : undefined}
+          aria-controls={showSearchError ? 'ticker-search-error' : 'ticker-search-listbox'}
           aria-activedescendant={
             activeIndex >= 0 ? `ticker-option-${activeIndex}` : undefined
           }
@@ -133,7 +143,23 @@ export default function TickerSearch({ onSelect, className = '' }: TickerSearchP
             {showRecents && (
               <div className="px-3 py-1.5 text-xs text-muted">Recent</div>
             )}
-            <ul
+            {showSearchError && (
+              <div id="ticker-search-error" role="alert" className="px-3 py-2 text-sm">
+                <div className="font-medium text-danger">Ticker search unavailable</div>
+                <div className="mt-0.5 break-words text-muted">
+                  {error instanceof Error ? error.message : 'Check your connection and try again.'}
+                </div>
+                <button
+                  type="button"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => { void refetch(); }}
+                  className="mt-2 rounded-md border border-border-strong px-2 py-1 text-xs font-medium text-secondary outline-none hover:bg-surface hover:text-primary focus-visible:ring-2 focus-visible:ring-accent"
+                >
+                  Retry search
+                </button>
+              </div>
+            )}
+            {!showSearchError && <ul
               id="ticker-search-listbox"
               role="listbox"
               className="max-h-60 overflow-y-auto"
@@ -184,7 +210,7 @@ export default function TickerSearch({ onSelect, className = '' }: TickerSearchP
                   </div>
                 </li>
               ))}
-            </ul>
+            </ul>}
           </div>
         )}
       </div>

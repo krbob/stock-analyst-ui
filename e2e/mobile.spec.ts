@@ -93,6 +93,18 @@ async function mockApi(page: Page) {
     }
 
     if (url.pathname.startsWith('/api/v1/search/')) {
+      if (url.pathname.endsWith('/SEARCHERROR')) {
+        await route.fulfill({
+          status: 503,
+          json: {
+            error: 'Search service unavailable',
+            errorCode: 'SERVICE_UNAVAILABLE',
+            retryable: false,
+            requestId: 'search-error-test',
+          },
+        });
+        return;
+      }
       await route.fulfill({ json: [] });
       return;
     }
@@ -182,6 +194,15 @@ for (const width of [320, 375]) {
     expect(tickerPopupBox).not.toBeNull();
     expect(tickerPopupBox!.x).toBeGreaterThanOrEqual(0);
     expect(tickerPopupBox!.x + tickerPopupBox!.width).toBeLessThanOrEqual(width);
+    await ticker.press('Escape');
+
+    await ticker.fill('SEARCHERROR');
+    const searchError = page.getByRole('alert');
+    await expect(searchError).toContainText('Ticker search unavailable');
+    await expect(searchError).toContainText('Search service unavailable');
+    await expect(page.getByRole('button', { name: 'Retry search' })).toBeVisible();
+    await expect(page.getByText('No tickers found')).toBeHidden();
+    await expectNoWcagViolations(page, `Ticker search error at ${width}px`);
     await ticker.press('Escape');
 
     await currency.click();

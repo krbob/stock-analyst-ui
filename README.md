@@ -45,7 +45,7 @@ Interactive stock analysis dashboard built with React and [lightweight-charts](h
 **Other**
 - Currency conversion (150+ currencies via the API)
 - Shareable URLs — full chart state encoded in query parameters
-- Ticker search with autocomplete and recent history
+- Ticker search with autocomplete, recent history and distinct empty/error feedback with retry
 - Dark theme, fully responsive
 - Quote/history/compare provenance bars with source, coverage, market freshness and unit semantics
 

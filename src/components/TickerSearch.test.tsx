@@ -4,9 +4,13 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import TickerSearch from './TickerSearch';
 
+const queryMocks = vi.hoisted(() => ({
+  useTickerSearch: vi.fn(),
+}));
+
 // Mock the search query to avoid real API calls
 vi.mock('../api/queries', () => ({
-  useTickerSearch: vi.fn(() => ({ data: [] })),
+  useTickerSearch: queryMocks.useTickerSearch,
 }));
 
 // jsdom localStorage stub
@@ -32,6 +36,14 @@ afterEach(() => {
 
 beforeEach(() => {
   storageMock.clear();
+  queryMocks.useTickerSearch.mockReset();
+  queryMocks.useTickerSearch.mockReturnValue({
+    data: [],
+    isFetching: false,
+    isError: false,
+    error: null,
+    refetch: vi.fn(),
+  });
 });
 
 describe('TickerSearch', () => {
@@ -237,5 +249,42 @@ describe('TickerSearch', () => {
 
     expect(input).toHaveValue('AAPL');
     expect(input).toHaveFocus();
+  });
+
+  it('identifies a completed empty search as no matching tickers', async () => {
+    const user = userEvent.setup();
+    renderWithQuery(<TickerSearch onSelect={vi.fn()} />);
+
+    await user.type(screen.getByPlaceholderText('Ticker'), 'not-listed');
+
+    expect(await screen.findByText('No tickers found')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('shows a retryable error instead of presenting a failed search as empty', async () => {
+    const refetch = vi.fn();
+    queryMocks.useTickerSearch.mockReturnValue({
+      data: [{ symbol: 'OLD', name: 'Stale result', exchange: 'NMS' }],
+      isFetching: false,
+      isError: true,
+      error: new Error('Search service timed out'),
+      refetch,
+    });
+    const user = userEvent.setup();
+    renderWithQuery(<TickerSearch onSelect={vi.fn()} />);
+
+    const input = screen.getByPlaceholderText('Ticker');
+    await user.type(input, 'aapl');
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('Ticker search unavailable');
+    expect(alert).toHaveTextContent('Search service timed out');
+    expect(screen.queryByText('No tickers found')).not.toBeInTheDocument();
+    expect(screen.queryByText('OLD')).not.toBeInTheDocument();
+    expect(input).toHaveAttribute('aria-invalid', 'true');
+    expect(input).toHaveAttribute('aria-describedby', alert.id);
+
+    await user.click(screen.getByRole('button', { name: 'Retry search' }));
+    expect(refetch).toHaveBeenCalledTimes(1);
   });
 });
