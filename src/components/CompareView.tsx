@@ -73,7 +73,12 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
   const h5 = useStockHistory(symbols[5] ?? '', period, undefined, undefined, currency);
   const histories = [h0, h1, h2, h3, h4, h5];
 
-  const { data: compareData } = useCompare(symbols, currency);
+  const {
+    data: compareData,
+    error: compareError,
+    isLoading: compareLoading,
+    refetch: refetchCompare,
+  } = useCompare(symbols, currency);
 
   const activeCount = symbols.length;
   const historySources = symbols.map((sym, index) => {
@@ -227,7 +232,12 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
   }, [hasData, activeCount, period, currency, chartTheme, ...symbols, h0.data, h1.data, h2.data, h3.data, h4.data, h5.data]);
 
   const chartLoading = !hasData && isFetching;
-  const tableLoading = !compareData;
+  const tableLoading = compareLoading;
+  const compareErrorMessage = compareError instanceof Error
+    ? compareError.message
+    : compareError
+      ? String(compareError)
+      : null;
 
   return (
     <div className="space-y-4">
@@ -271,11 +281,23 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
       )}
 
       {/* Comparison table */}
-      {tableLoading ? (
-        <div className="flex h-32 items-center justify-center rounded-xl border border-border bg-surface-raised">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-border-strong border-t-accent" />
+      {compareErrorMessage && !compareData ? (
+        <div role="alert" className="rounded-xl border border-danger/40 bg-danger/10 px-4 py-4 text-sm text-primary">
+          <div className="font-medium">Unable to load comparison data</div>
+          <div className="mt-1 break-words text-danger">{compareErrorMessage}</div>
+          <button
+            type="button"
+            onClick={() => { void refetchCompare(); }}
+            className="mt-3 rounded-lg border border-danger/40 px-3 py-1.5 font-medium text-primary outline-none transition-colors hover:bg-danger/10 focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            Retry comparison
+          </button>
         </div>
-      ) : quotes.length > 0 && (
+      ) : tableLoading ? (
+        <div className="flex h-32 items-center justify-center rounded-xl border border-border bg-surface-raised">
+          <div role="status" aria-label="Loading comparison data" className="h-8 w-8 animate-spin rounded-full border-2 border-border-strong border-t-accent" />
+        </div>
+      ) : quotes.length > 0 ? (
         <div className="overflow-x-auto rounded-xl border border-border bg-surface-raised shadow-sm">
           <table className="w-full text-sm tabular-nums">
             <thead>
@@ -314,6 +336,10 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
               })}
             </tbody>
           </table>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-border bg-surface-raised px-4 py-6 text-center text-sm text-secondary">
+          No comparison data returned for the selected symbols
         </div>
       )}
     </div>
