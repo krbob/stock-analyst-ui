@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { expectNoWcagViolations } from './support/accessibility';
 
 test('reloads a query-string navigation from the cached app shell while offline', async ({ context, page }) => {
   await page.goto('/?s=AAPL&p=1y');
@@ -16,6 +17,7 @@ test('reloads a query-string navigation from the cached app shell while offline'
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: 'Stock Analyst' })).toBeVisible();
     await expect(page).toHaveURL(/[?&]s=AAPL(?:&|$)/);
+    await expectNoWcagViolations(page, 'Offline app shell');
   } finally {
     await context.setOffline(false);
   }

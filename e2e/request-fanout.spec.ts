@@ -55,7 +55,7 @@ function quote(symbol: string) {
 
 test('keeps request fan-out scoped to the active analysis view', async ({ page }) => {
   const calls: string[] = [];
-  await page.route('**/api/**', async (route) => {
+  await page.route('**/api/v1/**', async (route) => {
     const url = new URL(route.request().url());
     calls.push(`${url.pathname}${url.search}`);
     if (url.pathname.startsWith('/api/v1/history/')) {

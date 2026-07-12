@@ -13,6 +13,7 @@
     "preview": "vite preview",
     "test": "npm run contract:test && npm run tokens:check && vitest run",
     "test:watch": "vitest",
+    "test:e2e:ci": "playwright test e2e/accessibility.spec.ts e2e/app-switcher.spec.ts e2e/mobile.spec.ts e2e/offline.spec.ts e2e/request-fanout.spec.ts",
     "tokens:check": "node scripts/validate-design-tokens.mjs",
     "screenshots": "playwright test e2e/screenshots.spec.ts"
   },
@@ -23,6 +24,7 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.12.1",
     "@eslint/js": "^10.0.0",
     "@hey-api/openapi-ts": "0.99.0",
     "@playwright/test": "^1.59.1",

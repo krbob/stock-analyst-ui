@@ -1,5 +1,5 @@
 /*
- * Stock ecosystem design-token contract — v1.0.0.
+ * Stock ecosystem design-token contract — v1.0.1.
  *
  * This file is framework-neutral: consumers depend on the --ui-* custom
  * properties, not on Tailwind or React. Keep primitive values private to the
@@ -31,11 +31,14 @@
   --ui-ref-color-blue-600: #2563eb;
   --ui-ref-color-green-500: #22c55e;
   --ui-ref-color-green-700: #15803d;
+  --ui-ref-color-green-800: #166534;
   --ui-ref-color-red-400: #f87171;
   --ui-ref-color-red-500: #ef4444;
   --ui-ref-color-red-600: #dc2626;
+  --ui-ref-color-red-700: #b91c1c;
   --ui-ref-color-amber-400: #fbbf24;
   --ui-ref-color-amber-700: #b45309;
+  --ui-ref-color-amber-800: #92400e;
   --ui-ref-color-yellow-600: #ca8a04;
   --ui-ref-color-orange-600: #ea580c;
   --ui-ref-color-orange-700: #d97706;
@@ -63,10 +66,10 @@
   --ui-color-text-muted: var(--ui-ref-color-neutral-500);
   --ui-color-action: var(--ui-ref-color-blue-600);
   --ui-color-on-action: var(--ui-ref-color-neutral-0);
-  --ui-color-positive: var(--ui-ref-color-green-700);
-  --ui-color-negative: var(--ui-ref-color-red-600);
-  --ui-color-danger: var(--ui-ref-color-red-600);
-  --ui-color-highlight: var(--ui-ref-color-amber-700);
+  --ui-color-positive: var(--ui-ref-color-green-800);
+  --ui-color-negative: var(--ui-ref-color-red-700);
+  --ui-color-danger: var(--ui-ref-color-red-700);
+  --ui-color-highlight: var(--ui-ref-color-amber-800);
   --ui-space-unit: var(--ui-ref-space-unit);
   --ui-space-control-gap: calc(2 * var(--ui-ref-space-unit));
   --ui-space-section-gap: calc(4 * var(--ui-ref-space-unit));

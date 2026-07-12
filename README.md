@@ -189,6 +189,7 @@ npm run build        # Type check + production build
 npm run lint         # ESLint
 npm test             # Run tests (Vitest)
 npm run test:watch   # Tests in watch mode
+npm run test:e2e:ci # Production-browser smoke, keyboard and axe WCAG A/AA checks
 npm run contract:check     # Verify OpenAPI snapshot/client drift
 npm run contract:generate  # Regenerate the pinned API client
 ```
@@ -218,7 +219,7 @@ GitHub Actions pipeline (`.github/workflows/ci-build.yml`):
 3. **Lint** — ESLint
 4. **Test** — Node contract test and Vitest
 5. **Docker build** — multi-stage image
-6. **Smoke test** — container serves HTML and canonical `/v1` browser requests
+6. **Browser/a11y smoke** — production container, canonical `/v1` requests, keyboard flows, axe WCAG A/AA, 320/375 px and offline shell
 7. **Publish** (main only) — push to `ghcr.io/krbob/stock-analyst-ui`
 
 ## Tech stack

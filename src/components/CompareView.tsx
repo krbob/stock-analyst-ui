@@ -236,7 +236,8 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
             const color = chartTheme.compareColors[i % chartTheme.compareColors.length];
             const val = legendValues.get(sym);
             return (
-              <span key={sym} style={{ color }}>
+              <span key={sym} className="inline-flex items-center gap-1 text-primary">
+                <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
                 {sym.toUpperCase()}
                 {val != null && <span className="ml-1 text-primary">{val >= 0 ? '+' : ''}{val.toFixed(2)}%</span>}
               </span>
@@ -312,10 +313,16 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
                     <th
                       key={q.symbol}
                       aria-label={q.name ? `${q.symbol.toUpperCase()} ${q.name}` : q.symbol.toUpperCase()}
-                      className="px-3 py-2 text-right font-medium"
-                      style={{ color: chartTheme.compareColors[idx % chartTheme.compareColors.length] }}
+                      className="px-3 py-2 text-right font-medium text-primary"
                     >
-                      {q.symbol.toUpperCase()}
+                      <span className="inline-flex items-center justify-end gap-1">
+                        <span
+                          aria-hidden="true"
+                          className="h-2 w-2 rounded-full"
+                          style={{ backgroundColor: chartTheme.compareColors[idx % chartTheme.compareColors.length] }}
+                        />
+                        {q.symbol.toUpperCase()}
+                      </span>
                       {q.name && <span aria-hidden="true" className="hidden text-xs text-muted font-normal sm:block">{q.name}</span>}
                     </th>
                   );

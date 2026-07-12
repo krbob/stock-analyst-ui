@@ -82,7 +82,7 @@ jobs:
 
           curl -sf http://localhost:3000 | grep -q "Stock Analyst"
           curl -sSI http://localhost:3000/runtime-config.js | grep -qi 'Cache-Control:.*no-store'
-          BASE_URL=http://localhost:3000 npx playwright test e2e/offline.spec.ts e2e/mobile.spec.ts e2e/request-fanout.spec.ts e2e/app-switcher.spec.ts
+          BASE_URL=http://localhost:3000 npm run test:e2e:ci
           echo "Smoke test passed"
 
   publish:

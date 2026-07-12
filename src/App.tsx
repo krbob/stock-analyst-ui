@@ -364,7 +364,7 @@ export default function App() {
                 title={inCompareMode ? 'Exit comparison mode' : 'Compare stocks'}
                 className={`inline-flex h-8 w-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent sm:w-auto sm:px-2.5 ${
                   inCompareMode
-                    ? 'border-accent/40 bg-accent/15 text-accent'
+                    ? 'border-accent/40 bg-accent/15 text-primary'
                     : 'border-border bg-surface text-secondary hover:text-primary'
                 }`}
               >
@@ -385,9 +385,17 @@ export default function App() {
                 {compareSymbols.map((sym, i) => (
                   <span
                     key={sym}
-                    className="inline-flex items-center gap-0.5 rounded-full py-0.5 pl-2.5 pr-0.5 text-sm font-medium sm:gap-1 sm:py-1 sm:pl-3"
-                    style={{ backgroundColor: chartTheme.compareColors[i % chartTheme.compareColors.length] + '22', color: chartTheme.compareColors[i % chartTheme.compareColors.length] }}
+                    className="inline-flex items-center gap-1 rounded-full border py-0.5 pl-2.5 pr-0.5 text-sm font-medium text-primary sm:py-1 sm:pl-3"
+                    style={{
+                      backgroundColor: chartTheme.compareColors[i % chartTheme.compareColors.length] + '16',
+                      borderColor: chartTheme.compareColors[i % chartTheme.compareColors.length] + '66',
+                    }}
                   >
+                    <span
+                      aria-hidden="true"
+                      className="h-2 w-2 rounded-full"
+                      style={{ backgroundColor: chartTheme.compareColors[i % chartTheme.compareColors.length] }}
+                    />
                     {sym.toUpperCase()}
                     <button type="button" onClick={() => removeFromCompare(sym)} className="inline-flex h-6 w-6 items-center justify-center rounded-full text-base leading-none outline-none hover:bg-surface/60 hover:text-primary focus-visible:ring-2 focus-visible:ring-accent" aria-label={`Remove ${sym.toUpperCase()} from compare`}>&times;</button>
                   </span>
@@ -452,12 +460,12 @@ export default function App() {
               <IndicatorsPopover groups={INDICATORS} active={indicators} onToggleGroup={toggleIndicatorGroup} />
               </div>
               <div className="ml-auto flex shrink-0 items-center gap-2">
-                <div className={`transition-opacity duration-200 ${chartZoomed ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                <div className={chartZoomed ? '' : 'invisible pointer-events-none'}>
                   <button
                     type="button"
                     onClick={() => resetViewRef.current?.()}
                     tabIndex={chartZoomed ? 0 : -1}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-transparent px-2.5 py-1.5 text-xs font-medium text-muted outline-none transition-colors hover:bg-surface hover:text-primary focus-visible:ring-2 focus-visible:ring-accent sm:text-sm"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-transparent px-2.5 py-1.5 text-xs font-medium text-secondary outline-none transition-colors hover:bg-surface hover:text-primary focus-visible:ring-2 focus-visible:ring-accent sm:text-sm"
                   >
                     <ResetIcon />
                     Reset

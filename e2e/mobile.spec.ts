@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { expectNoWcagViolations } from './support/accessibility';
 
 const SYMBOLS = ['AAPL', 'MSFT', 'GOOG', 'AMZN', 'NVDA', 'META'];
 
@@ -56,7 +57,7 @@ function quote(symbol: string, index: number) {
 }
 
 async function mockApi(page: Page) {
-  await page.route('**/api/**', async (route) => {
+  await page.route('**/api/v1/**', async (route) => {
     const url = new URL(route.request().url());
     if (url.pathname === '/api/v1/compare') {
       await route.fulfill({
@@ -128,6 +129,7 @@ for (const width of [320, 375]) {
     await expect(provenance).toContainText('Source: Yahoo Finance');
     await expect(provenance).toContainText('Market status: Fresh');
     await expect(provenance).toContainText('Unit scale: ×1');
+    await expectNoWcagViolations(page, `Comparison analysis at ${width}px`);
 
     const layout = await page.evaluate(() => {
       const headerElement = document.querySelector('header');
