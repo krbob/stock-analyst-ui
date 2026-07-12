@@ -2,10 +2,15 @@
   "name": "stock-analyst-ui",
   "private": true,
   "version": "0.0.0",
+  "packageManager": "npm@11.16.0",
+  "engines": {
+    "node": "24.18.x",
+    "npm": "11.16.x"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run contract:check && npm run tokens:check && tsc -b && vite build",
+    "build": "npm run supply-chain:check && npm run contract:check && npm run tokens:check && tsc -b && vite build",
     "contract:check": "node scripts/openapi-contract.mjs check",
     "contract:generate": "node scripts/openapi-contract.mjs generate",
     "contract:test": "node --test scripts/test-openapi-contract.mjs",
@@ -17,7 +22,8 @@
     "test:watch": "vitest",
     "test:e2e:ci": "playwright test e2e/accessibility.spec.ts e2e/app-switcher.spec.ts e2e/mobile.spec.ts e2e/offline.spec.ts e2e/request-fanout.spec.ts",
     "tokens:check": "node scripts/validate-design-tokens.mjs",
-    "screenshots": "playwright test e2e/screenshots.spec.ts"
+    "screenshots": "playwright test e2e/screenshots.spec.ts",
+    "supply-chain:check": "node scripts/check-supply-chain.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.21",

@@ -1,26 +1,43 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
+    "config:recommended",
+    "helpers:pinGitHubActionDigests",
+    ":dependencyDashboard"
   ],
   "timezone": "Europe/Warsaw",
-  "automerge": true,
-  "automergeType": "pr",
-  "platformAutomerge": true,
-  "rebaseWhen": "behind-base-branch",
   "schedule": [
-    "* * 1 * *"
+    "before 6am on Monday"
   ],
-  "automergeSchedule": [
-    "at any time"
-  ],
-  "updateNotScheduled": true,
-  "prConcurrentLimit": 0,
-  "branchConcurrentLimit": 0,
-  "prHourlyLimit": 0,
+  "updateNotScheduled": false,
+  "automerge": false,
+  "platformAutomerge": false,
+  "rebaseWhen": "conflicted",
+  "minimumReleaseAge": "7 days",
+  "prConcurrentLimit": 3,
+  "branchConcurrentLimit": 4,
+  "prHourlyLimit": 2,
+  "separateMajorMinor": true,
+  "separateMultipleMajor": true,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": [
+      "before 6am on the first day of the month"
+    ],
+    "automerge": false
+  },
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": [
+      "security"
+    ],
+    "schedule": [
+      "at any time"
+    ]
+  },
   "packageRules": [
     {
-      "description": "Group non-major frontend runtime dependency updates",
+      "description": "Group only patch-level frontend runtime updates",
       "matchManagers": [
         "npm"
       ],
@@ -28,15 +45,12 @@
         "dependencies"
       ],
       "matchUpdateTypes": [
-        "patch",
-        "minor",
-        "digest",
-        "pin"
+        "patch"
       ],
-      "groupName": "Frontend runtime dependencies"
+      "groupName": "Frontend runtime patches"
     },
     {
-      "description": "Group non-major TypeScript type package updates",
+      "description": "Group only patch-level TypeScript type updates",
       "matchManagers": [
         "npm"
       ],
@@ -44,15 +58,12 @@
         "@types/**"
       ],
       "matchUpdateTypes": [
-        "patch",
-        "minor",
-        "digest",
-        "pin"
+        "patch"
       ],
-      "groupName": "TypeScript type packages"
+      "groupName": "TypeScript type patches"
     },
     {
-      "description": "Group non-major frontend build tooling updates",
+      "description": "Group only patch-level frontend build tooling updates",
       "matchManagers": [
         "npm"
       ],
@@ -64,19 +75,17 @@
         "@tailwindcss/vite"
       ],
       "matchUpdateTypes": [
-        "patch",
-        "minor",
-        "digest",
-        "pin"
+        "patch"
       ],
-      "groupName": "Frontend build tooling"
+      "groupName": "Frontend build tooling patches"
     },
     {
-      "description": "Group non-major frontend test tooling updates",
+      "description": "Group only patch-level frontend test tooling updates",
       "matchManagers": [
         "npm"
       ],
       "matchPackageNames": [
+        "@axe-core/playwright",
         "@playwright/test",
         "@testing-library/**",
         "jsdom",
@@ -84,15 +93,12 @@
         "@vitest/**"
       ],
       "matchUpdateTypes": [
-        "patch",
-        "minor",
-        "digest",
-        "pin"
+        "patch"
       ],
-      "groupName": "Frontend test tooling"
+      "groupName": "Frontend test tooling patches"
     },
     {
-      "description": "Group non-major frontend linting updates",
+      "description": "Group only patch-level frontend linting updates",
       "matchManagers": [
         "npm"
       ],
@@ -105,39 +111,41 @@
         "typescript-eslint"
       ],
       "matchUpdateTypes": [
-        "patch",
-        "minor",
-        "digest",
-        "pin"
+        "patch"
       ],
-      "groupName": "Frontend linting"
+      "groupName": "Frontend linting patches"
     },
     {
-      "description": "Group non-major GitHub Actions updates",
+      "description": "Group GitHub Actions patch and immutable digest refreshes",
       "matchManagers": [
         "github-actions"
       ],
       "matchUpdateTypes": [
         "patch",
-        "minor",
-        "digest",
-        "pin"
+        "digest"
       ],
-      "groupName": "GitHub Actions"
+      "groupName": "GitHub Actions maintenance"
     },
     {
-      "description": "Group non-major Docker image updates",
+      "description": "Group immutable Docker digest refreshes only",
       "matchManagers": [
         "dockerfile",
         "docker-compose"
       ],
       "matchUpdateTypes": [
-        "patch",
-        "minor",
-        "digest",
-        "pin"
+        "digest"
       ],
-      "groupName": "Docker images"
+      "groupName": "Docker digest maintenance"
+    },
+    {
+      "description": "Keep major upgrades explicit and easy to identify",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "labels": [
+        "breaking-change"
+      ],
+      "automerge": false
     }
   ]
 }

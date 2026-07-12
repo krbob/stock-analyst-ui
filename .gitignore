@@ -18,6 +18,9 @@ dist
 # Test coverage
 coverage
 
+# Generated security reports
+stock-analyst-ui.spdx.json
+
 # Playwright
 test-results
 

@@ -98,8 +98,10 @@ The UI expects intraday `timestamp` values from the API to be standard UTC epoch
 
 Every quote and history response carries the generated, nested `DataProvenance` contract. The UI displays its provider, actual coverage, retrieval time, optional market timestamp, response currency, adjustment basis, unit scale and market-observation status. `retrievedAt` describes when the API obtained the response; `status` is the backend's cadence-aware assessment of the latest market observation, so the UI keeps the two concepts separate and never infers freshness locally.
 
+This repository pins Node.js 24.18 and npm 11.16. Use the version from `.node-version` and install the lockfile without dependency lifecycle scripts:
+
 ```bash
-npm install
+npm ci --ignore-scripts
 npm run dev
 # Open http://localhost:5173
 ```
@@ -193,13 +195,14 @@ npm run test:coverage # All owned src files + fixed regression floors and report
 npm run test:e2e:ci # Production-browser smoke, keyboard and axe WCAG A/AA checks
 npm run contract:check     # Verify OpenAPI snapshot/client drift
 npm run contract:generate  # Regenerate the pinned API client
+npm run supply-chain:check # Verify immutable CI/container/toolchain policy
 ```
 
 Coverage is deliberately all-source rather than limited to modules imported by tests. The versioned scope and non-auto-updating floors live in `coverage-baseline.json`; generated API code, tests and declarations are the only exclusions. CI publishes the exact covered/total counts and percentages to the workflow summary, while retaining text, JSON, LCOV and HTML reports under `coverage/`.
 
 ## Docker
 
-Multi-stage build: Node 24 for compilation, Nginx Alpine for serving.
+Multi-stage build: Node 24.18.0 with npm 11.16 for compilation, and unprivileged Nginx 1.31.2 Alpine for serving. Both base images use explicit tags and immutable multi-architecture digests; dependency lifecycle scripts are disabled during installation.
 
 ```bash
 # Build
@@ -217,20 +220,23 @@ Set optional `PORTFOLIO_URL` at container startup to enable the Portfolio app sw
 
 GitHub Actions pipeline (`.github/workflows/ci-build.yml`):
 
-1. **Contract check** — pinned OpenAPI snapshot and generated SDK drift
-2. **Type check** — `tsc --noEmit`
-3. **Lint** — ESLint
-4. **Test/coverage** — Node contract test plus all-source Vitest floors and workflow summary
-5. **Docker build** — multi-stage image
-6. **Browser/a11y smoke** — production container, canonical `/v1` requests, keyboard flows, axe WCAG A/AA, 320/375 px and offline shell
-7. **Publish** (main only) — push to `ghcr.io/krbob/stock-analyst-ui`
+1. **Supply-chain policy** — exact Node/npm toolchain, immutable Action and Docker pins, lifecycle-script restrictions
+2. **Dependency audit** — fail on HIGH or CRITICAL npm advisories
+3. **Contract check** — pinned OpenAPI snapshot and generated SDK drift
+4. **Type check and lint** — TypeScript and ESLint
+5. **Test/coverage** — Node contract test plus all-source Vitest floors, retained reports and workflow summary
+6. **Docker build and security** — SPDX JSON SBOM artifact plus an actionable HIGH/CRITICAL Trivy gate
+7. **Browser/a11y smoke** — production container, canonical `/v1` requests, keyboard flows, axe WCAG A/AA, 320/375 px and offline shell
+8. **Publish** (main only) — multi-platform GHCR image with BuildKit provenance and SBOM attestations
+
+All third-party Actions use full commit SHAs with human-readable release comments. Renovate runs in a bounded weekly window, waits seven days after releases, groups only low-risk patch/digest maintenance and never automerges; security alerts may run outside the weekly window but still require manual review.
 
 ## Tech stack
 
 | Component | Technology |
 |-----------|------------|
-| Framework | React 19, TypeScript 5.9 |
-| Build | Vite 7 |
+| Framework | React 19, TypeScript 6 |
+| Build | Vite 8 |
 | Styling | Tailwind CSS 4 |
 | Charts | lightweight-charts 5 |
 | State | TanStack Query 5 |

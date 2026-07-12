@@ -3,6 +3,9 @@ dist
 docs
 .git
 .github
+!.github/
+!.github/workflows/
+!.github/workflows/ci-build.yml
 .env
 .env.*
 !.env.example
@@ -10,5 +13,8 @@ docs
 *.tsbuildinfo
 coverage
 .nyc_output
+test-results
+playwright-report
+stock-analyst-ui.spdx.json
 .vscode
 .idea
