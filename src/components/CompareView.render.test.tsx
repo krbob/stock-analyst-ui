@@ -57,6 +57,7 @@ describe('CompareView rendering', () => {
           symbol: 'AAPL',
           name: 'Apple Inc.',
           date: '2026-07-10',
+          lastPrice: 200,
           peRatio: 25,
           gain: {
             daily: null,
@@ -67,6 +68,15 @@ describe('CompareView rendering', () => {
             ytd: null,
             yearly: null,
             fiveYear: null,
+          },
+          provenance: {
+            source: 'YAHOO_FINANCE',
+            retrievedAt: '2026-07-12T10:00:00Z',
+            marketDate: '2026-07-10',
+            currency: 'USD',
+            unitScale: 1,
+            adjustment: 'SPLIT_ADJUSTED',
+            status: 'FRESH',
           },
         } as Quote,
         error: null,

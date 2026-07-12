@@ -29,4 +29,17 @@ describe('shouldRetryApiQuery', () => {
     expect(shouldRetryApiQuery(1, new ApiError('upstream', 502))).toBe(false);
     expect(shouldRetryApiQuery(1, new TypeError('network failed'))).toBe(false);
   });
+
+  it('honors a generated non-retryable server classification', () => {
+    const error = new ApiError('permanent upstream failure', 503, null, {
+      error: 'permanent upstream failure',
+      errorCode: 'UPSTREAM_ERROR',
+      retryable: false,
+      requestId: 'req-1',
+    });
+
+    expect(error.errorCode).toBe('UPSTREAM_ERROR');
+    expect(error.requestId).toBe('req-1');
+    expect(shouldRetryApiQuery(0, error)).toBe(false);
+  });
 });

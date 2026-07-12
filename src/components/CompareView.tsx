@@ -16,12 +16,12 @@ import { historyProvenance, quoteProvenance } from '../lib/data-provenance';
 // Table helpers
 // ---------------------------------------------------------------------------
 
-type MetricFn = (q: Quote) => number | string | null;
+type MetricFn = (q: Quote) => number | string | null | undefined;
 
 interface Metric {
   label: string;
   get: MetricFn;
-  fmt: (v: number | string | null) => string;
+  fmt: (v: number | string | null | undefined) => string;
   best?: 'max' | 'min';
   gain?: boolean;
 }

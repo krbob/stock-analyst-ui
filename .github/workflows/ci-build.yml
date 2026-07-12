@@ -29,6 +29,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify OpenAPI snapshot and generated client
+        run: npm run contract:check
+
       - name: Type check
         run: npx tsc --noEmit
 

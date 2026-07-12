@@ -16,11 +16,14 @@ export interface DataProvenanceSummary {
   itemCount: number;
   marketScopes: MarketScope[];
   sources: string[];
-  sourceReportedCount: number;
   retrievedAt: string[];
-  retrievedAtReportedCount: number;
+  marketTimestamps: string[];
+  marketTimestampReportedCount: number;
+  currencies: string[];
+  currencyReportedCount: number;
+  adjustments: string[];
+  unitScales: number[];
   statuses: string[];
-  statusReportedCount: number;
 }
 
 function cleanText(value: string | null | undefined, maxLength = 120): string | null {
@@ -33,14 +36,18 @@ function cleanDate(value: string | null | undefined): string | null {
   return cleanText(value, 40);
 }
 
+function appendUnique<T>(items: T[], value: T): void {
+  if (!items.includes(value)) items.push(value);
+}
+
 export function quoteProvenance(quote: Quote, label = 'Quote'): DataProvenanceItem {
+  const { provenance } = quote;
+  const marketDate = cleanDate(provenance.marketDate) ?? cleanDate(quote.date);
   return {
+    ...provenance,
     label,
-    marketFrom: quote.date,
-    marketTo: quote.date,
-    source: quote.source,
-    retrievedAt: quote.retrievedAt,
-    status: quote.status,
+    marketFrom: cleanDate(provenance.coverageFrom) ?? marketDate,
+    marketTo: cleanDate(provenance.coverageTo) ?? marketDate,
   };
 }
 
@@ -49,18 +56,15 @@ export function historyProvenance(history: StockHistory, label = 'History'): Dat
     .map((price) => cleanDate(price.date))
     .filter((date): date is string => date != null)
     .sort();
-  // Requested bounds describe the query, not necessarily returned market data.
-  // Only actual represented price points qualify as a market-data range.
   const first = dates[0];
   const last = dates.at(-1) ?? first;
+  const { provenance } = history;
 
   return {
+    ...provenance,
     label,
-    marketFrom: first,
-    marketTo: last,
-    source: history.source,
-    retrievedAt: history.retrievedAt,
-    status: history.status,
+    marketFrom: cleanDate(provenance.coverageFrom) ?? first,
+    marketTo: cleanDate(provenance.coverageTo) ?? last,
   };
 }
 
@@ -68,10 +72,13 @@ export function summarizeDataProvenance(items: DataProvenanceItem[]): DataProven
   const marketScopeMap = new Map<string, MarketScope>();
   const sources: string[] = [];
   const retrievedAt: string[] = [];
+  const marketTimestamps: string[] = [];
+  const currencies: string[] = [];
+  const adjustments: string[] = [];
+  const unitScales: number[] = [];
   const statuses: string[] = [];
-  let sourceReportedCount = 0;
-  let retrievedAtReportedCount = 0;
-  let statusReportedCount = 0;
+  let marketTimestampReportedCount = 0;
+  let currencyReportedCount = 0;
 
   for (const item of items) {
     const from = cleanDate(item.marketFrom);
@@ -88,20 +95,21 @@ export function summarizeDataProvenance(items: DataProvenanceItem[]): DataProven
       });
     }
 
-    const source = cleanText(item.source);
-    if (source) {
-      sourceReportedCount += 1;
-      if (!sources.includes(source)) sources.push(source);
+    appendUnique(sources, item.source);
+    appendUnique(retrievedAt, item.retrievedAt);
+    appendUnique(adjustments, item.adjustment);
+    appendUnique(unitScales, item.unitScale);
+    appendUnique(statuses, item.status);
+
+    const marketTimestamp = cleanText(item.marketTimestamp, 80);
+    if (marketTimestamp) {
+      marketTimestampReportedCount += 1;
+      appendUnique(marketTimestamps, marketTimestamp);
     }
-    const retrieved = cleanText(item.retrievedAt, 80);
-    if (retrieved) {
-      retrievedAtReportedCount += 1;
-      if (!retrievedAt.includes(retrieved)) retrievedAt.push(retrieved);
-    }
-    const status = cleanText(item.status, 40);
-    if (status) {
-      statusReportedCount += 1;
-      if (!statuses.includes(status)) statuses.push(status);
+    const currency = cleanText(item.currency, 12);
+    if (currency) {
+      currencyReportedCount += 1;
+      appendUnique(currencies, currency.toUpperCase());
     }
   }
 
@@ -109,10 +117,13 @@ export function summarizeDataProvenance(items: DataProvenanceItem[]): DataProven
     itemCount: items.length,
     marketScopes: [...marketScopeMap.values()],
     sources,
-    sourceReportedCount,
     retrievedAt: retrievedAt.sort(),
-    retrievedAtReportedCount,
+    marketTimestamps: marketTimestamps.sort(),
+    marketTimestampReportedCount,
+    currencies,
+    currencyReportedCount,
+    adjustments,
+    unitScales: unitScales.sort((left, right) => left - right),
     statuses,
-    statusReportedCount,
   };
 }

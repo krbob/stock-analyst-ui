@@ -1,12 +1,30 @@
+import type {
+  ApiError as ContractApiError,
+  ApiErrorCode,
+} from './generated/types.gen';
+
 export class ApiError extends Error {
   readonly status: number;
   readonly retryAfterSeconds: number | null;
+  readonly errorCode: ApiErrorCode | null;
+  readonly retryable: boolean;
+  readonly requestId: string | null;
+  readonly body: ContractApiError | null;
 
-  constructor(message: string, status: number, retryAfterSeconds: number | null = null) {
+  constructor(
+    message: string,
+    status: number,
+    retryAfterSeconds: number | null = null,
+    body: ContractApiError | null = null,
+  ) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.retryAfterSeconds = retryAfterSeconds;
+    this.errorCode = body?.errorCode ?? null;
+    this.retryable = body?.retryable ?? status >= 500;
+    this.requestId = body?.requestId ?? null;
+    this.body = body;
   }
 }
 
@@ -28,6 +46,6 @@ export function parseRetryAfterSeconds(
 
 export function shouldRetryApiQuery(failureCount: number, error: Error): boolean {
   if (failureCount >= 1) return false;
-  if (error instanceof ApiError) return error.status >= 500;
+  if (error instanceof ApiError) return error.status !== 429 && error.status >= 500 && error.retryable;
   return true;
 }

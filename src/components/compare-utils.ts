@@ -39,7 +39,7 @@ export function normalizeFromTime(
   }));
 }
 
-export function findBestIdx(values: (number | string | null)[], dir: 'max' | 'min'): number {
+export function findBestIdx(values: (number | string | null | undefined)[], dir: 'max' | 'min'): number {
   let best = -1;
   let bestVal = dir === 'max' ? -Infinity : Infinity;
   let tied = false;

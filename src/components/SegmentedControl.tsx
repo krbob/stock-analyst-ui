@@ -46,7 +46,6 @@ export default function SegmentedControl<T extends string>({
   useLayoutEffect(() => {
     // Measuring the active option and mirroring it into state is the point of
     // this layout effect (DOM → overlay position); it settles in one pass.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     measure();
     const group = groupRef.current;
     if (!group || !('ResizeObserver' in window)) return;

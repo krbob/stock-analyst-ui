@@ -1,0 +1,559 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Stock Analyst API",
+    "version": "1.0.0",
+    "description": "Versioned market-data contract. Unversioned routes remain temporary compatibility aliases."
+  },
+  "tags": [
+    { "name": "Market data" },
+    { "name": "Discovery" }
+  ],
+  "paths": {
+    "/v1/quote/{stock}": {
+      "x-legacy-alias": "/quote/{stock}",
+      "get": {
+        "tags": ["Market data"],
+        "operationId": "getQuote",
+        "summary": "Get the latest normalized quote",
+        "parameters": [
+          { "$ref": "#/components/parameters/Stock" },
+          { "$ref": "#/components/parameters/Currency" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Normalized quote",
+            "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestId" } },
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Quote" } }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "422": { "$ref": "#/components/responses/UnprocessableEntity" },
+          "429": { "$ref": "#/components/responses/TooManyRequests" },
+          "502": { "$ref": "#/components/responses/BadGateway" },
+          "503": { "$ref": "#/components/responses/ServiceUnavailable" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/v1/compare": {
+      "x-legacy-alias": "/compare",
+      "get": {
+        "tags": ["Market data"],
+        "operationId": "compareStocks",
+        "summary": "Compare up to ten symbols",
+        "parameters": [
+          {
+            "name": "symbols",
+            "in": "query",
+            "required": true,
+            "description": "Comma-separated symbol list.",
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 10,
+              "items": { "$ref": "#/components/schemas/Symbol" }
+            }
+          },
+          { "$ref": "#/components/parameters/Currency" }
+        ],
+        "responses": {
+          "200": {
+            "description": "One result per requested symbol; individual unknown symbols are represented in-item.",
+            "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestId" } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/CompareResult" }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "422": { "$ref": "#/components/responses/UnprocessableEntity" },
+          "429": { "$ref": "#/components/responses/TooManyRequests" },
+          "502": { "$ref": "#/components/responses/BadGateway" },
+          "503": { "$ref": "#/components/responses/ServiceUnavailable" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/v1/history/{stock}": {
+      "x-legacy-alias": "/history/{stock}",
+      "get": {
+        "tags": ["Market data"],
+        "operationId": "getStockHistory",
+        "summary": "Get split-adjusted price history and optional indicators",
+        "parameters": [
+          { "$ref": "#/components/parameters/Stock" },
+          { "$ref": "#/components/parameters/Period" },
+          { "$ref": "#/components/parameters/Interval" },
+          { "$ref": "#/components/parameters/Indicators" },
+          { "$ref": "#/components/parameters/Currency" },
+          {
+            "name": "dividends",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "boolean", "default": false }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "description": "Inclusive start date. Must be provided together with `to`.",
+            "schema": { "type": "string", "format": "date" }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "description": "Inclusive end date. Must be provided together with `from`.",
+            "schema": { "type": "string", "format": "date" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Normalized split-adjusted history",
+            "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestId" } },
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/StockHistory" } }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "422": { "$ref": "#/components/responses/UnprocessableEntity" },
+          "429": { "$ref": "#/components/responses/TooManyRequests" },
+          "502": { "$ref": "#/components/responses/BadGateway" },
+          "503": { "$ref": "#/components/responses/ServiceUnavailable" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/v1/indicators/{stock}": {
+      "x-legacy-alias": "/indicators/{stock}",
+      "get": {
+        "tags": ["Market data"],
+        "operationId": "getLatestIndicators",
+        "summary": "Get the latest requested indicator values",
+        "parameters": [
+          { "$ref": "#/components/parameters/Stock" },
+          { "$ref": "#/components/parameters/Period" },
+          { "$ref": "#/components/parameters/Interval" },
+          { "$ref": "#/components/parameters/Indicators" },
+          { "$ref": "#/components/parameters/Currency" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Latest indicator snapshot",
+            "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestId" } },
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/LatestIndicators" } }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "422": { "$ref": "#/components/responses/UnprocessableEntity" },
+          "429": { "$ref": "#/components/responses/TooManyRequests" },
+          "502": { "$ref": "#/components/responses/BadGateway" },
+          "503": { "$ref": "#/components/responses/ServiceUnavailable" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/v1/search/{query}": {
+      "x-legacy-alias": "/search/{query}",
+      "get": {
+        "tags": ["Discovery"],
+        "operationId": "searchTickers",
+        "summary": "Search tickers",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "minLength": 1, "maxLength": 50 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matching tickers",
+            "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestId" } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/SearchResult" }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "429": { "$ref": "#/components/responses/TooManyRequests" },
+          "502": { "$ref": "#/components/responses/BadGateway" },
+          "503": { "$ref": "#/components/responses/ServiceUnavailable" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "headers": {
+      "RequestId": {
+        "description": "Validated client request identifier or a server-generated UUID.",
+        "schema": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+        }
+      },
+      "RetryAfter": {
+        "description": "Seconds before the caller should retry.",
+        "schema": { "type": "string", "pattern": "^[0-9]+$" }
+      }
+    },
+    "parameters": {
+      "Stock": {
+        "name": "stock",
+        "in": "path",
+        "required": true,
+        "schema": { "$ref": "#/components/schemas/Symbol" }
+      },
+      "Currency": {
+        "name": "currency",
+        "in": "query",
+        "required": false,
+        "description": "Optional ISO 4217 target currency.",
+        "schema": { "type": "string", "pattern": "^[A-Za-z]{3}$", "example": "PLN" }
+      },
+      "Period": {
+        "name": "period",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "default": "1y",
+          "enum": ["1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max"]
+        }
+      },
+      "Interval": {
+        "name": "interval",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "enum": ["1m", "5m", "15m", "30m", "1h", "1d", "1wk", "1mo"]
+        }
+      },
+      "Indicators": {
+        "name": "indicators",
+        "in": "query",
+        "required": false,
+        "description": "Comma-separated subset of supported indicator names.",
+        "schema": {
+          "type": "string",
+          "example": "sma50,rsi,macd"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Invalid path or query parameter.",
+        "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiError" } } }
+      },
+      "NotFound": {
+        "description": "Symbol or route not found.",
+        "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiError" } } }
+      },
+      "UnprocessableEntity": {
+        "description": "The request is valid but required market or conversion data is insufficient.",
+        "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiError" } } }
+      },
+      "TooManyRequests": {
+        "description": "The upstream provider rate-limited the request.",
+        "headers": {
+          "X-Request-ID": { "$ref": "#/components/headers/RequestId" },
+          "Retry-After": { "$ref": "#/components/headers/RetryAfter" }
+        },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiError" } } }
+      },
+      "BadGateway": {
+        "description": "The market-data backend returned a classified failure.",
+        "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiError" } } }
+      },
+      "ServiceUnavailable": {
+        "description": "The backend bulkhead or circuit breaker rejected the request.",
+        "headers": {
+          "X-Request-ID": { "$ref": "#/components/headers/RequestId" },
+          "Retry-After": { "$ref": "#/components/headers/RetryAfter" }
+        },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiError" } } }
+      },
+      "InternalServerError": {
+        "description": "Unexpected server failure.",
+        "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiError" } } }
+      }
+    },
+    "schemas": {
+      "Symbol": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 20,
+        "pattern": "^[a-zA-Z0-9.\\-=^]{1,20}$",
+        "example": "AAPL"
+      },
+      "ApiErrorCode": {
+        "type": "string",
+        "enum": [
+          "INVALID_REQUEST",
+          "ROUTE_NOT_FOUND",
+          "METHOD_NOT_ALLOWED",
+          "SYMBOL_NOT_FOUND",
+          "INSUFFICIENT_DATA",
+          "UPSTREAM_RATE_LIMITED",
+          "SERVICE_UNAVAILABLE",
+          "UPSTREAM_ERROR",
+          "INTERNAL_ERROR"
+        ]
+      },
+      "ApiError": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["error", "errorCode", "retryable", "requestId"],
+        "properties": {
+          "error": { "type": "string" },
+          "errorCode": { "$ref": "#/components/schemas/ApiErrorCode" },
+          "retryable": { "type": "boolean" },
+          "requestId": { "type": "string", "nullable": true }
+        }
+      },
+      "Quote": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["symbol", "name", "date", "lastPrice", "gain", "provenance"],
+        "properties": {
+          "symbol": { "$ref": "#/components/schemas/Symbol" },
+          "name": { "type": "string" },
+          "currency": { "type": "string", "nullable": true },
+          "date": { "type": "string", "format": "date" },
+          "lastPrice": { "type": "number", "format": "double" },
+          "gain": { "$ref": "#/components/schemas/Gain" },
+          "peRatio": { "type": "number", "format": "double", "nullable": true },
+          "pbRatio": { "type": "number", "format": "double", "nullable": true },
+          "eps": { "type": "number", "format": "double", "nullable": true },
+          "roe": { "type": "number", "format": "double", "nullable": true },
+          "marketCap": { "type": "number", "format": "double", "nullable": true },
+          "beta": { "type": "number", "format": "double", "nullable": true },
+          "dividendYield": { "type": "number", "format": "double", "nullable": true },
+          "dividendGrowth": { "type": "number", "format": "double", "nullable": true },
+          "fiftyTwoWeekHigh": { "type": "number", "format": "double", "nullable": true },
+          "fiftyTwoWeekLow": { "type": "number", "format": "double", "nullable": true },
+          "sector": { "type": "string", "nullable": true },
+          "industry": { "type": "string", "nullable": true },
+          "earningsDate": { "type": "string", "format": "date", "nullable": true },
+          "recommendation": { "type": "string", "nullable": true },
+          "analystCount": { "type": "integer", "format": "int32", "nullable": true },
+          "previousClose": { "type": "number", "format": "double", "nullable": true },
+          "provenance": { "$ref": "#/components/schemas/DataProvenance" }
+        }
+      },
+      "Gain": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "daily": { "type": "number", "format": "double", "nullable": true },
+          "weekly": { "type": "number", "format": "double", "nullable": true },
+          "monthly": { "type": "number", "format": "double", "nullable": true },
+          "quarterly": { "type": "number", "format": "double", "nullable": true },
+          "halfYearly": { "type": "number", "format": "double", "nullable": true },
+          "ytd": { "type": "number", "format": "double", "nullable": true },
+          "yearly": { "type": "number", "format": "double", "nullable": true },
+          "fiveYear": { "type": "number", "format": "double", "nullable": true }
+        }
+      },
+      "CompareResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["symbol"],
+        "properties": {
+          "symbol": { "$ref": "#/components/schemas/Symbol" },
+          "data": { "$ref": "#/components/schemas/Quote" },
+          "error": { "type": "string", "nullable": true }
+        }
+      },
+      "StockHistory": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["symbol", "name", "period", "interval", "prices", "adjustment", "provenance"],
+        "properties": {
+          "symbol": { "$ref": "#/components/schemas/Symbol" },
+          "name": { "type": "string" },
+          "period": { "type": "string" },
+          "interval": { "type": "string" },
+          "prices": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/HistoricalPrice" }
+          },
+          "adjustment": { "$ref": "#/components/schemas/PriceAdjustment" },
+          "indicators": { "$ref": "#/components/schemas/Indicators" },
+          "currency": { "type": "string", "nullable": true },
+          "requestedFrom": { "type": "string", "format": "date", "nullable": true },
+          "requestedTo": { "type": "string", "format": "date", "nullable": true },
+          "provenance": { "$ref": "#/components/schemas/DataProvenance" }
+        }
+      },
+      "PriceAdjustment": {
+        "type": "string",
+        "enum": ["split-adjusted"]
+      },
+      "HistoricalPrice": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["date", "open", "close", "low", "high", "volume", "dividend"],
+        "properties": {
+          "date": { "type": "string", "format": "date" },
+          "open": { "type": "number", "format": "double" },
+          "close": { "type": "number", "format": "double" },
+          "low": { "type": "number", "format": "double" },
+          "high": { "type": "number", "format": "double" },
+          "volume": { "type": "integer", "format": "int64" },
+          "dividend": { "type": "number", "format": "double" },
+          "timestamp": { "type": "integer", "format": "int64", "nullable": true },
+          "splitRatio": { "type": "number", "format": "double", "nullable": true }
+        }
+      },
+      "Indicators": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "sma50": { "type": "array", "items": { "$ref": "#/components/schemas/SingleValue" } },
+          "sma200": { "type": "array", "items": { "$ref": "#/components/schemas/SingleValue" } },
+          "ema50": { "type": "array", "items": { "$ref": "#/components/schemas/SingleValue" } },
+          "ema200": { "type": "array", "items": { "$ref": "#/components/schemas/SingleValue" } },
+          "bb": { "type": "array", "items": { "$ref": "#/components/schemas/BollingerValue" } },
+          "rsi": { "type": "array", "items": { "$ref": "#/components/schemas/SingleValue" } },
+          "macd": { "type": "array", "items": { "$ref": "#/components/schemas/MacdValue" } }
+        }
+      },
+      "SingleValue": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["date", "value"],
+        "properties": {
+          "date": { "type": "string", "format": "date" },
+          "value": { "type": "number", "format": "double" },
+          "timestamp": { "type": "integer", "format": "int64", "nullable": true }
+        }
+      },
+      "BollingerValue": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["date", "upper", "middle", "lower"],
+        "properties": {
+          "date": { "type": "string", "format": "date" },
+          "upper": { "type": "number", "format": "double" },
+          "middle": { "type": "number", "format": "double" },
+          "lower": { "type": "number", "format": "double" },
+          "timestamp": { "type": "integer", "format": "int64", "nullable": true }
+        }
+      },
+      "MacdValue": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["date", "macd", "signal", "histogram"],
+        "properties": {
+          "date": { "type": "string", "format": "date" },
+          "macd": { "type": "number", "format": "double" },
+          "signal": { "type": "number", "format": "double" },
+          "histogram": { "type": "number", "format": "double" },
+          "timestamp": { "type": "integer", "format": "int64", "nullable": true }
+        }
+      },
+      "LatestIndicators": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["symbol", "date", "provenance"],
+        "properties": {
+          "symbol": { "$ref": "#/components/schemas/Symbol" },
+          "date": { "type": "string", "format": "date" },
+          "rsi": { "type": "number", "format": "double", "nullable": true },
+          "macd": { "$ref": "#/components/schemas/MacdSnapshot" },
+          "bb": { "$ref": "#/components/schemas/BollingerSnapshot" },
+          "sma50": { "type": "number", "format": "double", "nullable": true },
+          "sma200": { "type": "number", "format": "double", "nullable": true },
+          "ema50": { "type": "number", "format": "double", "nullable": true },
+          "ema200": { "type": "number", "format": "double", "nullable": true },
+          "provenance": { "$ref": "#/components/schemas/DataProvenance" }
+        }
+      },
+      "MacdSnapshot": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["macd", "signal", "histogram"],
+        "properties": {
+          "macd": { "type": "number", "format": "double" },
+          "signal": { "type": "number", "format": "double" },
+          "histogram": { "type": "number", "format": "double" }
+        }
+      },
+      "BollingerSnapshot": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["upper", "middle", "lower"],
+        "properties": {
+          "upper": { "type": "number", "format": "double" },
+          "middle": { "type": "number", "format": "double" },
+          "lower": { "type": "number", "format": "double" }
+        }
+      },
+      "DataProvenance": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "retrievedAt", "unitScale", "adjustment", "status"],
+        "properties": {
+          "source": { "$ref": "#/components/schemas/MarketDataSource" },
+          "retrievedAt": { "type": "string", "format": "date-time" },
+          "marketTimestamp": { "type": "string", "format": "date-time", "nullable": true },
+          "marketDate": { "type": "string", "format": "date", "nullable": true },
+          "currency": { "type": "string", "nullable": true },
+          "unitScale": { "type": "number", "format": "double", "enum": [1.0] },
+          "adjustment": { "$ref": "#/components/schemas/DataAdjustment" },
+          "coverageFrom": { "type": "string", "format": "date", "nullable": true },
+          "coverageTo": { "type": "string", "format": "date", "nullable": true },
+          "status": { "$ref": "#/components/schemas/DataStatus" }
+        }
+      },
+      "MarketDataSource": {
+        "type": "string",
+        "enum": ["YAHOO_FINANCE"]
+      },
+      "DataAdjustment": {
+        "type": "string",
+        "enum": ["RAW", "SPLIT_ADJUSTED", "TOTAL_RETURN"]
+      },
+      "DataStatus": {
+        "type": "string",
+        "enum": ["FRESH", "STALE", "PARTIAL", "ERROR"]
+      },
+      "SearchResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["symbol", "name", "exchange", "quoteType"],
+        "properties": {
+          "symbol": { "$ref": "#/components/schemas/Symbol" },
+          "name": { "type": "string" },
+          "exchange": { "type": "string" },
+          "quoteType": { "type": "string" }
+        }
+      }
+    }
+  }
+}

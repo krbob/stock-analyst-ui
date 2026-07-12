@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "contract": "stock-analyst-v1",
+  "apiVersion": "1.0.0",
+  "source": {
+    "repository": "krbob/stock-analyst",
+    "commit": "6a290a667adfd482c6a3eeba1382d69c1ed593a1",
+    "path": "src/main/resources/openapi/stock-analyst-v1.json"
+  },
+  "snapshot": {
+    "path": "openapi/stock-analyst-v1.json",
+    "sha256": "0f248b9b402e705a71ba90b28a4555614a385e8161cca2aaa7d63a82dfc0f2fb"
+  },
+  "generator": {
+    "package": "@hey-api/openapi-ts",
+    "version": "0.99.0",
+    "config": "openapi-ts.config.mjs",
+    "output": "src/api/generated",
+    "treeSha256": "e7d10b79c9ac24a2007f2306b204b79fcbbf892ec588465623a4ffe39a19b6ea"
+  }
+}

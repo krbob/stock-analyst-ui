@@ -13,6 +13,21 @@ const GAINS = {
   fiveYear: 1.455,
 };
 
+function provenance(currency: string, coverageFrom: string, coverageTo: string) {
+  return {
+    source: 'YAHOO_FINANCE',
+    retrievedAt: '2026-07-12T10:00:00Z',
+    marketTimestamp: '2026-07-10T20:00:00Z',
+    marketDate: '2026-07-10',
+    currency,
+    unitScale: 1,
+    adjustment: 'SPLIT_ADJUSTED',
+    coverageFrom,
+    coverageTo,
+    status: 'FRESH',
+  };
+}
+
 function quote(symbol: string, index: number) {
   return {
     symbol,
@@ -36,20 +51,21 @@ function quote(symbol: string, index: number) {
     earningsDate: '2026-08-01',
     recommendation: 'buy',
     analystCount: 30 + index,
+    provenance: provenance('PLN', '2026-07-10', '2026-07-10'),
   };
 }
 
 async function mockApi(page: Page) {
   await page.route('**/api/**', async (route) => {
     const url = new URL(route.request().url());
-    if (url.pathname === '/api/compare') {
+    if (url.pathname === '/api/v1/compare') {
       await route.fulfill({
         json: SYMBOLS.map((symbol, index) => ({ symbol, data: quote(symbol, index), error: null })),
       });
       return;
     }
 
-    if (url.pathname.startsWith('/api/history/')) {
+    if (url.pathname.startsWith('/api/v1/history/')) {
       const symbol = decodeURIComponent(url.pathname.split('/').at(-1) ?? 'AAPL').toUpperCase();
       const index = Math.max(0, SYMBOLS.indexOf(symbol));
       await route.fulfill({
@@ -58,18 +74,24 @@ async function mockApi(page: Page) {
           name: quote(symbol, index).name,
           period: '1y',
           interval: '1d',
+          adjustment: 'split-adjusted',
           currency: url.searchParams.get('currency') ?? 'USD',
           prices: [
             { date: '2026-07-08', open: 100, high: 103, low: 99, close: 101 + index, volume: 1_000_000, dividend: 0 },
             { date: '2026-07-09', open: 101, high: 105, low: 100, close: 103 + index, volume: 1_100_000, dividend: 0 },
             { date: '2026-07-10', open: 103, high: 108, low: 102, close: 106 + index, volume: 1_200_000, dividend: 0 },
           ],
+          provenance: provenance(
+            url.searchParams.get('currency') ?? 'USD',
+            '2026-07-08',
+            '2026-07-10',
+          ),
         },
       });
       return;
     }
 
-    if (url.pathname.startsWith('/api/search/')) {
+    if (url.pathname.startsWith('/api/v1/search/')) {
       await route.fulfill({ json: [] });
       return;
     }
@@ -103,7 +125,9 @@ for (const width of [320, 375]) {
     await expect(chart).toBeVisible();
     await expect(tableRegion).toBeVisible();
     await expect(provenance).toContainText('6/6 quotes · 6/6 histories');
-    await expect(provenance).toContainText('Source: not reported by API');
+    await expect(provenance).toContainText('Source: Yahoo Finance');
+    await expect(provenance).toContainText('Market status: Fresh');
+    await expect(provenance).toContainText('Unit scale: ×1');
 
     const layout = await page.evaluate(() => {
       const headerElement = document.querySelector('header');

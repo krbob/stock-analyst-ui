@@ -18,24 +18,18 @@ function queryClient(retry: false | typeof shouldRetryApiQuery = false) {
 }
 
 function jsonResponse(data: unknown): Response {
-  return {
-    ok: true,
+  return new Response(JSON.stringify(data), {
     status: 200,
-    statusText: 'OK',
-    json: async () => data,
-    text: async () => JSON.stringify(data),
-  } as Response;
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
 
 function errorResponse(status: number, error: string): Response {
-  return {
-    ok: false,
+  return new Response(JSON.stringify({ error }), {
     status,
     statusText: 'Error',
-    headers: { get: () => null },
-    json: async () => ({ error }),
-    text: async () => JSON.stringify({ error }),
-  } as unknown as Response;
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
 
 function HistoryObserver() {
@@ -57,8 +51,8 @@ afterEach(() => {
 describe('query request lifecycle', () => {
   it('coalesces identical observers and aborts only after the last one unmounts', async () => {
     let requestSignal: AbortSignal | undefined;
-    const fetchMock = vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
-      requestSignal = init?.signal ?? undefined;
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      requestSignal = input instanceof Request ? input.signal : init?.signal ?? undefined;
       return new Promise<Response>((_resolve, reject) => {
         requestSignal?.addEventListener('abort', () => {
           reject(new DOMException('Aborted', 'AbortError'));
@@ -76,10 +70,11 @@ describe('query request lifecycle', () => {
     );
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
-    expect(fetchMock).toHaveBeenCalledWith(
-      '/api/history/AAPL?period=1y&indicators=sma50',
-      { signal: expect.any(AbortSignal) },
-    );
+    const generatedRequest = fetchMock.mock.calls[0][0] as Request;
+    const generatedUrl = new URL(generatedRequest.url);
+    expect(`${generatedUrl.pathname}${generatedUrl.search}`)
+      .toBe('/api/v1/history/AAPL?period=1y&indicators=sma50');
+    expect(generatedRequest.signal).toBeInstanceOf(AbortSignal);
     expect(requestSignal?.aborted).toBe(false);
 
     view.rerender(
@@ -110,7 +105,9 @@ describe('query request lifecycle', () => {
 
     expect(await screen.findByText('Apple Inc.')).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(fetchMock.mock.calls.every(([, init]) => init?.signal instanceof AbortSignal)).toBe(true);
+    expect(fetchMock.mock.calls.every(([request]) => (
+      request instanceof Request && request.signal instanceof AbortSignal
+    ))).toBe(true);
     client.clear();
   });
 

@@ -258,8 +258,8 @@ export default function StockDetails({ symbol, currency, prices, indicators, int
             <Item label="Sector" value={data.sector ?? '—'} />
             <Item label="Industry" value={data.industry ?? '—'} />
             <Item label="Earnings" value={data.earningsDate ?? '—'} tooltip="Next Earnings Date. When the company reports quarterly results. Stock prices often move significantly around earnings." />
-            <Recommendation value={data.recommendation} count={data.analystCount} />
-            <FiftyTwoWeekRange low={data.fiftyTwoWeekLow} high={data.fiftyTwoWeekHigh} price={data.lastPrice} />
+            <Recommendation value={data.recommendation ?? null} count={data.analystCount ?? null} />
+            <FiftyTwoWeekRange low={data.fiftyTwoWeekLow ?? null} high={data.fiftyTwoWeekHigh ?? null} price={data.lastPrice} />
           </div>
         </div>
 

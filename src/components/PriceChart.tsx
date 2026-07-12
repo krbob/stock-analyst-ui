@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { createChart, createSeriesMarkers, CandlestickSeries, LineSeries, HistogramSeries, PriceScaleMode, type IChartApi, type ISeriesApi, type SeriesType, type Time, type UTCTimestamp } from 'lightweight-charts';
-import type { HistoricalPrice, Indicators, StockHistory } from '../api/types';
+import { isInterval, type HistoricalPrice, type Indicators, type StockHistory } from '../api/types';
 import { useStockHistory } from '../api/queries';
 import type { Interval, Period } from '../api/types';
 import { createHistoryRequest, matchesHistoryRequest } from '../api/history-utils';
@@ -19,11 +19,11 @@ import { runChartCleanups } from './chart-lifecycle';
 // Time helpers
 // ---------------------------------------------------------------------------
 
-function timeKey(item: { date: string; timestamp?: number }): string {
+function timeKey(item: { date: string; timestamp?: number | null }): string {
   return item.timestamp != null ? String(item.timestamp) : item.date;
 }
 
-function chartTime(item: { date: string; timestamp?: number }): Time {
+function chartTime(item: { date: string; timestamp?: number | null }): Time {
   return item.timestamp != null ? item.timestamp as UTCTimestamp : item.date;
 }
 
@@ -502,7 +502,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
   const accessibleDescription = describePriceChart(
     symbol,
     currentData?.prices ?? [],
-    currentData?.interval ?? interval,
+    isInterval(currentData?.interval) ? currentData.interval : interval,
     currentData?.currency ?? currency,
     currentData?.adjustment,
   );

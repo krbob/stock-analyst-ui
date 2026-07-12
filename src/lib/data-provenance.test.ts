@@ -1,10 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import type { Quote, StockHistory } from '../api/types';
+import type { DataProvenance, Quote, StockHistory } from '../api/types';
 import {
   historyProvenance,
   quoteProvenance,
   summarizeDataProvenance,
 } from './data-provenance';
+
+const provenance: DataProvenance = {
+  source: 'YAHOO_FINANCE',
+  retrievedAt: '2026-07-12T10:00:00Z',
+  unitScale: 1,
+  adjustment: 'SPLIT_ADJUSTED',
+  status: 'FRESH',
+};
 
 const gain = {
   daily: null,
@@ -18,39 +26,35 @@ const gain = {
 };
 
 describe('data provenance adapters', () => {
-  it('uses API-provided quote metadata without inferring a provider or freshness', () => {
-    const item = quoteProvenance({
+  it('uses the generated nested quote provenance without inferring metadata', () => {
+    const quote: Quote = {
       symbol: 'AAPL',
       name: 'Apple',
       currency: 'USD',
       date: '2026-07-10',
       lastPrice: 200,
       gain,
-      peRatio: null,
-      pbRatio: null,
-      eps: null,
-      roe: null,
-      marketCap: null,
-      beta: null,
-      dividendYield: null,
-      dividendGrowth: null,
-      fiftyTwoWeekHigh: null,
-      fiftyTwoWeekLow: null,
-      sector: null,
-      industry: null,
-      earningsDate: null,
-      recommendation: null,
-      analystCount: null,
-    });
+      provenance: {
+        ...provenance,
+        marketTimestamp: '2026-07-10T20:00:00Z',
+        marketDate: '2026-07-10',
+        currency: 'USD',
+        coverageFrom: '2021-07-12',
+        coverageTo: '2026-07-10',
+        status: 'PARTIAL',
+      },
+    };
 
-    expect(item).toMatchObject({ marketFrom: '2026-07-10', marketTo: '2026-07-10' });
-    expect(item.source).toBeUndefined();
-    expect(item.retrievedAt).toBeUndefined();
-    expect(item.status).toBeUndefined();
+    expect(quoteProvenance(quote)).toEqual({
+      ...quote.provenance,
+      label: 'Quote',
+      marketFrom: '2021-07-12',
+      marketTo: '2026-07-10',
+    });
   });
 
-  it('derives the represented history range from unsorted prices, not the requested window', () => {
-    const item = historyProvenance({
+  it('falls back to represented price dates when optional history coverage is absent', () => {
+    const history: StockHistory = {
       symbol: 'AAPL',
       name: 'Apple',
       period: '1y',
@@ -59,40 +63,54 @@ describe('data provenance adapters', () => {
         { date: '2026-07-10', open: 1, close: 1, low: 1, high: 1, volume: 1, dividend: 0 },
         { date: '2025-07-11', open: 1, close: 1, low: 1, high: 1, volume: 1, dividend: 0 },
       ],
+      adjustment: 'split-adjusted',
       requestedFrom: '2025-07-01',
       requestedTo: '2026-07-12',
-    } as StockHistory);
+      provenance,
+    };
 
-    expect(item).toMatchObject({ marketFrom: '2025-07-11', marketTo: '2026-07-10' });
+    expect(historyProvenance(history)).toMatchObject({
+      marketFrom: '2025-07-11',
+      marketTo: '2026-07-10',
+    });
   });
 
-  it('keeps future optional metadata and reports partial coverage exactly', () => {
-    const quote = {
-      date: '2026-07-10',
-      source: 'Provider A',
-      retrievedAt: '2026-07-12T10:00:00Z',
-      status: 'delayed',
-    } as Quote;
+  it('summarizes strict and optional metadata coverage exactly', () => {
     const summary = summarizeDataProvenance([
-      quoteProvenance(quote, 'AAPL quote'),
-      { label: 'AAPL history', marketFrom: '2025-07-11', marketTo: '2026-07-10' },
+      {
+        ...provenance,
+        label: 'AAPL quote',
+        marketFrom: '2021-07-12',
+        marketTo: '2026-07-10',
+        marketTimestamp: '2026-07-10T20:00:00Z',
+        currency: 'usd',
+      },
+      {
+        ...provenance,
+        label: 'AAPL history',
+        marketFrom: '2025-07-11',
+        marketTo: '2026-07-10',
+      },
     ]);
 
     expect(summary).toMatchObject({
       itemCount: 2,
-      sources: ['Provider A'],
-      sourceReportedCount: 1,
+      sources: ['YAHOO_FINANCE'],
       retrievedAt: ['2026-07-12T10:00:00Z'],
-      retrievedAtReportedCount: 1,
-      statuses: ['delayed'],
-      statusReportedCount: 1,
+      marketTimestamps: ['2026-07-10T20:00:00Z'],
+      marketTimestampReportedCount: 1,
+      currencies: ['USD'],
+      currencyReportedCount: 1,
+      adjustments: ['SPLIT_ADJUSTED'],
+      unitScales: [1],
+      statuses: ['FRESH'],
     });
   });
 
   it('groups identical market scopes without losing dataset labels', () => {
     const summary = summarizeDataProvenance([
-      { label: 'AAPL quote', marketFrom: '2026-07-10', marketTo: '2026-07-10' },
-      { label: 'MSFT quote', marketFrom: '2026-07-10', marketTo: '2026-07-10' },
+      { ...provenance, label: 'AAPL quote', marketFrom: '2026-07-10', marketTo: '2026-07-10' },
+      { ...provenance, label: 'MSFT quote', marketFrom: '2026-07-10', marketTo: '2026-07-10' },
     ]);
 
     expect(summary.marketScopes).toEqual([{

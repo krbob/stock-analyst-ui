@@ -1,54 +1,112 @@
+import { client as generatedClient } from './generated/client.gen';
+import {
+  compareStocks as requestComparison,
+  getQuote as requestQuote,
+  getStockHistory as requestHistory,
+  searchTickers as requestSearch,
+} from './generated/sdk.gen';
+import type { ApiError as ContractApiError } from './generated/types.gen';
 import type { CompareResult, Interval, Period, Quote, SearchResult, StockHistory } from './types';
 import { attachHistoryRequest, createHistoryRequest } from './history-utils';
 import { ApiError, parseRetryAfterSeconds } from './errors';
 
-const API_URL = '/api';
+const API_URL = new URL('/api', window.location.origin).toString().replace(/\/$/, '');
 
-async function fetchApi<T>(path: string, signal?: AbortSignal): Promise<T> {
-  const response = signal
-    ? await fetch(`${API_URL}${path}`, { signal })
-    : await fetch(`${API_URL}${path}`);
-  if (!response.ok) {
-    const text = await response.text();
-    let message = `${response.status} ${response.statusText}`;
-    try {
-      const json = JSON.parse(text);
-      if (json.error) message = json.error;
-    } catch {
-      if (text && !text.trimStart().startsWith('<')) message = text;
-    }
-    const retryAfterSeconds = parseRetryAfterSeconds(response.headers?.get?.('Retry-After'));
-    if (response.status === 429 && retryAfterSeconds != null) {
-      message += ` Try again in ${retryAfterSeconds} seconds.`;
-    }
-    throw new ApiError(message, response.status, retryAfterSeconds);
+generatedClient.setConfig({ baseUrl: API_URL });
+
+interface GeneratedResult<T> {
+  data?: T;
+  error?: unknown;
+  response?: Response;
+}
+
+function contractError(value: unknown): ContractApiError | null {
+  if (value == null || typeof value !== 'object') return null;
+  const candidate = value as Record<string, unknown>;
+  if (
+    typeof candidate.error !== 'string'
+    || typeof candidate.errorCode !== 'string'
+    || typeof candidate.retryable !== 'boolean'
+    || !(candidate.requestId == null || typeof candidate.requestId === 'string')
+  ) return null;
+  return candidate as ContractApiError;
+}
+
+function errorText(value: unknown): string | null {
+  if (typeof value === 'string') {
+    return value && !value.trimStart().startsWith('<') ? value : null;
   }
-  return response.json();
+  if (value != null && typeof value === 'object') {
+    const error = (value as Record<string, unknown>).error;
+    if (typeof error === 'string' && error) return error;
+  }
+  return null;
 }
 
-export function getHistory(symbol: string, period: Period = '1y', interval?: Interval, indicators?: string[], currency?: string, dividends?: boolean, signal?: AbortSignal): Promise<StockHistory> {
+function unwrapResult<T>({ data, error, response }: GeneratedResult<T>): T {
+  if (data !== undefined) return data;
+
+  // Fetch/network failures have no HTTP response. Keep the original Error so
+  // React Query can distinguish transport failures from classified API errors.
+  if (!response) {
+    if (error instanceof Error) throw error;
+    throw new Error(errorText(error) ?? 'Network request failed');
+  }
+
+  const body = contractError(error);
+  const retryAfterSeconds = parseRetryAfterSeconds(response.headers.get('Retry-After'));
+  let message = body?.error ?? errorText(error) ?? `${response.status} ${response.statusText}`;
+  if (response.status === 429 && retryAfterSeconds != null) {
+    message += ` Try again in ${retryAfterSeconds} seconds.`;
+  }
+  throw new ApiError(message, response.status, retryAfterSeconds, body);
+}
+
+export async function getHistory(
+  symbol: string,
+  period: Period = '1y',
+  interval?: Interval,
+  indicators?: string[],
+  currency?: string,
+  dividends?: boolean,
+  signal?: AbortSignal,
+): Promise<StockHistory> {
   const request = createHistoryRequest(symbol, period, interval, indicators, currency, dividends);
-  let url = `/history/${encodeURIComponent(request.symbol)}?period=${request.period}`;
-  if (request.interval) url += `&interval=${request.interval}`;
-  if (request.indicatorsKey) url += `&indicators=${request.indicatorsKey}`;
-  if (request.currency) url += `&currency=${encodeURIComponent(request.currency)}`;
-  if (request.dividends) url += '&dividends=true';
-
-  return fetchApi<StockHistory>(url, signal).then((history) => attachHistoryRequest(history, request));
+  const result = await requestHistory({
+    path: { stock: request.symbol },
+    query: {
+      period: request.period,
+      interval: request.interval,
+      indicators: request.indicatorsKey || undefined,
+      currency: request.currency ?? undefined,
+      dividends: request.dividends || undefined,
+    },
+    signal,
+  });
+  return attachHistoryRequest(unwrapResult(result), request);
 }
 
-export function getQuote(symbol: string, currency?: string, signal?: AbortSignal): Promise<Quote> {
-  let url = `/quote/${encodeURIComponent(symbol)}`;
-  if (currency) url += `?currency=${encodeURIComponent(currency)}`;
-  return fetchApi(url, signal);
+export async function getQuote(symbol: string, currency?: string, signal?: AbortSignal): Promise<Quote> {
+  const result = await requestQuote({
+    path: { stock: symbol },
+    query: { currency },
+    signal,
+  });
+  return unwrapResult(result);
 }
 
-export function compareStocks(symbols: string[], currency?: string, signal?: AbortSignal): Promise<CompareResult[]> {
-  let url = `/compare?symbols=${symbols.map(encodeURIComponent).join(',')}`;
-  if (currency) url += `&currency=${encodeURIComponent(currency)}`;
-  return fetchApi(url, signal);
+export async function compareStocks(symbols: string[], currency?: string, signal?: AbortSignal): Promise<CompareResult[]> {
+  const result = await requestComparison({
+    query: { symbols, currency },
+    signal,
+  });
+  return unwrapResult(result);
 }
 
-export function searchTickers(query: string, signal?: AbortSignal): Promise<SearchResult[]> {
-  return fetchApi(`/search/${encodeURIComponent(query)}`, signal);
+export async function searchTickers(query: string, signal?: AbortSignal): Promise<SearchResult[]> {
+  const result = await requestSearch({
+    path: { query },
+    signal,
+  });
+  return unwrapResult(result);
 }

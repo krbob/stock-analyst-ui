@@ -40,6 +40,15 @@ function makeQuote(overrides: Partial<Quote> = {}): Quote {
     earningsDate: '2026-07-30',
     recommendation: 'buy',
     analystCount: 40,
+    provenance: {
+      source: 'YAHOO_FINANCE',
+      retrievedAt: '2026-07-12T10:00:00Z',
+      marketDate: '2026-07-03',
+      currency: 'USD',
+      unitScale: 1,
+      adjustment: 'SPLIT_ADJUSTED',
+      status: 'FRESH',
+    },
     ...overrides,
   };
 }

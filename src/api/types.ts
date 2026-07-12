@@ -1,85 +1,23 @@
-export interface Gain {
-  daily: number | null;
-  weekly: number | null;
-  monthly: number | null;
-  quarterly: number | null;
-  halfYearly: number | null;
-  ytd: number | null;
-  yearly: number | null;
-  fiveYear: number | null;
-}
+import type {
+  BollingerValue,
+  CompareResult,
+  DataAdjustment,
+  DataProvenance,
+  DataStatus,
+  Gain,
+  HistoricalPrice,
+  Indicators,
+  Interval,
+  MacdValue,
+  MarketDataSource,
+  Period,
+  Quote,
+  SearchResult,
+  SingleValue,
+  StockHistory as ContractStockHistory,
+} from './generated/types.gen';
 
-/** Optional forward-compatible metadata. Current API versions may omit it. */
-export interface DataProvenance {
-  source?: string | null;
-  retrievedAt?: string | null;
-  status?: string | null;
-}
-
-export interface Quote extends DataProvenance {
-  symbol: string;
-  name: string;
-  currency: string | null;
-  date: string;
-  lastPrice: number;
-  gain: Gain;
-  peRatio: number | null;
-  pbRatio: number | null;
-  eps: number | null;
-  roe: number | null;
-  marketCap: number | null;
-  beta: number | null;
-  dividendYield: number | null;
-  dividendGrowth: number | null;
-  fiftyTwoWeekHigh: number | null;
-  fiftyTwoWeekLow: number | null;
-  sector: string | null;
-  industry: string | null;
-  earningsDate: string | null;
-  recommendation: string | null;
-  analystCount: number | null;
-}
-
-export interface CompareResult {
-  symbol: string;
-  data: Quote | null;
-  error: string | null;
-}
-
-export interface HistoricalPrice {
-  date: string;
-  open: number;
-  close: number;
-  low: number;
-  high: number;
-  volume: number;
-  dividend: number;
-  timestamp?: number;
-  splitRatio?: number | null;
-}
-
-export interface SingleValue {
-  date: string;
-  value: number;
-  timestamp?: number;
-}
-
-export interface BollingerValue {
-  date: string;
-  upper: number;
-  middle: number;
-  lower: number;
-  timestamp?: number;
-}
-
-export interface MacdValue {
-  date: string;
-  macd: number;
-  signal: number;
-  histogram: number;
-  timestamp?: number;
-}
-
+/** Client-only identity attached after a successful history request. */
 export interface HistoryRequest {
   symbol: string;
   period: Period;
@@ -89,37 +27,33 @@ export interface HistoryRequest {
   dividends: boolean;
 }
 
-export interface Indicators {
-  sma50?: SingleValue[];
-  sma200?: SingleValue[];
-  ema50?: SingleValue[];
-  ema200?: SingleValue[];
-  bb?: BollingerValue[];
-  rsi?: SingleValue[];
-  macd?: MacdValue[];
-}
-
-export interface StockHistory extends DataProvenance {
-  symbol: string;
-  name: string;
-  period: string;
-  interval: Interval;
-  prices: HistoricalPrice[];
-  adjustment?: 'split-adjusted';
-  indicators?: Indicators;
-  currency?: string | null;
+/** Generated wire contract plus local request identity used to reject stale UI data. */
+export type StockHistory = ContractStockHistory & {
   request?: HistoryRequest;
-}
+};
 
-export interface SearchResult {
-  symbol: string;
-  name: string;
-  exchange: string;
-  quoteType: string;
-}
-
-export type Period = '1d' | '5d' | '1mo' | '3mo' | '6mo' | '1y' | '2y' | '5y' | '10y' | 'ytd' | 'max';
-
-export type Interval = '1m' | '5m' | '15m' | '30m' | '1h' | '1d' | '1wk' | '1mo';
+export type {
+  BollingerValue,
+  CompareResult,
+  DataAdjustment,
+  DataProvenance,
+  DataStatus,
+  Gain,
+  HistoricalPrice,
+  Indicators,
+  Interval,
+  MacdValue,
+  MarketDataSource,
+  Period,
+  Quote,
+  SearchResult,
+  SingleValue,
+};
 
 export const INTRADAY_INTERVALS: Interval[] = ['1m', '5m', '15m', '30m', '1h'];
+
+const ALL_INTERVALS: readonly string[] = [...INTRADAY_INTERVALS, '1d', '1wk', '1mo'];
+
+export function isInterval(value: string | null | undefined): value is Interval {
+  return value != null && ALL_INTERVALS.includes(value);
+}

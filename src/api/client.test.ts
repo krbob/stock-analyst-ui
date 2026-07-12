@@ -1,112 +1,76 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getHistory, getQuote, compareStocks, searchTickers } from './client';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { compareStocks, getHistory, getQuote, searchTickers } from './client';
 
 const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
 
-function jsonResponse(data: unknown, status = 200) {
-  return Promise.resolve({
-    ok: status >= 200 && status < 300,
+function response(
+  body: unknown,
+  status = 200,
+  headers: Record<string, string> = {},
+  statusText = status === 200 ? 'OK' : 'Error',
+): Promise<Response> {
+  const text = typeof body === 'string' ? body : JSON.stringify(body);
+  return Promise.resolve(new Response(text, {
     status,
-    statusText: status === 200 ? 'OK' : 'Error',
-    json: () => Promise.resolve(data),
-    text: () => Promise.resolve(JSON.stringify(data)),
-  });
+    statusText,
+    headers: {
+      'Content-Type': typeof body === 'string' ? 'text/plain' : 'application/json',
+      ...headers,
+    },
+  }));
 }
 
-function errorResponse(body: string | object, status = 500) {
-  const text = typeof body === 'string' ? body : JSON.stringify(body);
-  return Promise.resolve({
-    ok: false,
-    status,
-    statusText: 'Internal Server Error',
-    json: () => Promise.resolve(typeof body === 'object' ? body : {}),
-    text: () => Promise.resolve(text),
-  });
+function lastRequest(): Request {
+  const request = mockFetch.mock.lastCall?.[0];
+  expect(request).toBeInstanceOf(Request);
+  return request as Request;
+}
+
+function expectLastUrl(expected: string): void {
+  const url = new URL(lastRequest().url);
+  expect(`${url.pathname}${url.search}`).toBe(expected);
 }
 
 beforeEach(() => {
   mockFetch.mockReset();
 });
 
-describe('getHistory', () => {
-  it('builds URL with symbol and default period', async () => {
-    mockFetch.mockReturnValue(jsonResponse({ prices: [] }));
+describe('getHistory generated contract', () => {
+  it('uses the canonical v1 path with the default period', async () => {
+    mockFetch.mockReturnValue(response({ prices: [] }));
     await getHistory('AAPL');
-    expect(mockFetch).toHaveBeenCalledWith('/api/history/AAPL?period=1y');
+    expectLastUrl('/api/v1/history/AAPL?period=1y');
   });
 
-  it('includes period param', async () => {
-    mockFetch.mockReturnValue(jsonResponse({ prices: [] }));
-    await getHistory('MSFT', '5y');
-    expect(mockFetch).toHaveBeenCalledWith('/api/history/MSFT?period=5y');
-  });
-
-  it('includes interval when provided', async () => {
-    mockFetch.mockReturnValue(jsonResponse({ prices: [] }));
-    await getHistory('AAPL', '1d', '5m');
-    expect(mockFetch).toHaveBeenCalledWith('/api/history/AAPL?period=1d&interval=5m');
-  });
-
-  it('includes indicators', async () => {
-    mockFetch.mockReturnValue(jsonResponse({ prices: [] }));
-    await getHistory('AAPL', '1y', undefined, ['sma50', 'rsi']);
-    expect(mockFetch).toHaveBeenCalledWith('/api/history/AAPL?period=1y&indicators=sma50,rsi');
-  });
-
-  it('includes currency', async () => {
-    mockFetch.mockReturnValue(jsonResponse({ prices: [] }));
-    await getHistory('AAPL', '1y', undefined, undefined, 'EUR');
-    expect(mockFetch).toHaveBeenCalledWith('/api/history/AAPL?period=1y&currency=EUR');
-  });
-
-  it('includes dividends', async () => {
-    mockFetch.mockReturnValue(jsonResponse({ prices: [] }));
-    await getHistory('AAPL', '1y', undefined, undefined, undefined, true);
-    expect(mockFetch).toHaveBeenCalledWith('/api/history/AAPL?period=1y&dividends=true');
-  });
-
-  it('forwards an AbortSignal without changing the request URL', async () => {
-    const controller = new AbortController();
-    mockFetch.mockReturnValue(jsonResponse({ prices: [] }));
-
-    await getHistory('AAPL', '1y', undefined, undefined, undefined, false, controller.signal);
-
-    expect(mockFetch).toHaveBeenCalledWith(
-      '/api/history/AAPL?period=1y',
-      { signal: controller.signal },
-    );
-  });
-
-  it('builds full URL with all params', async () => {
-    mockFetch.mockReturnValue(jsonResponse({ prices: [] }));
+  it('includes each supported query parameter', async () => {
+    mockFetch.mockReturnValue(response({ prices: [] }));
     await getHistory('AAPL', '5y', '1wk', ['sma50', 'bb'], 'GBP', true);
-    expect(mockFetch).toHaveBeenCalledWith(
-      '/api/history/AAPL?period=5y&interval=1wk&indicators=sma50,bb&currency=GBP&dividends=true',
-    );
+    expectLastUrl('/api/v1/history/AAPL?period=5y&interval=1wk&indicators=sma50%2Cbb&currency=GBP&dividends=true');
   });
 
-  it('encodes special characters in symbol', async () => {
-    mockFetch.mockReturnValue(jsonResponse({ prices: [] }));
-    await getHistory('BRK.B');
-    expect(mockFetch).toHaveBeenCalledWith('/api/history/BRK.B?period=1y');
+  it('omits disabled optional parameters', async () => {
+    mockFetch.mockReturnValue(response({ prices: [] }));
+    await getHistory('MSFT', '5y');
+    expectLastUrl('/api/v1/history/MSFT?period=5y');
   });
 
-  it('attaches normalized request metadata to the response', async () => {
-    mockFetch.mockReturnValue(jsonResponse({
-      symbol: 'AAPL',
-      name: 'Apple Inc.',
+  it('normalizes request identity and safely encodes the path', async () => {
+    mockFetch.mockReturnValue(response({
+      symbol: 'BRK.B',
+      name: 'Berkshire',
       period: '1y',
       interval: '1d',
       prices: [],
+      adjustment: 'split-adjusted',
       currency: 'EUR',
     }));
 
-    const result = await getHistory('aapl', '1y', '1d', ['sma50'], 'eur', true);
+    const result = await getHistory(' brk.b ', '1y', '1d', ['sma50'], ' eur ', true);
 
-    expect(mockFetch).toHaveBeenCalledWith('/api/history/AAPL?period=1y&interval=1d&indicators=sma50&currency=EUR&dividends=true');
+    expectLastUrl('/api/v1/history/BRK.B?period=1y&interval=1d&indicators=sma50&currency=EUR&dividends=true');
     expect(result.request).toEqual({
-      symbol: 'AAPL',
+      symbol: 'BRK.B',
       period: '1y',
       interval: '1d',
       indicatorsKey: 'sma50',
@@ -114,104 +78,117 @@ describe('getHistory', () => {
       dividends: true,
     });
   });
+
+  it('forwards aborts through the generated Request', async () => {
+    const controller = new AbortController();
+    mockFetch.mockReturnValue(response({ prices: [] }));
+
+    await getHistory('AAPL', '1y', undefined, undefined, undefined, false, controller.signal);
+    const request = lastRequest();
+    expect(request.signal.aborted).toBe(false);
+
+    controller.abort();
+    expect(request.signal.aborted).toBe(true);
+  });
 });
 
-describe('getQuote', () => {
-  it('builds URL with symbol only', async () => {
-    mockFetch.mockReturnValue(jsonResponse({}));
-    await getQuote('AAPL');
-    expect(mockFetch).toHaveBeenCalledWith('/api/quote/AAPL');
-  });
-
-  it('includes currency', async () => {
-    mockFetch.mockReturnValue(jsonResponse({}));
+describe('other generated SDK operations', () => {
+  it('builds a canonical quote request', async () => {
+    mockFetch.mockReturnValue(response({}));
     await getQuote('AAPL', 'EUR');
-    expect(mockFetch).toHaveBeenCalledWith('/api/quote/AAPL?currency=EUR');
+    expectLastUrl('/api/v1/quote/AAPL?currency=EUR');
   });
 
-  it('forwards an AbortSignal', async () => {
+  it('forwards quote aborts', async () => {
     const controller = new AbortController();
-    mockFetch.mockReturnValue(jsonResponse({}));
+    mockFetch.mockReturnValue(response({}));
 
     await getQuote('AAPL', undefined, controller.signal);
-
-    expect(mockFetch).toHaveBeenCalledWith('/api/quote/AAPL', { signal: controller.signal });
-  });
-});
-
-describe('compareStocks', () => {
-  it('builds URL with symbols', async () => {
-    mockFetch.mockReturnValue(jsonResponse([]));
-    await compareStocks(['AAPL', 'MSFT']);
-    expect(mockFetch).toHaveBeenCalledWith('/api/compare?symbols=AAPL,MSFT');
+    const request = lastRequest();
+    controller.abort();
+    expect(request.signal.aborted).toBe(true);
   });
 
-  it('includes currency', async () => {
-    mockFetch.mockReturnValue(jsonResponse([]));
+  it('serializes compare symbols according to the OpenAPI array contract', async () => {
+    mockFetch.mockReturnValue(response([]));
     await compareStocks(['AAPL', 'MSFT'], 'EUR');
-    expect(mockFetch).toHaveBeenCalledWith('/api/compare?symbols=AAPL,MSFT&currency=EUR');
+    expectLastUrl('/api/v1/compare?symbols=AAPL,MSFT&currency=EUR');
   });
 
-  it('encodes symbols', async () => {
-    mockFetch.mockReturnValue(jsonResponse([]));
-    await compareStocks(['BRK.B']);
-    expect(mockFetch).toHaveBeenCalledWith('/api/compare?symbols=BRK.B');
-  });
-});
-
-describe('searchTickers', () => {
-  it('builds URL with query', async () => {
-    mockFetch.mockReturnValue(jsonResponse([]));
-    await searchTickers('apple');
-    expect(mockFetch).toHaveBeenCalledWith('/api/search/apple');
-  });
-
-  it('encodes special characters', async () => {
-    mockFetch.mockReturnValue(jsonResponse([]));
+  it('uses the canonical encoded search path', async () => {
+    mockFetch.mockReturnValue(response([]));
     await searchTickers('a&b');
-    expect(mockFetch).toHaveBeenCalledWith('/api/search/a%26b');
+    expectLastUrl('/api/v1/search/a%26b');
   });
 });
 
-describe('fetchApi error handling', () => {
-  it('throws with JSON error message', async () => {
-    mockFetch.mockReturnValue(errorResponse({ error: 'Stock not found' }, 404));
-    await expect(getQuote('INVALID')).rejects.toThrow('Stock not found');
-  });
-
-  it('throws with plain text body', async () => {
-    mockFetch.mockReturnValue(errorResponse('Something broke', 500));
-    await expect(getQuote('AAPL')).rejects.toThrow('Something broke');
-  });
-
-  it('throws with status text when body is empty', async () => {
-    mockFetch.mockReturnValue(
-      Promise.resolve({
-        ok: false,
-        status: 503,
-        statusText: 'Service Unavailable',
-        text: () => Promise.resolve(''),
-      }),
-    );
-    await expect(getQuote('AAPL')).rejects.toThrow('503 Service Unavailable');
-  });
-
-  it('preserves rate limit metadata and presents retry guidance', async () => {
-    mockFetch.mockReturnValue(
-      Promise.resolve({
-        ok: false,
-        status: 429,
-        statusText: 'Too Many Requests',
-        headers: { get: (name: string) => name === 'Retry-After' ? '60' : null },
-        text: () => Promise.resolve(JSON.stringify({ error: 'Upstream rate limit' })),
-      }),
-    );
+describe('generated ApiError adaptation', () => {
+  it('preserves the generated error body, HTTP status, request ID and Retry-After', async () => {
+    mockFetch.mockReturnValue(response({
+      error: 'Data backend is busy',
+      errorCode: 'SERVICE_UNAVAILABLE',
+      retryable: true,
+      requestId: 'req-123',
+    }, 503, { 'Retry-After': '2' }, 'Service Unavailable'));
 
     await expect(getQuote('AAPL')).rejects.toMatchObject({
       name: 'ApiError',
+      message: 'Data backend is busy',
+      status: 503,
+      retryAfterSeconds: 2,
+      errorCode: 'SERVICE_UNAVAILABLE',
+      retryable: true,
+      requestId: 'req-123',
+      body: {
+        error: 'Data backend is busy',
+        errorCode: 'SERVICE_UNAVAILABLE',
+        retryable: true,
+        requestId: 'req-123',
+      },
+    });
+  });
+
+  it('keeps rate-limit guidance and generated classification', async () => {
+    mockFetch.mockReturnValue(response({
+      error: 'Upstream rate limit',
+      errorCode: 'UPSTREAM_RATE_LIMITED',
+      retryable: true,
+      requestId: null,
+    }, 429, { 'Retry-After': '60' }, 'Too Many Requests'));
+
+    await expect(getQuote('AAPL')).rejects.toMatchObject({
       status: 429,
       retryAfterSeconds: 60,
+      errorCode: 'UPSTREAM_RATE_LIMITED',
+      retryable: true,
       message: 'Upstream rate limit Try again in 60 seconds.',
     });
+  });
+
+  it('remains backward-compatible with a partial JSON error body', async () => {
+    mockFetch.mockReturnValue(response({ error: 'Stock not found' }, 404, {}, 'Not Found'));
+
+    await expect(getQuote('INVALID')).rejects.toMatchObject({
+      message: 'Stock not found',
+      status: 404,
+      errorCode: null,
+      retryable: false,
+      requestId: null,
+    });
+  });
+
+  it('uses plain text but does not surface an HTML proxy body', async () => {
+    mockFetch.mockReturnValueOnce(response('Something broke', 500, {}, 'Internal Server Error'));
+    await expect(getQuote('AAPL')).rejects.toThrow('Something broke');
+
+    mockFetch.mockReturnValueOnce(response('<html>proxy failure</html>', 502, {}, 'Bad Gateway'));
+    await expect(getQuote('AAPL')).rejects.toThrow('502 Bad Gateway');
+  });
+
+  it('preserves transport errors without misclassifying them as API responses', async () => {
+    const networkError = new TypeError('fetch failed');
+    mockFetch.mockRejectedValue(networkError);
+
+    await expect(getQuote('AAPL')).rejects.toBe(networkError);
   });
 });

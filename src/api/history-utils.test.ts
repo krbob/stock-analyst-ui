@@ -22,6 +22,14 @@ describe('matchesHistoryRequest', () => {
     period: '1y',
     interval: '1d',
     prices: [],
+    adjustment: 'split-adjusted',
+    provenance: {
+      source: 'YAHOO_FINANCE',
+      retrievedAt: '2026-07-12T10:00:00Z',
+      unitScale: 1,
+      adjustment: 'SPLIT_ADJUSTED',
+      status: 'FRESH',
+    },
     request: createHistoryRequest('AAPL', '1y', '1d', ['sma50'], 'EUR', true),
   };
 

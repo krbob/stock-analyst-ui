@@ -5,10 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run tokens:check && tsc -b && vite build",
+    "build": "npm run contract:check && npm run tokens:check && tsc -b && vite build",
+    "contract:check": "node scripts/openapi-contract.mjs check",
+    "contract:generate": "node scripts/openapi-contract.mjs generate",
+    "contract:test": "node --test scripts/test-openapi-contract.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "npm run tokens:check && vitest run",
+    "test": "npm run contract:test && npm run tokens:check && vitest run",
     "test:watch": "vitest",
     "tokens:check": "node scripts/validate-design-tokens.mjs",
     "screenshots": "playwright test e2e/screenshots.spec.ts"
@@ -21,6 +24,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",
+    "@hey-api/openapi-ts": "0.99.0",
     "@playwright/test": "^1.59.1",
     "@tailwindcss/vite": "^4.2.1",
     "@testing-library/jest-dom": "^6.9.1",

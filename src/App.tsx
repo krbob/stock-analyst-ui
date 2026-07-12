@@ -10,7 +10,7 @@ import AppSwitcher from './components/AppSwitcher';
 import IndicatorsPopover from './components/IndicatorsPopover';
 import DataProvenanceBar from './components/DataProvenanceBar';
 import { useQuote, useStockHistory } from './api/queries';
-import type { Interval, Period, Quote } from './api/types';
+import { isInterval, type Interval, type Period, type Quote } from './api/types';
 import { parseUrlParams, buildUrlParams } from './url-state';
 import { createHistoryRequest, matchesHistoryRequest } from './api/history-utils';
 import { formatGain } from './lib/format';
@@ -154,7 +154,7 @@ const GAIN_PERIODS = [
   { label: '5Y', key: 'fiveYear' },
 ] as const;
 
-function GainChip({ label, value }: { label: string; value: number | null }) {
+function GainChip({ label, value }: { label: string; value: number | null | undefined }) {
   if (value == null || !Number.isFinite(value)) return null;
   return (
     <span className={`text-xs ${value >= 0 ? 'text-up' : 'text-down'}`}>
@@ -285,7 +285,7 @@ export default function App() {
     activeHistory ? historyProvenance(activeHistory) : null,
   ].filter((item) => item != null);
   const activeInterval = interval ?? (
-    nativeHistory?.symbol.toLowerCase() === symbol.toLowerCase()
+    nativeHistory?.symbol.toLowerCase() === symbol.toLowerCase() && isInterval(nativeHistory.interval)
       ? nativeHistory.interval
       : undefined
   );

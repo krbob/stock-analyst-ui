@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import type { DataProvenanceItem, MarketScope } from '../lib/data-provenance';
 import { summarizeDataProvenance } from '../lib/data-provenance';
 
@@ -15,6 +16,44 @@ function coverageSuffix(reported: number, total: number): string {
 function compactValues(values: string[]): string {
   if (values.length <= 3) return values.join(', ');
   return `${values.slice(0, 3).join(', ')} +${values.length - 3} more`;
+}
+
+function humanizeContractValue(value: string): string {
+  return value
+    .toLowerCase()
+    .replaceAll('_', ' ')
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function formatInstant(value: string): string {
+  const parsed = Date.parse(value);
+  if (!Number.isFinite(parsed)) return value;
+  return new Date(parsed).toISOString()
+    .replace('T', ' ')
+    .replace('.000Z', ' UTC')
+    .replace('Z', ' UTC');
+}
+
+function InstantValues({ values }: { values: string[] }) {
+  const visible = values.slice(0, 3);
+  return (
+    <>
+      {visible.map((value, index) => (
+        <Fragment key={value}>
+          {index > 0 && ', '}
+          <time dateTime={value}>{formatInstant(value)}</time>
+        </Fragment>
+      ))}
+      {values.length > visible.length && ` +${values.length - visible.length} more`}
+    </>
+  );
+}
+
+function statusClass(statuses: string[]): string {
+  if (statuses.includes('ERROR')) return 'text-danger';
+  if (statuses.includes('PARTIAL') || statuses.includes('STALE')) return 'text-highlight';
+  if (statuses.includes('FRESH')) return 'text-up';
+  return 'text-secondary';
 }
 
 function MarketScopeLabel({ scope }: { scope: MarketScope }) {
@@ -45,15 +84,10 @@ export default function DataProvenanceBar({
 }: DataProvenanceBarProps) {
   if (items.length === 0) return null;
   const summary = summarizeDataProvenance(items);
-  const source = summary.sources.length > 0
-    ? `${compactValues(summary.sources)}${coverageSuffix(summary.sourceReportedCount, summary.itemCount)}`
-    : 'not reported by API';
-  const retrieved = summary.retrievedAt.length > 0
-    ? `${compactValues(summary.retrievedAt)}${coverageSuffix(summary.retrievedAtReportedCount, summary.itemCount)}`
-    : 'not reported by API';
-  const status = summary.statuses.length > 0
-    ? `${compactValues(summary.statuses)}${coverageSuffix(summary.statusReportedCount, summary.itemCount)}`
-    : 'not reported by API';
+  const source = compactValues(summary.sources.map(humanizeContractValue));
+  const status = compactValues(summary.statuses.map(humanizeContractValue));
+  const adjustments = compactValues(summary.adjustments.map(humanizeContractValue));
+  const unitScales = compactValues(summary.unitScales.map((scale) => `×${scale}`));
 
   return (
     <section
@@ -66,8 +100,22 @@ export default function DataProvenanceBar({
         <MarketScopeLabel key={`${scope.from}:${scope.to}`} scope={scope} />
       ))}
       <span>Source: {source}</span>
-      <span>Retrieved: {retrieved}</span>
-      <span>Freshness status: {status}</span>
+      <span className={`font-medium ${statusClass(summary.statuses)}`}>Market status: {status}</span>
+      <span>Retrieved: <InstantValues values={summary.retrievedAt} /></span>
+      {summary.marketTimestamps.length > 0 && (
+        <span>
+          Market observed: <InstantValues values={summary.marketTimestamps} />
+          {coverageSuffix(summary.marketTimestampReportedCount, summary.itemCount)}
+        </span>
+      )}
+      {summary.currencies.length > 0 && (
+        <span>
+          Currency: {compactValues(summary.currencies)}
+          {coverageSuffix(summary.currencyReportedCount, summary.itemCount)}
+        </span>
+      )}
+      <span>Adjustment: {adjustments}</span>
+      <span>Unit scale: {unitScales}</span>
       {isRefreshing && <span role="status" className="font-medium text-accent">Refreshing…</span>}
     </section>
   );
