@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "description": "Non-auto-updating floor for all owned application source files.",
+  "include": [
+    "src/**/*.{ts,tsx}"
+  ],
+  "exclude": [
+    "src/**/*.test.{ts,tsx}",
+    "src/**/*.d.ts",
+    "src/test/**",
+    "src/api/generated/**"
+  ],
+  "thresholds": {
+    "statements": 74,
+    "branches": 68,
+    "functions": 76,
+    "lines": 76
+  }
+}

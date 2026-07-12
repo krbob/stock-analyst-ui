@@ -38,8 +38,13 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Run tests
-        run: npm test
+      - name: Run tests with all-source coverage
+        run: npm run test:coverage
+
+      - name: Publish coverage summary
+        run: |
+          set -o pipefail
+          npm run --silent coverage:report | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Build Docker image
         uses: docker/build-push-action@v7

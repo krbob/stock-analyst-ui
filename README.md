@@ -189,10 +189,13 @@ npm run build        # Type check + production build
 npm run lint         # ESLint
 npm test             # Run tests (Vitest)
 npm run test:watch   # Tests in watch mode
+npm run test:coverage # All owned src files + fixed regression floors and reports
 npm run test:e2e:ci # Production-browser smoke, keyboard and axe WCAG A/AA checks
 npm run contract:check     # Verify OpenAPI snapshot/client drift
 npm run contract:generate  # Regenerate the pinned API client
 ```
+
+Coverage is deliberately all-source rather than limited to modules imported by tests. The versioned scope and non-auto-updating floors live in `coverage-baseline.json`; generated API code, tests and declarations are the only exclusions. CI publishes the exact covered/total counts and percentages to the workflow summary, while retaining text, JSON, LCOV and HTML reports under `coverage/`.
 
 ## Docker
 
@@ -217,7 +220,7 @@ GitHub Actions pipeline (`.github/workflows/ci-build.yml`):
 1. **Contract check** — pinned OpenAPI snapshot and generated SDK drift
 2. **Type check** — `tsc --noEmit`
 3. **Lint** — ESLint
-4. **Test** — Node contract test and Vitest
+4. **Test/coverage** — Node contract test plus all-source Vitest floors and workflow summary
 5. **Docker build** — multi-stage image
 6. **Browser/a11y smoke** — production container, canonical `/v1` requests, keyboard flows, axe WCAG A/AA, 320/375 px and offline shell
 7. **Publish** (main only) — push to `ghcr.io/krbob/stock-analyst-ui`
