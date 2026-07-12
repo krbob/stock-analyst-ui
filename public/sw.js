@@ -1,4 +1,4 @@
-const CACHE_NAME = 'stock-analyst-v1';
+const CACHE_NAME = 'stock-analyst-v2';
 const SHELL_ASSETS = [
   '/',
   '/manifest.webmanifest',
@@ -33,13 +33,34 @@ self.addEventListener('fetch', (event) => {
   // Skip API calls and non-same-origin requests
   if (url.pathname.startsWith('/api/') || url.origin !== self.location.origin) return;
 
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put('/', clone));
+          }
+          return response;
+        })
+        .catch(async () => (
+          await caches.match('/')
+          ?? await caches.match('/index.html')
+          ?? Response.error()
+        ))
+    );
+    return;
+  }
+
   event.respondWith(
     fetch(request)
       .then((response) => {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        }
         return response;
       })
-      .catch(() => caches.match(request))
+      .catch(async () => await caches.match(request, { ignoreSearch: true }) ?? Response.error())
   );
 });

@@ -47,6 +47,9 @@ jobs:
           cache-from: type=gha,scope=stock-analyst-ui
           cache-to: type=gha,mode=max,scope=stock-analyst-ui
 
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
       - name: Smoke test
         run: |
           if docker run --rm stock-analyst-ui:test; then
@@ -74,6 +77,7 @@ jobs:
           fi
 
           curl -sf http://localhost:3000 | grep -q "Stock Analyst"
+          BASE_URL=http://localhost:3000 npx playwright test e2e/offline.spec.ts
           echo "Smoke test passed"
 
   publish:
