@@ -36,9 +36,10 @@ beforeEach(() => {
 
 describe('TickerSearch', () => {
   it('renders input and Go button', () => {
-    renderWithQuery(<TickerSearch onSelect={vi.fn()} />);
+    renderWithQuery(<TickerSearch onSelect={vi.fn()} className="mobile-header-search" />);
     expect(screen.getByPlaceholderText('Ticker')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Go' })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Ticker').closest('form')).toHaveClass('mobile-header-search', 'min-w-0');
   });
 
   it('calls onSelect with uppercased value on submit', async () => {
@@ -101,6 +102,12 @@ describe('TickerSearch', () => {
     expect(screen.getByText('Recent')).toBeInTheDocument();
     expect(screen.getByText('AAPL')).toBeInTheDocument();
     expect(screen.getByText('Apple Inc.')).toBeInTheDocument();
+    expect(screen.getByText('Recent').parentElement).toHaveClass(
+      'left-0',
+      'w-[calc(100vw-1.5rem)]',
+      'max-w-72',
+      'sm:right-0',
+    );
   });
 
   it('deduplicates recents case-insensitively', async () => {

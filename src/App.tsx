@@ -318,10 +318,13 @@ export default function App() {
   return (
     <div className="min-h-screen bg-page text-primary">
       <header className="sticky top-0 z-40 border-b border-border bg-surface-raised/90 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 sm:px-6">
-          <h1 className="text-lg font-bold tracking-tight sm:text-xl">Stock Analyst</h1>
-          <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
-            <TickerSearch onSelect={handleSelect} />
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-2 gap-y-2 px-3 py-2 sm:gap-x-4 sm:px-6 sm:py-2.5">
+          <h1 className="order-1 text-lg font-bold tracking-tight sm:text-xl">Stock Analyst</h1>
+          <div className="order-2 ml-auto sm:order-3 sm:ml-0">
+            <ThemeToggle />
+          </div>
+          <div className="order-3 flex w-full min-w-0 items-center justify-end gap-2 sm:order-2 sm:ml-auto sm:w-auto">
+            <TickerSearch onSelect={handleSelect} className="min-w-0 flex-1 sm:flex-none" />
             {(symbol || inCompareMode) && (
               <CurrencyPicker
                 nativeCurrency={inCompareMode ? null : headerQuote?.currency ?? null}
@@ -334,35 +337,36 @@ export default function App() {
                 type="button"
                 onClick={inCompareMode ? exitCompare : enterCompare}
                 aria-pressed={inCompareMode}
-                className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent ${
+                aria-label={inCompareMode ? 'Exit comparison mode' : 'Enter comparison mode'}
+                title={inCompareMode ? 'Exit comparison mode' : 'Compare stocks'}
+                className={`inline-flex h-8 w-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent sm:w-auto sm:px-2.5 ${
                   inCompareMode
                     ? 'border-accent/40 bg-accent/15 text-accent'
                     : 'border-border bg-surface text-secondary hover:text-primary'
                 }`}
               >
                 <CompareIcon />
-                Compare
+                <span className="hidden sm:inline">{inCompareMode ? 'Exit' : 'Compare'}</span>
               </button>
             )}
-            <ThemeToggle />
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
+      <main className="mx-auto max-w-7xl px-3 py-3 sm:px-6 sm:py-6">
         {/* Compare mode — symbol chips + period + overlay chart + table */}
         {inCompareMode && (
           <>
-            <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex flex-wrap items-center gap-2">
+            <div className="mb-3 flex flex-col gap-2 sm:mb-4 sm:gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div aria-label="Compared symbols" className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 {compareSymbols.map((sym, i) => (
                   <span
                     key={sym}
-                    className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium"
+                    className="inline-flex items-center gap-0.5 rounded-full py-0.5 pl-2.5 pr-0.5 text-sm font-medium sm:gap-1 sm:py-1 sm:pl-3"
                     style={{ backgroundColor: COMPARE_COLORS[i % COMPARE_COLORS.length] + '22', color: COMPARE_COLORS[i % COMPARE_COLORS.length] }}
                   >
                     {sym.toUpperCase()}
-                    <button type="button" onClick={() => removeFromCompare(sym)} className="ml-0.5 rounded outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-accent" aria-label={`Remove ${sym.toUpperCase()} from compare`}>&times;</button>
+                    <button type="button" onClick={() => removeFromCompare(sym)} className="inline-flex h-6 w-6 items-center justify-center rounded-full text-base leading-none outline-none hover:bg-surface/60 hover:text-primary focus-visible:ring-2 focus-visible:ring-accent" aria-label={`Remove ${sym.toUpperCase()} from compare`}>&times;</button>
                   </span>
                 ))}
                 {compareSymbols.length < 6 && (
@@ -451,7 +455,7 @@ export default function App() {
       </main>
 
       {SHOW_CHART_ATTRIBUTION ? (
-        <footer className="mx-auto max-w-7xl px-4 pb-6 pt-2 text-xs text-muted sm:px-6">
+        <footer className="mx-auto max-w-7xl px-3 pb-6 pt-2 text-xs text-muted sm:px-6">
           Charts powered by{' '}
           <a
             href="https://www.tradingview.com/lightweight-charts/"

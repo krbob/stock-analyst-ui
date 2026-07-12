@@ -78,6 +78,15 @@ describe('CompareView rendering', () => {
 
     render(<CompareView symbols={['AAPL']} period="1y" />);
 
+    const tableRegion = screen.getByRole('region', { name: 'Scrollable stock comparison table' });
+    expect(tableRegion).toHaveAttribute('tabindex', '0');
+    expect(tableRegion.querySelector('table')).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Metric' })).toHaveClass('sticky', 'left-0');
+    expect(screen.getByText('As of')).toHaveClass('sticky', 'left-0');
+    expect(screen.getByText('2026-07-10')).toHaveClass('whitespace-nowrap');
+    expect(screen.getByRole('columnheader', { name: 'AAPL Apple Inc.' })).toBeInTheDocument();
+    expect(screen.getByText('Apple Inc.')).toHaveClass('hidden', 'sm:block');
+    expect(screen.getByText('Apple Inc.')).toHaveAttribute('aria-hidden', 'true');
     expect(screen.getByRole('row', { name: 'As of 2026-07-10' })).toBeInTheDocument();
     expect(screen.getByRole('row', { name: 'Forward P/E 25.00' })).toBeInTheDocument();
     expect(screen.queryByText('P/E')).not.toBeInTheDocument();

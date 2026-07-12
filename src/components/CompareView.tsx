@@ -47,7 +47,7 @@ const METRICS: Metric[] = [
 ];
 
 function fallbackChartHeight(): number {
-  return window.matchMedia('(max-width: 639px)').matches ? 300 : 400;
+  return window.matchMedia('(max-width: 639px)').matches ? 260 : 400;
 }
 
 // ---------------------------------------------------------------------------
@@ -224,7 +224,7 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
       {/* Overlay chart */}
       <div className="relative overflow-hidden rounded-xl border border-border bg-chart-bg shadow-sm">
         {/* Legend */}
-        <div className="absolute left-2 top-2 z-20 flex flex-wrap gap-x-3 gap-y-0.5 rounded-lg border border-border bg-surface-raised/85 px-2.5 py-1.5 text-xs tabular-nums shadow-sm backdrop-blur">
+        <div className="relative z-20 flex flex-wrap gap-x-2 gap-y-0.5 border-b border-border bg-surface-raised px-2.5 py-1.5 text-xs tabular-nums sm:absolute sm:left-2 sm:top-2 sm:gap-x-3 sm:rounded-lg sm:border sm:bg-surface-raised/85 sm:shadow-sm sm:backdrop-blur">
           {symbols.map((sym, i) => {
             const color = COMPARE_COLORS[i % COMPARE_COLORS.length];
             const val = legendValues.get(sym);
@@ -235,7 +235,7 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
               </span>
             );
           })}
-          <span className="text-muted">Base: first point in selected period</span>
+          <span className="w-full text-[11px] text-muted sm:w-auto sm:text-xs">Base: first point in selected period</span>
         </div>
         <div
           ref={containerRef}
@@ -243,7 +243,7 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
           tabIndex={0}
           aria-label={`Percentage comparison chart for ${symbols.map((symbol) => symbol.toUpperCase()).join(', ')}`}
           aria-describedby={accessibleDescriptionId}
-          className="h-[300px] w-full outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent sm:h-[400px]"
+          className="h-[260px] w-full outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent sm:h-[400px]"
         />
         {(chartLoading || isFetching) && (
           <div className={`absolute inset-0 z-10 flex items-center justify-center ${chartLoading ? 'bg-chart-bg' : 'bg-chart-bg/80'}`}>
@@ -287,17 +287,22 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
           <div role="status" aria-label="Loading comparison data" className="h-8 w-8 animate-spin rounded-full border-2 border-border-strong border-t-accent" />
         </div>
       ) : quotes.length > 0 ? (
-        <div className="overflow-x-auto rounded-xl border border-border bg-surface-raised shadow-sm">
+        <div role="region" aria-label="Scrollable stock comparison table" tabIndex={0} className="overflow-x-auto rounded-xl border border-border bg-surface-raised shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-accent">
           <table className="w-full text-sm tabular-nums">
             <thead>
               <tr className="border-b border-border bg-surface/60">
-                <th className="px-3 py-2 text-left text-muted font-medium">Metric</th>
+                <th className="sticky left-0 z-10 bg-surface px-3 py-2 text-left text-muted font-medium">Metric</th>
                 {quotes.map((q) => {
                   const idx = Math.max(0, symbols.findIndex((s) => s.toLowerCase() === q.symbol.toLowerCase()));
                   return (
-                    <th key={q.symbol} className="px-3 py-2 text-right font-medium" style={{ color: COMPARE_COLORS[idx % COMPARE_COLORS.length] }}>
+                    <th
+                      key={q.symbol}
+                      aria-label={q.name ? `${q.symbol.toUpperCase()} ${q.name}` : q.symbol.toUpperCase()}
+                      className="px-3 py-2 text-right font-medium"
+                      style={{ color: COMPARE_COLORS[idx % COMPARE_COLORS.length] }}
+                    >
                       {q.symbol.toUpperCase()}
-                      {q.name && <span className="block text-xs text-muted font-normal">{q.name}</span>}
+                      {q.name && <span aria-hidden="true" className="hidden text-xs text-muted font-normal sm:block">{q.name}</span>}
                     </th>
                   );
                 })}
@@ -309,13 +314,13 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
                 const bestIdx = m.best ? findBestIdx(values, m.best) : -1;
                 return (
                   <tr key={m.label} className="border-b border-border/60 hover:bg-surface/60">
-                    <td className="px-3 py-1.5 text-muted">{m.label}</td>
+                    <td className="sticky left-0 z-10 bg-surface-raised px-3 py-1.5 text-muted">{m.label}</td>
                     {values.map((v, i) => {
                       const formatted = m.fmt(v);
                       const isBest = i === bestIdx;
                       const gainColor = m.gain && typeof v === 'number' && Number.isFinite(v) ? (v >= 0 ? 'text-up' : 'text-down') : 'text-secondary';
                       return (
-                        <td key={i} className={`px-3 py-1.5 text-right ${isBest ? 'bg-highlight/10 font-semibold text-highlight' : gainColor}`}>
+                        <td key={i} className={`whitespace-nowrap px-3 py-1.5 text-right ${isBest ? 'bg-highlight/10 font-semibold text-highlight' : gainColor}`}>
                           {formatted}
                         </td>
                       );

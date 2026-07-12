@@ -42,7 +42,7 @@ export function LazyCompareView(props: CompareViewProps) {
       fallback={(
         <ModuleFallback
           label="Loading comparison view"
-          className="h-[300px] w-full rounded-xl border border-border bg-chart-bg shadow-sm sm:h-[400px]"
+          className="h-[310px] w-full rounded-xl border border-border bg-chart-bg shadow-sm sm:h-[400px]"
         />
       )}
     >

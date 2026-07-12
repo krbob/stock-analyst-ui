@@ -56,7 +56,13 @@ describe('CurrencyPicker', () => {
     expect(screen.getByPlaceholderText('Search currency...')).toBeInTheDocument();
     expect(screen.getByText('default')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Select currency' })).toHaveAttribute('aria-haspopup', 'listbox');
-    expect(screen.getByRole('listbox', { name: 'Currencies' })).toBeInTheDocument();
+    const listbox = screen.getByRole('listbox', { name: 'Currencies' });
+    expect(listbox).toBeInTheDocument();
+    expect(listbox.parentElement).toHaveClass(
+      'right-0',
+      'max-w-[calc(100vw-1.5rem)]',
+      'sm:left-0',
+    );
   });
 
   it('selects a filtered currency using only the keyboard', async () => {

@@ -51,8 +51,13 @@ vi.mock('./components/StockDetails', async () => {
 });
 
 vi.mock('./components/TickerSearch', () => ({
-  default: function MockTickerSearch() {
-    return <div data-testid="ticker-search" />;
+  default: function MockTickerSearch({ className }: { className?: string }) {
+    return (
+      <form data-testid="ticker-search" className={className}>
+        <input aria-label="Search ticker" />
+        <button type="button">Go</button>
+      </form>
+    );
   },
 }));
 
@@ -75,13 +80,19 @@ describe('App lazy analysis modes', () => {
 
     render(<App />);
 
+    expect(screen.getByRole('heading', { name: 'Stock Analyst' })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Search ticker' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Go' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Select currency' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /theme active/i })).toBeInTheDocument();
+    expect(screen.getByTestId('ticker-search')).toHaveClass('min-w-0', 'flex-1', 'sm:flex-none');
     expect(await screen.findByTestId('price-chart-module')).toBeInTheDocument();
     expect(await screen.findByTestId('stock-details-module')).toBeInTheDocument();
     expect(lifecycle.priceMount).toHaveBeenCalledTimes(1);
     expect(lifecycle.detailsMount).toHaveBeenCalledTimes(1);
     expect(screen.queryByTestId('comparison-module')).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Compare' }));
+    await user.click(screen.getByRole('button', { name: 'Enter comparison mode' }));
 
     expect(await screen.findByTestId('comparison-module')).toBeInTheDocument();
     expect(screen.queryByTestId('price-chart-module')).not.toBeInTheDocument();
@@ -90,7 +101,7 @@ describe('App lazy analysis modes', () => {
     expect(lifecycle.detailsUnmount).toHaveBeenCalledTimes(1);
     expect(lifecycle.compareMount).toHaveBeenCalledTimes(1);
 
-    await user.click(screen.getByRole('button', { name: 'Compare' }));
+    await user.click(screen.getByRole('button', { name: 'Exit comparison mode' }));
 
     expect(await screen.findByTestId('price-chart-module')).toBeInTheDocument();
     expect(await screen.findByTestId('stock-details-module')).toBeInTheDocument();

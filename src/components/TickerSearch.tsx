@@ -9,9 +9,10 @@ import {
 
 interface TickerSearchProps {
   onSelect: (symbol: string) => void;
+  className?: string;
 }
 
-export default function TickerSearch({ onSelect }: TickerSearchProps) {
+export default function TickerSearch({ onSelect, className = '' }: TickerSearchProps) {
   const [input, setInput] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -86,8 +87,8 @@ export default function TickerSearch({ onSelect }: TickerSearchProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="relative flex gap-2">
-      <div className="relative">
+    <form onSubmit={handleSubmit} className={`relative flex min-w-0 gap-2 ${className}`}>
+      <div className="relative min-w-0 flex-1">
         <input
           ref={inputRef}
           type="text"
@@ -124,11 +125,11 @@ export default function TickerSearch({ onSelect }: TickerSearchProps) {
           aria-activedescendant={
             activeIndex >= 0 ? `ticker-option-${activeIndex}` : undefined
           }
-          className="w-24 rounded-md border border-border-strong bg-surface-raised px-3 py-1.5 text-base text-primary placeholder-muted focus:border-accent focus:outline-none sm:w-auto sm:text-sm"
+          className="w-full min-w-0 rounded-md border border-border-strong bg-surface-raised px-3 py-1.5 text-base text-primary placeholder-muted focus:border-accent focus:outline-none sm:w-auto sm:text-sm"
         />
 
         {showDropdown && (
-          <div className="absolute right-0 top-full z-50 mt-1 w-72 overflow-hidden rounded-lg border border-border bg-surface-raised shadow-lg">
+          <div className="absolute left-0 top-full z-50 mt-1 w-[calc(100vw-1.5rem)] max-w-72 overflow-hidden rounded-lg border border-border bg-surface-raised shadow-lg sm:left-auto sm:right-0 sm:w-72">
             {showRecents && (
               <div className="px-3 py-1.5 text-xs text-muted">Recent</div>
             )}
@@ -190,7 +191,7 @@ export default function TickerSearch({ onSelect }: TickerSearchProps) {
 
       <button
         type="submit"
-        className="rounded-md bg-accent px-4 py-1.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        className="shrink-0 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:px-4"
       >
         Go
       </button>

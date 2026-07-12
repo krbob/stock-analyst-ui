@@ -56,7 +56,7 @@ describe('lazy analysis views', () => {
     render(<LazyCompareView symbols={['AAPL', 'MSFT']} period="1y" />);
 
     const fallback = screen.getByRole('status', { name: 'Loading comparison view' });
-    expect(fallback).toHaveClass('h-[300px]', 'sm:h-[400px]');
+    expect(fallback).toHaveClass('h-[310px]', 'sm:h-[400px]');
     expect(screen.queryByTestId('comparison-module')).not.toBeInTheDocument();
 
     await act(async () => {

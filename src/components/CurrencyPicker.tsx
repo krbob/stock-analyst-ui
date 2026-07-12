@@ -165,7 +165,7 @@ export default function CurrencyPicker({ nativeCurrency, value, onChange }: Curr
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 top-full z-50 mt-1 w-64 overflow-hidden rounded-lg border border-border bg-surface-raised shadow-lg">
+        <div className="absolute right-0 top-full z-50 mt-1 w-64 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-lg border border-border bg-surface-raised shadow-lg sm:left-0 sm:right-auto">
           <div className="border-b border-border p-2">
             <input
               ref={searchRef}
