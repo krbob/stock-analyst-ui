@@ -1,0 +1,148 @@
+/*
+ * Stock ecosystem design-token contract — v1.0.0.
+ *
+ * This file is framework-neutral: consumers depend on the --ui-* custom
+ * properties, not on Tailwind or React. Keep primitive values private to the
+ * contract and consume semantic/component tokens from application code.
+ * Integrity and the public token inventory are recorded in tokens.manifest.json.
+ */
+
+:root {
+  /* Layer 1: primitives (raw palette, scale and geometry). */
+  --ui-ref-color-neutral-0: #ffffff;
+  --ui-ref-color-neutral-25: #f4f5f8;
+  --ui-ref-color-neutral-50: #eceef3;
+  --ui-ref-color-neutral-100: #e2e4ec;
+  --ui-ref-color-neutral-250: #c6cad6;
+  --ui-ref-color-neutral-500: #646b80;
+  --ui-ref-color-neutral-650: #494f61;
+  --ui-ref-color-neutral-900: #16181f;
+  --ui-ref-color-neutral-950: #1a1a2e;
+  --ui-ref-color-neutral-960: #15151f;
+  --ui-ref-color-neutral-975: #0f0f1a;
+  --ui-ref-color-neutral-dark-100: #f2f2f7;
+  --ui-ref-color-neutral-dark-200: #e0e0e0;
+  --ui-ref-color-neutral-dark-400: #b4b6c8;
+  --ui-ref-color-neutral-dark-500: #8b8da3;
+  --ui-ref-color-neutral-dark-700: #3a3a4e;
+  --ui-ref-color-neutral-dark-800: #2a2a3e;
+  --ui-ref-color-neutral-dark-850: #262638;
+  --ui-ref-color-blue-500: #3b82f6;
+  --ui-ref-color-blue-600: #2563eb;
+  --ui-ref-color-green-500: #22c55e;
+  --ui-ref-color-green-700: #15803d;
+  --ui-ref-color-red-400: #f87171;
+  --ui-ref-color-red-500: #ef4444;
+  --ui-ref-color-red-600: #dc2626;
+  --ui-ref-color-amber-400: #fbbf24;
+  --ui-ref-color-amber-700: #b45309;
+  --ui-ref-color-yellow-600: #ca8a04;
+  --ui-ref-color-orange-600: #ea580c;
+  --ui-ref-color-orange-700: #d97706;
+  --ui-ref-color-lime-700: #16a34a;
+  --ui-ref-color-purple-500: #8b5cf6;
+  --ui-ref-color-purple-600: #7c3aed;
+  --ui-ref-color-indigo-500: #6366f1;
+  --ui-ref-color-pink-600: #db2777;
+  --ui-ref-space-unit: 0.25rem;
+  --ui-ref-radius-sm: 0.375rem;
+  --ui-ref-radius-md: 0.5rem;
+  --ui-ref-radius-lg: 0.75rem;
+  --ui-ref-radius-round: 9999px;
+  --ui-ref-focus-width: 2px;
+  --ui-ref-focus-offset: 2px;
+
+  /* Layer 2: semantic roles (the stable cross-application API). */
+  --ui-color-canvas: var(--ui-ref-color-neutral-25);
+  --ui-color-surface: var(--ui-ref-color-neutral-50);
+  --ui-color-surface-raised: var(--ui-ref-color-neutral-0);
+  --ui-color-border: var(--ui-ref-color-neutral-100);
+  --ui-color-border-strong: var(--ui-ref-color-neutral-250);
+  --ui-color-text: var(--ui-ref-color-neutral-900);
+  --ui-color-text-secondary: var(--ui-ref-color-neutral-650);
+  --ui-color-text-muted: var(--ui-ref-color-neutral-500);
+  --ui-color-action: var(--ui-ref-color-blue-600);
+  --ui-color-on-action: var(--ui-ref-color-neutral-0);
+  --ui-color-positive: var(--ui-ref-color-green-700);
+  --ui-color-negative: var(--ui-ref-color-red-600);
+  --ui-color-danger: var(--ui-ref-color-red-600);
+  --ui-color-highlight: var(--ui-ref-color-amber-700);
+  --ui-space-unit: var(--ui-ref-space-unit);
+  --ui-space-control-gap: calc(2 * var(--ui-ref-space-unit));
+  --ui-space-section-gap: calc(4 * var(--ui-ref-space-unit));
+  --ui-space-page-gutter-compact: calc(3 * var(--ui-ref-space-unit));
+  --ui-space-page-gutter: calc(6 * var(--ui-ref-space-unit));
+  --ui-radius-field: var(--ui-ref-radius-sm);
+  --ui-radius-control: var(--ui-ref-radius-md);
+  --ui-radius-card: var(--ui-ref-radius-lg);
+  --ui-radius-pill: var(--ui-ref-radius-round);
+  --ui-focus-color: var(--ui-color-action);
+  --ui-focus-width: var(--ui-ref-focus-width);
+  --ui-focus-offset: var(--ui-ref-focus-offset);
+
+  /* Layer 3: component roles. */
+  --ui-chart-background: var(--ui-color-surface-raised);
+  --ui-chart-grid: var(--ui-color-surface);
+  --ui-chart-scale-border: var(--ui-color-border-strong);
+  --ui-chart-text: var(--ui-color-text-secondary);
+  --ui-chart-up: var(--ui-color-positive);
+  --ui-chart-down: var(--ui-color-negative);
+  --ui-chart-accent: var(--ui-color-action);
+  --ui-chart-series-1: var(--ui-ref-color-blue-600);
+  --ui-chart-series-2: var(--ui-ref-color-red-600);
+  --ui-chart-series-3: var(--ui-ref-color-lime-700);
+  --ui-chart-series-4: var(--ui-ref-color-orange-700);
+  --ui-chart-series-5: var(--ui-ref-color-purple-600);
+  --ui-chart-series-6: var(--ui-ref-color-pink-600);
+  --ui-chart-indicator-sma50: var(--ui-ref-color-orange-700);
+  --ui-chart-indicator-sma200: var(--ui-ref-color-blue-500);
+  --ui-chart-indicator-ema50: var(--ui-ref-color-orange-600);
+  --ui-chart-indicator-ema200: var(--ui-ref-color-indigo-500);
+  --ui-chart-indicator-bb-upper: var(--ui-ref-color-purple-600);
+  --ui-chart-indicator-bb-middle: var(--ui-ref-color-purple-500);
+  --ui-chart-indicator-bb-lower: var(--ui-ref-color-purple-600);
+  --ui-chart-indicator-rsi: var(--ui-ref-color-yellow-600);
+  --ui-chart-indicator-macd: var(--ui-ref-color-blue-500);
+  --ui-chart-indicator-macd-signal: var(--ui-ref-color-orange-600);
+  --ui-chart-dividend: var(--ui-ref-color-purple-500);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ui-color-canvas: var(--ui-ref-color-neutral-975);
+  --ui-color-surface: var(--ui-ref-color-neutral-960);
+  --ui-color-surface-raised: var(--ui-ref-color-neutral-950);
+  --ui-color-border: var(--ui-ref-color-neutral-dark-850);
+  --ui-color-border-strong: var(--ui-ref-color-neutral-dark-700);
+  --ui-color-text: var(--ui-ref-color-neutral-dark-100);
+  --ui-color-text-secondary: var(--ui-ref-color-neutral-dark-400);
+  --ui-color-text-muted: var(--ui-ref-color-neutral-dark-500);
+  --ui-color-action: var(--ui-ref-color-blue-500);
+  --ui-color-positive: var(--ui-ref-color-green-500);
+  --ui-color-negative: var(--ui-ref-color-red-500);
+  --ui-color-danger: var(--ui-ref-color-red-400);
+  --ui-color-highlight: var(--ui-ref-color-amber-400);
+  --ui-chart-grid: var(--ui-ref-color-neutral-dark-800);
+  --ui-chart-text: var(--ui-ref-color-neutral-dark-200);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ui-color-canvas: var(--ui-ref-color-neutral-975);
+    --ui-color-surface: var(--ui-ref-color-neutral-960);
+    --ui-color-surface-raised: var(--ui-ref-color-neutral-950);
+    --ui-color-border: var(--ui-ref-color-neutral-dark-850);
+    --ui-color-border-strong: var(--ui-ref-color-neutral-dark-700);
+    --ui-color-text: var(--ui-ref-color-neutral-dark-100);
+    --ui-color-text-secondary: var(--ui-ref-color-neutral-dark-400);
+    --ui-color-text-muted: var(--ui-ref-color-neutral-dark-500);
+    --ui-color-action: var(--ui-ref-color-blue-500);
+    --ui-color-positive: var(--ui-ref-color-green-500);
+    --ui-color-negative: var(--ui-ref-color-red-500);
+    --ui-color-danger: var(--ui-ref-color-red-400);
+    --ui-color-highlight: var(--ui-ref-color-amber-400);
+    --ui-chart-grid: var(--ui-ref-color-neutral-dark-800);
+    --ui-chart-text: var(--ui-ref-color-neutral-dark-200);
+  }
+}

@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run tokens:check && tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run",
+    "test": "npm run tokens:check && vitest run",
     "test:watch": "vitest",
+    "tokens:check": "node scripts/validate-design-tokens.mjs",
     "screenshots": "playwright test e2e/screenshots.spec.ts"
   },
   "dependencies": {

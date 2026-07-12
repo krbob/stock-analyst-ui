@@ -139,10 +139,17 @@ src/
 │   └── CurrencyPicker  Currency selector dropdown
 ├── data/           Currency definitions (Intl API)
 ├── hooks/          Custom hooks (useDebounce)
+├── styles/         Versioned, framework-neutral design-token contract
 ├── url-state.ts    URL ↔ state serialization
 ├── App.tsx         Main layout and state management
 └── main.tsx        Entry point
 ```
+
+### Design-token contract
+
+`src/styles/tokens.css` is the portable UI contract shared at CSS custom-property level. It separates raw `primitive` values from the stable `semantic` API and chart-specific `component` roles, with light, dark and system-theme mappings. The Tailwind aliases in `src/index.css` are an adapter only; another application can consume the public `--ui-*` semantic/component tokens without using Tailwind or React.
+
+`src/styles/tokens.manifest.json` records the contract version, SHA-256 digest and complete layer inventory. Run `npm run tokens:check` after any token change; intentional contract changes require updating the manifest version and digest. Consumers should pin a compatible manifest version and must not depend on private `--ui-ref-*` primitives.
 
 ### Key dependencies
 

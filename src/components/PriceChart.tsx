@@ -8,8 +8,6 @@ import {
   buildCandlestickOptions,
   buildChartOptions,
   buildLineSeriesOptions,
-  DIVIDEND_MARKER_COLOR,
-  INDICATOR_COLORS,
   withAlpha,
 } from '../lib/chart-theme';
 import { useChartTheme } from '../hooks/useChartTheme';
@@ -270,7 +268,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
           time: chartTime(price),
           position: 'belowBar' as const,
           shape: 'circle' as const,
-          color: DIVIDEND_MARKER_COLOR,
+          color: chartTheme.dividend,
           text: withText ? `D ${price.dividend.toFixed(2)}` : undefined,
         }));
 
@@ -384,7 +382,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
       const values = ind[key];
       if (!values) continue;
       const series = chart.addSeries(LineSeries, {
-        color: INDICATOR_COLORS[key],
+        color: chartTheme.indicatorColors[key],
         lineWidth: 1,
         priceScaleId: 'right',
       });
@@ -394,9 +392,9 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
 
     if (ind.bb && active.has('bb')) {
       const bbLines = [
-        { data: ind.bb.map((v) => ({ time: chartTime(v), value: v.upper })), color: INDICATOR_COLORS.bb_upper },
-        { data: ind.bb.map((v) => ({ time: chartTime(v), value: v.middle })), color: INDICATOR_COLORS.bb_middle, style: 2 },
-        { data: ind.bb.map((v) => ({ time: chartTime(v), value: v.lower })), color: INDICATOR_COLORS.bb_lower },
+        { data: ind.bb.map((v) => ({ time: chartTime(v), value: v.upper })), color: chartTheme.indicatorColors.bb_upper },
+        { data: ind.bb.map((v) => ({ time: chartTime(v), value: v.middle })), color: chartTheme.indicatorColors.bb_middle, style: 2 },
+        { data: ind.bb.map((v) => ({ time: chartTime(v), value: v.lower })), color: chartTheme.indicatorColors.bb_lower },
       ];
       for (const line of bbLines) {
         const series = chart.addSeries(LineSeries, {
@@ -417,7 +415,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
       const rsiPaneIdx = rsiPane.paneIndex();
 
       const rsiSeries = chart.addSeries(LineSeries, {
-        color: INDICATOR_COLORS.rsi,
+        color: chartTheme.indicatorColors.rsi,
         lineWidth: 1,
         priceFormat: { type: 'custom', formatter: (v: number) => v.toFixed(0) },
       }, rsiPaneIdx);
@@ -452,7 +450,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
       const macdPaneIdx = macdPane.paneIndex();
 
       const macdSeries = chart.addSeries(LineSeries, {
-        color: INDICATOR_COLORS.macd,
+        color: chartTheme.indicatorColors.macd,
         lineWidth: 1,
         priceFormat: { type: 'custom', formatter: (v: number) => v.toFixed(2) },
       }, macdPaneIdx);
@@ -460,7 +458,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
       cleanups.push(() => chart.removeSeries(macdSeries));
 
       const signalSeries = chart.addSeries(LineSeries, {
-        color: INDICATOR_COLORS.macd_signal,
+        color: chartTheme.indicatorColors.macd_signal,
         lineWidth: 1,
       }, macdPaneIdx);
       signalSeries.setData(ind.macd.map((v) => ({ time: chartTime(v), value: v.signal })));
@@ -518,14 +516,14 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
           <span>L <span className="text-primary">{legend.low.toFixed(2)}</span></span>
           <span>C <span className={legend.close >= legend.open ? 'text-up' : 'text-down'}>{legend.close.toFixed(2)}</span></span>
           <span>V <span className="text-primary">{fmtVol(legend.volume)}</span></span>
-          {legend.dividend > 0 && <span>Div <span style={{ color: DIVIDEND_MARKER_COLOR }}>{legend.dividend.toFixed(2)}</span></span>}
-          {indLegend?.sma50 != null && <span>SMA50 <span style={{ color: INDICATOR_COLORS.sma50 }}>{indLegend.sma50.toFixed(2)}</span></span>}
-          {indLegend?.sma200 != null && <span>SMA200 <span style={{ color: INDICATOR_COLORS.sma200 }}>{indLegend.sma200.toFixed(2)}</span></span>}
-          {indLegend?.ema50 != null && <span>EMA50 <span style={{ color: INDICATOR_COLORS.ema50 }}>{indLegend.ema50.toFixed(2)}</span></span>}
-          {indLegend?.ema200 != null && <span>EMA200 <span style={{ color: INDICATOR_COLORS.ema200 }}>{indLegend.ema200.toFixed(2)}</span></span>}
-          {indLegend?.bb != null && <span style={{ color: INDICATOR_COLORS.bb_middle }}>BB <span>{indLegend.bb.lower.toFixed(2)} / {indLegend.bb.middle.toFixed(2)} / {indLegend.bb.upper.toFixed(2)}</span></span>}
-          {indLegend?.rsi != null && <span>RSI <span style={{ color: INDICATOR_COLORS.rsi }}>{indLegend.rsi.toFixed(0)}</span></span>}
-          {indLegend?.macd != null && <span style={{ color: INDICATOR_COLORS.macd }}>MACD <span>{indLegend.macd.macd.toFixed(2)} / {indLegend.macd.signal.toFixed(2)} / {indLegend.macd.histogram.toFixed(2)}</span></span>}
+          {legend.dividend > 0 && <span>Div <span style={{ color: chartTheme.dividend }}>{legend.dividend.toFixed(2)}</span></span>}
+          {indLegend?.sma50 != null && <span>SMA50 <span style={{ color: chartTheme.indicatorColors.sma50 }}>{indLegend.sma50.toFixed(2)}</span></span>}
+          {indLegend?.sma200 != null && <span>SMA200 <span style={{ color: chartTheme.indicatorColors.sma200 }}>{indLegend.sma200.toFixed(2)}</span></span>}
+          {indLegend?.ema50 != null && <span>EMA50 <span style={{ color: chartTheme.indicatorColors.ema50 }}>{indLegend.ema50.toFixed(2)}</span></span>}
+          {indLegend?.ema200 != null && <span>EMA200 <span style={{ color: chartTheme.indicatorColors.ema200 }}>{indLegend.ema200.toFixed(2)}</span></span>}
+          {indLegend?.bb != null && <span style={{ color: chartTheme.indicatorColors.bb_middle }}>BB <span>{indLegend.bb.lower.toFixed(2)} / {indLegend.bb.middle.toFixed(2)} / {indLegend.bb.upper.toFixed(2)}</span></span>}
+          {indLegend?.rsi != null && <span>RSI <span style={{ color: chartTheme.indicatorColors.rsi }}>{indLegend.rsi.toFixed(0)}</span></span>}
+          {indLegend?.macd != null && <span style={{ color: chartTheme.indicatorColors.macd }}>MACD <span>{indLegend.macd.macd.toFixed(2)} / {indLegend.macd.signal.toFixed(2)} / {indLegend.macd.histogram.toFixed(2)}</span></span>}
         </div>
       )}
       {currentData?.adjustment === 'split-adjusted' && (

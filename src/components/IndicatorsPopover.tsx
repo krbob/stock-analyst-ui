@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { INDICATOR_COLORS } from '../lib/chart-theme';
+import type { IndicatorColorKey } from '../lib/chart-theme';
+import { useChartTheme } from '../hooks/useChartTheme';
 
 export interface IndicatorGroup {
   label: string;
@@ -7,11 +8,11 @@ export interface IndicatorGroup {
 }
 
 /** Palette chips shown next to each indicator group, matching the chart colors. */
-function chipColors(keys: string[]): string[] {
+function chipColors(keys: string[], colors: Record<IndicatorColorKey, string>): string[] {
   return keys.flatMap((key) => {
-    if (key === 'bb') return [INDICATOR_COLORS.bb_upper, INDICATOR_COLORS.bb_middle];
-    if (key === 'macd') return [INDICATOR_COLORS.macd, INDICATOR_COLORS.macd_signal];
-    const color = INDICATOR_COLORS[key];
+    if (key === 'bb') return [colors.bb_upper, colors.bb_middle];
+    if (key === 'macd') return [colors.macd, colors.macd_signal];
+    const color = colors[key as IndicatorColorKey];
     return color ? [color] : [];
   });
 }
@@ -23,6 +24,7 @@ interface IndicatorsPopoverProps {
 }
 
 export default function IndicatorsPopover({ groups, active, onToggleGroup }: IndicatorsPopoverProps) {
+  const chartTheme = useChartTheme();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -107,7 +109,7 @@ export default function IndicatorsPopover({ groups, active, onToggleGroup }: Ind
                 />
                 <span className="flex-1 text-primary">{group.label}</span>
                 <span className="flex items-center gap-1">
-                  {chipColors(group.keys).map((color, index) => (
+                  {chipColors(group.keys, chartTheme.indicatorColors).map((color, index) => (
                     <span
                       key={index}
                       aria-hidden="true"

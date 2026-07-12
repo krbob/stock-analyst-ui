@@ -13,7 +13,22 @@ export interface ChartTheme {
   up: string;
   down: string;
   accent: string;
+  compareColors: string[];
+  indicatorColors: Record<IndicatorColorKey, string>;
+  dividend: string;
 }
+
+export type IndicatorColorKey =
+  | 'sma50'
+  | 'sma200'
+  | 'ema50'
+  | 'ema200'
+  | 'bb_upper'
+  | 'bb_middle'
+  | 'bb_lower'
+  | 'rsi'
+  | 'macd'
+  | 'macd_signal';
 
 /** Dark-theme values, used when CSS variables cannot be resolved (e.g. jsdom). */
 export const FALLBACK_CHART_THEME: ChartTheme = {
@@ -24,16 +39,55 @@ export const FALLBACK_CHART_THEME: ChartTheme = {
   up: '#22c55e',
   down: '#ef4444',
   accent: '#3b82f6',
+  compareColors: ['#2563eb', '#dc2626', '#16a34a', '#d97706', '#7c3aed', '#db2777'],
+  indicatorColors: {
+    sma50: '#d97706',
+    sma200: '#3b82f6',
+    ema50: '#ea580c',
+    ema200: '#6366f1',
+    bb_upper: '#7c3aed',
+    bb_middle: '#8b5cf6',
+    bb_lower: '#7c3aed',
+    rsi: '#ca8a04',
+    macd: '#3b82f6',
+    macd_signal: '#ea580c',
+  },
+  dividend: '#8b5cf6',
 };
 
-const TOKEN_MAP: Record<keyof ChartTheme, string> = {
-  background: '--color-chart-bg',
-  text: '--color-chart-text',
-  grid: '--color-chart-grid',
-  scaleBorder: '--color-chart-scale-border',
-  up: '--color-up',
-  down: '--color-down',
-  accent: '--color-accent',
+type ChartColorKey = 'background' | 'text' | 'grid' | 'scaleBorder' | 'up' | 'down' | 'accent' | 'dividend';
+
+const TOKEN_MAP: Record<ChartColorKey, string> = {
+  background: '--ui-chart-background',
+  text: '--ui-chart-text',
+  grid: '--ui-chart-grid',
+  scaleBorder: '--ui-chart-scale-border',
+  up: '--ui-chart-up',
+  down: '--ui-chart-down',
+  accent: '--ui-chart-accent',
+  dividend: '--ui-chart-dividend',
+};
+
+const COMPARE_TOKEN_MAP = [
+  '--ui-chart-series-1',
+  '--ui-chart-series-2',
+  '--ui-chart-series-3',
+  '--ui-chart-series-4',
+  '--ui-chart-series-5',
+  '--ui-chart-series-6',
+] as const;
+
+const INDICATOR_TOKEN_MAP: Record<IndicatorColorKey, string> = {
+  sma50: '--ui-chart-indicator-sma50',
+  sma200: '--ui-chart-indicator-sma200',
+  ema50: '--ui-chart-indicator-ema50',
+  ema200: '--ui-chart-indicator-ema200',
+  bb_upper: '--ui-chart-indicator-bb-upper',
+  bb_middle: '--ui-chart-indicator-bb-middle',
+  bb_lower: '--ui-chart-indicator-bb-lower',
+  rsi: '--ui-chart-indicator-rsi',
+  macd: '--ui-chart-indicator-macd',
+  macd_signal: '--ui-chart-indicator-macd-signal',
 };
 
 type TokenReader = (token: string) => string;
@@ -50,16 +104,30 @@ function defaultTokenReader(): TokenReader | null {
 export function readChartTheme(read?: TokenReader): ChartTheme {
   const reader = read ?? defaultTokenReader();
   if (!reader) return FALLBACK_CHART_THEME;
-  const theme = { ...FALLBACK_CHART_THEME };
-  for (const key of Object.keys(TOKEN_MAP) as (keyof ChartTheme)[]) {
+  const theme: ChartTheme = {
+    ...FALLBACK_CHART_THEME,
+    compareColors: [...FALLBACK_CHART_THEME.compareColors],
+    indicatorColors: { ...FALLBACK_CHART_THEME.indicatorColors },
+  };
+  for (const key of Object.keys(TOKEN_MAP) as ChartColorKey[]) {
     const value = reader(TOKEN_MAP[key]).trim();
     if (value) theme[key] = value;
+  }
+  theme.compareColors = COMPARE_TOKEN_MAP.map((token, index) => (
+    reader(token).trim() || FALLBACK_CHART_THEME.compareColors[index]
+  ));
+  for (const key of Object.keys(INDICATOR_TOKEN_MAP) as IndicatorColorKey[]) {
+    const value = reader(INDICATOR_TOKEN_MAP[key]).trim();
+    if (value) theme.indicatorColors[key] = value;
   }
   return theme;
 }
 
 export function chartThemesEqual(a: ChartTheme, b: ChartTheme): boolean {
-  return (Object.keys(TOKEN_MAP) as (keyof ChartTheme)[]).every((key) => a[key] === b[key]);
+  return (Object.keys(TOKEN_MAP) as ChartColorKey[]).every((key) => a[key] === b[key])
+    && a.compareColors.every((color, index) => color === b.compareColors[index])
+    && (Object.keys(INDICATOR_TOKEN_MAP) as IndicatorColorKey[])
+      .every((key) => a.indicatorColors[key] === b.indicatorColors[key]);
 }
 
 /**
@@ -121,24 +189,3 @@ export function buildLineSeriesOptions(theme: ChartTheme) {
 export function withAlpha(color: string, alphaHex: string): string {
   return /^#[0-9a-fA-F]{6}$/.test(color) ? color + alphaHex : color;
 }
-
-// ---------------------------------------------------------------------------
-// Fixed palettes (accessible on both light and dark chart surfaces)
-// ---------------------------------------------------------------------------
-
-export const COMPARE_COLORS = ['#2563eb', '#dc2626', '#16a34a', '#d97706', '#7c3aed', '#db2777'];
-
-export const INDICATOR_COLORS: Record<string, string> = {
-  sma50: '#d97706',
-  sma200: '#3b82f6',
-  ema50: '#ea580c',
-  ema200: '#6366f1',
-  bb_upper: '#7c3aed',
-  bb_middle: '#8b5cf6',
-  bb_lower: '#7c3aed',
-  rsi: '#ca8a04',
-  macd: '#3b82f6',
-  macd_signal: '#ea580c',
-};
-
-export const DIVIDEND_MARKER_COLOR = '#8b5cf6';

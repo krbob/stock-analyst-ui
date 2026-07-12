@@ -12,8 +12,8 @@ import { useQuote, useStockHistory } from './api/queries';
 import type { Interval, Period, Quote } from './api/types';
 import { parseUrlParams, buildUrlParams } from './url-state';
 import { createHistoryRequest, matchesHistoryRequest } from './api/history-utils';
-import { COMPARE_COLORS } from './lib/chart-theme';
 import { formatGain } from './lib/format';
+import { useChartTheme } from './hooks/useChartTheme';
 
 const URL_INIT = parseUrlParams(window.location.search);
 
@@ -218,6 +218,7 @@ function StockInfo({ symbol, currency, livePrice, hideGain, nativeQuote, convert
 }
 
 export default function App() {
+  const chartTheme = useChartTheme();
   const [symbol, setSymbol] = useState(URL_INIT.symbol);
   const [period, setPeriod] = useState<Period>(URL_INIT.period);
   const [interval, setSelectedInterval] = useState<Interval | undefined>(URL_INIT.interval);
@@ -375,7 +376,7 @@ export default function App() {
                   <span
                     key={sym}
                     className="inline-flex items-center gap-0.5 rounded-full py-0.5 pl-2.5 pr-0.5 text-sm font-medium sm:gap-1 sm:py-1 sm:pl-3"
-                    style={{ backgroundColor: COMPARE_COLORS[i % COMPARE_COLORS.length] + '22', color: COMPARE_COLORS[i % COMPARE_COLORS.length] }}
+                    style={{ backgroundColor: chartTheme.compareColors[i % chartTheme.compareColors.length] + '22', color: chartTheme.compareColors[i % chartTheme.compareColors.length] }}
                   >
                     {sym.toUpperCase()}
                     <button type="button" onClick={() => removeFromCompare(sym)} className="inline-flex h-6 w-6 items-center justify-center rounded-full text-base leading-none outline-none hover:bg-surface/60 hover:text-primary focus-visible:ring-2 focus-visible:ring-accent" aria-label={`Remove ${sym.toUpperCase()} from compare`}>&times;</button>

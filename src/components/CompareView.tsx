@@ -3,7 +3,7 @@ import { createChart, LineSeries, type IChartApi } from 'lightweight-charts';
 import { useStockHistory, useCompare } from '../api/queries';
 import type { CompareResult, Period, Quote } from '../api/types';
 import { createHistoryRequest, matchesHistoryRequest } from '../api/history-utils';
-import { buildChartOptions, COMPARE_COLORS } from '../lib/chart-theme';
+import { buildChartOptions } from '../lib/chart-theme';
 import { useChartTheme } from '../hooks/useChartTheme';
 import { formatGain, formatMarketCap, formatNumber, formatRatioPercent } from '../lib/format';
 import { formatRecommendation } from '../lib/recommendation';
@@ -143,7 +143,7 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
     for (const source of chartSeries) {
       const data = source.data!;
       const sym = source.symbol;
-      const color = COMPARE_COLORS[source.colorIndex % COMPARE_COLORS.length];
+      const color = chartTheme.compareColors[source.colorIndex % chartTheme.compareColors.length];
       const normalized = normalizeFromTime(data.prices, null);
       if (normalized.length === 0) continue;
 
@@ -226,7 +226,7 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
         {/* Legend */}
         <div className="relative z-20 flex flex-wrap gap-x-2 gap-y-0.5 border-b border-border bg-surface-raised px-2.5 py-1.5 text-xs tabular-nums sm:absolute sm:left-2 sm:top-2 sm:gap-x-3 sm:rounded-lg sm:border sm:bg-surface-raised/85 sm:shadow-sm sm:backdrop-blur">
           {symbols.map((sym, i) => {
-            const color = COMPARE_COLORS[i % COMPARE_COLORS.length];
+            const color = chartTheme.compareColors[i % chartTheme.compareColors.length];
             const val = legendValues.get(sym);
             return (
               <span key={sym} style={{ color }}>
@@ -299,7 +299,7 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
                       key={q.symbol}
                       aria-label={q.name ? `${q.symbol.toUpperCase()} ${q.name}` : q.symbol.toUpperCase()}
                       className="px-3 py-2 text-right font-medium"
-                      style={{ color: COMPARE_COLORS[idx % COMPARE_COLORS.length] }}
+                      style={{ color: chartTheme.compareColors[idx % chartTheme.compareColors.length] }}
                     >
                       {q.symbol.toUpperCase()}
                       {q.name && <span aria-hidden="true" className="hidden text-xs text-muted font-normal sm:block">{q.name}</span>}

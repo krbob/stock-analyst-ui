@@ -14,16 +14,19 @@ import { THEME_CHANGE_EVENT } from './theme';
 describe('readChartTheme', () => {
   it('reads colors from the provided token reader', () => {
     const tokens: Record<string, string> = {
-      '--color-chart-bg': '#ffffff',
-      '--color-chart-text': ' #111111 ',
-      '--color-chart-grid': '#eeeeee',
-      '--color-chart-scale-border': '#cccccc',
-      '--color-up': '#15803d',
-      '--color-down': '#dc2626',
-      '--color-accent': '#2563eb',
+      '--ui-chart-background': '#ffffff',
+      '--ui-chart-text': ' #111111 ',
+      '--ui-chart-grid': '#eeeeee',
+      '--ui-chart-scale-border': '#cccccc',
+      '--ui-chart-up': '#15803d',
+      '--ui-chart-down': '#dc2626',
+      '--ui-chart-accent': '#2563eb',
+      '--ui-chart-series-1': '#123456',
+      '--ui-chart-indicator-sma50': '#654321',
+      '--ui-chart-dividend': '#abcdef',
     };
     const theme = readChartTheme((token) => tokens[token] ?? '');
-    expect(theme).toEqual({
+    expect(theme).toMatchObject({
       background: '#ffffff',
       text: '#111111',
       grid: '#eeeeee',
@@ -31,11 +34,16 @@ describe('readChartTheme', () => {
       up: '#15803d',
       down: '#dc2626',
       accent: '#2563eb',
+      dividend: '#abcdef',
     });
+    expect(theme.compareColors[0]).toBe('#123456');
+    expect(theme.compareColors[1]).toBe(FALLBACK_CHART_THEME.compareColors[1]);
+    expect(theme.indicatorColors.sma50).toBe('#654321');
+    expect(theme.indicatorColors.macd).toBe(FALLBACK_CHART_THEME.indicatorColors.macd);
   });
 
   it('falls back per-token when a variable is unresolved', () => {
-    const theme = readChartTheme((token) => (token === '--color-up' ? '#00ff00' : ''));
+    const theme = readChartTheme((token) => (token === '--ui-chart-up' ? '#00ff00' : ''));
     expect(theme.up).toBe('#00ff00');
     expect(theme.background).toBe(FALLBACK_CHART_THEME.background);
     expect(theme.grid).toBe(FALLBACK_CHART_THEME.grid);
@@ -44,7 +52,19 @@ describe('readChartTheme', () => {
   it('does not throw in jsdom without resolved CSS variables', () => {
     const theme = readChartTheme();
     // jsdom does not cascade custom properties from stylesheets → dark fallbacks
-    for (const value of Object.values(theme)) {
+    const values = [
+      theme.background,
+      theme.text,
+      theme.grid,
+      theme.scaleBorder,
+      theme.up,
+      theme.down,
+      theme.accent,
+      theme.dividend,
+      ...theme.compareColors,
+      ...Object.values(theme.indicatorColors),
+    ];
+    for (const value of values) {
       expect(value).toMatch(/^#[0-9a-fA-F]{6}$/);
     }
   });
@@ -95,8 +115,21 @@ describe('withAlpha', () => {
 
 describe('chartThemesEqual', () => {
   it('compares all color fields', () => {
-    expect(chartThemesEqual(FALLBACK_CHART_THEME, { ...FALLBACK_CHART_THEME })).toBe(true);
+    const clone = {
+      ...FALLBACK_CHART_THEME,
+      compareColors: [...FALLBACK_CHART_THEME.compareColors],
+      indicatorColors: { ...FALLBACK_CHART_THEME.indicatorColors },
+    };
+    expect(chartThemesEqual(FALLBACK_CHART_THEME, clone)).toBe(true);
     expect(chartThemesEqual(FALLBACK_CHART_THEME, { ...FALLBACK_CHART_THEME, up: '#000000' })).toBe(false);
+    expect(chartThemesEqual(FALLBACK_CHART_THEME, {
+      ...clone,
+      compareColors: ['#000000', ...clone.compareColors.slice(1)],
+    })).toBe(false);
+    expect(chartThemesEqual(FALLBACK_CHART_THEME, {
+      ...clone,
+      indicatorColors: { ...clone.indicatorColors, rsi: '#000000' },
+    })).toBe(false);
   });
 });
 

@@ -1,36 +1,34 @@
+@import "./styles/tokens.css";
 @import "tailwindcss";
 
 /*
- * Design tokens.
+ * Tailwind bridge for the framework-neutral contract in styles/tokens.css.
  *
- * Light values live in @theme (the default). Dark values are applied by
- * overriding the same CSS variables:
- *   - `data-theme="dark"` on <html> forces dark,
- *   - `data-theme="light"` forces light,
- *   - no attribute ("system") falls back to prefers-color-scheme.
- *
- * `@theme static` ensures every token is emitted on :root so the chart
- * theme module can read them via getComputedStyle at runtime.
+ * Existing utilities remain stable while their values come from semantic
+ * --ui-* roles. New framework-neutral consumers should use --ui-* directly.
  */
-@theme static {
-  --color-page: #f4f5f8;
-  --color-surface: #eceef3;
-  --color-surface-raised: #ffffff;
-  --color-border: #e2e4ec;
-  --color-border-strong: #c6cad6;
-  --color-primary: #16181f;
-  --color-secondary: #494f61;
-  --color-muted: #646b80;
-  --color-accent: #2563eb;
-  --color-accent-foreground: #ffffff;
-  --color-up: #15803d;
-  --color-down: #dc2626;
-  --color-danger: #dc2626;
-  --color-highlight: #b45309;
-  --color-chart-bg: #ffffff;
-  --color-chart-grid: #eceef3;
-  --color-chart-scale-border: #c6cad6;
-  --color-chart-text: #494f61;
+@theme inline {
+  --spacing: var(--ui-space-unit);
+  --radius-sm: var(--ui-radius-field);
+  --radius-md: var(--ui-radius-field);
+  --radius-lg: var(--ui-radius-control);
+  --radius-xl: var(--ui-radius-card);
+  --radius-full: var(--ui-radius-pill);
+  --color-page: var(--ui-color-canvas);
+  --color-surface: var(--ui-color-surface);
+  --color-surface-raised: var(--ui-color-surface-raised);
+  --color-border: var(--ui-color-border);
+  --color-border-strong: var(--ui-color-border-strong);
+  --color-primary: var(--ui-color-text);
+  --color-secondary: var(--ui-color-text-secondary);
+  --color-muted: var(--ui-color-text-muted);
+  --color-accent: var(--ui-color-action);
+  --color-accent-foreground: var(--ui-color-on-action);
+  --color-up: var(--ui-color-positive);
+  --color-down: var(--ui-color-negative);
+  --color-danger: var(--ui-color-danger);
+  --color-highlight: var(--ui-color-highlight);
+  --color-chart-bg: var(--ui-chart-background);
 }
 
 @layer base {
@@ -38,56 +36,9 @@
     color-scheme: light;
   }
 
-  /* Dark tokens — keep the two blocks below in sync. */
-  :root[data-theme="dark"] {
-    color-scheme: dark;
-    --color-page: #0f0f1a;
-    --color-surface: #15151f;
-    --color-surface-raised: #1a1a2e;
-    --color-border: #262638;
-    --color-border-strong: #3a3a4e;
-    --color-primary: #f2f2f7;
-    --color-secondary: #b4b6c8;
-    --color-muted: #8b8da3;
-    --color-accent: #3b82f6;
-    --color-accent-foreground: #ffffff;
-    --color-up: #22c55e;
-    --color-down: #ef4444;
-    --color-danger: #f87171;
-    --color-highlight: #fbbf24;
-    --color-chart-bg: #1a1a2e;
-    --color-chart-grid: #2a2a3e;
-    --color-chart-scale-border: #3a3a4e;
-    --color-chart-text: #e0e0e0;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      color-scheme: dark;
-      --color-page: #0f0f1a;
-      --color-surface: #15151f;
-      --color-surface-raised: #1a1a2e;
-      --color-border: #262638;
-      --color-border-strong: #3a3a4e;
-      --color-primary: #f2f2f7;
-      --color-secondary: #b4b6c8;
-      --color-muted: #8b8da3;
-      --color-accent: #3b82f6;
-      --color-accent-foreground: #ffffff;
-      --color-up: #22c55e;
-      --color-down: #ef4444;
-      --color-danger: #f87171;
-      --color-highlight: #fbbf24;
-      --color-chart-bg: #1a1a2e;
-      --color-chart-grid: #2a2a3e;
-      --color-chart-scale-border: #3a3a4e;
-      --color-chart-text: #e0e0e0;
-    }
-  }
-
   html {
     overscroll-behavior: none;
-    background-color: var(--color-page);
+    background-color: var(--ui-color-canvas);
   }
 
   body {
@@ -97,8 +48,8 @@
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
     padding-bottom: env(safe-area-inset-bottom);
-    background-color: var(--color-page);
-    color: var(--color-primary);
+    background-color: var(--ui-color-canvas);
+    color: var(--ui-color-text);
   }
 
   input,
