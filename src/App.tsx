@@ -375,9 +375,9 @@ export default function App() {
           </>
         )}
 
-        {/* Single-stock content (hidden but mounted in compare to avoid chart.remove() crash) */}
-        {symbol ? (
-          <div className={inCompareMode ? 'hidden' : showDetails ? 'xl:grid xl:grid-cols-[minmax(0,1fr)_380px] xl:items-start xl:gap-6' : ''}>
+        {/* Only the active mode is mounted, so compare does not retain single-stock requests/charts. */}
+        {!inCompareMode && (symbol ? (
+          <div className={showDetails ? 'xl:grid xl:grid-cols-[minmax(0,1fr)_380px] xl:items-start xl:gap-6' : ''}>
             <section className="min-w-0">
             <div className="mb-4">
               <StockInfo symbol={symbol} currency={currency} livePrice={isIntradayPeriod && !currency ? nativeHistory?.prices.at(-1)?.close : undefined} hideGain={isIntradayPeriod} />
@@ -445,9 +445,9 @@ export default function App() {
               <StockDetails symbol={symbol} currency={currency} prices={currencyHistory?.prices ?? nativeHistory?.prices} indicators={currencyHistory?.indicators ?? nativeHistory?.indicators} interval={activeInterval} showDividends={showDividends} />
             </aside>
           </div>
-        ) : !inCompareMode && (
+        ) : (
           <EmptyState onSelect={handleSelect} />
-        )}
+        ))}
       </main>
 
       {SHOW_CHART_ATTRIBUTION ? (

@@ -15,6 +15,7 @@ import {
 import { useChartTheme } from '../hooks/useChartTheme';
 import { getPaneStretchFactors, type IndicatorPaneKind } from './price-chart-layout';
 import { describePriceChart } from './chart-accessibility';
+import { runChartCleanups } from './chart-lifecycle';
 
 // ---------------------------------------------------------------------------
 // Time helpers
@@ -112,6 +113,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
   const chartRef = useRef<IChartApi | null>(null);
   const pricesRef = useRef<Map<string, HistoricalPrice>>(new Map());
   const indRef = useRef<Map<string, IndicatorSnapshot>>(new Map());
+  const baseCleanupRef = useRef<(() => void)[]>([]);
   const indicatorCleanupRef = useRef<(() => void)[]>([]);
   const [legend, setLegend] = useState<HistoricalPrice | null>(null);
   const [indLegend, setIndLegend] = useState<IndicatorSnapshot | null>(null);
@@ -190,6 +192,10 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
       if (fitTimerRef.current) clearTimeout(fitTimerRef.current);
       resizeObserver?.disconnect();
       window.removeEventListener('resize', handleResize);
+      runChartCleanups(baseCleanupRef.current);
+      baseCleanupRef.current = [];
+      runChartCleanups(indicatorCleanupRef.current);
+      indicatorCleanupRef.current = [];
       try { chart.remove(); } catch { /* lightweight-charts may throw on remove */ }
       chartRef.current = null;
     };
@@ -335,7 +341,11 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
     }
     onZoomChange?.(false);
 
-    return () => cleanups.forEach((fn) => fn());
+    baseCleanupRef.current = cleanups;
+    return () => {
+      runChartCleanups(cleanups);
+      if (baseCleanupRef.current === cleanups) baseCleanupRef.current = [];
+    };
   // onZoomChange/resetRef are stable refs from parent — including them causes infinite loops
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentData, lineChart, showDividends, chartTheme]);
@@ -343,7 +353,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
   // ---- Indicators (kept separate so toggles do not recreate price/volume series) ----
   useEffect(() => {
     const chart = chartRef.current;
-    indicatorCleanupRef.current.forEach((fn) => fn());
+    runChartCleanups(indicatorCleanupRef.current);
     indicatorCleanupRef.current = [];
 
     const ind = currentData?.indicators;
@@ -471,7 +481,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
     indicatorCleanupRef.current = cleanups;
 
     return () => {
-      cleanups.forEach((fn) => fn());
+      runChartCleanups(cleanups);
       if (indicatorCleanupRef.current === cleanups) indicatorCleanupRef.current = [];
     };
   }, [currentData, activeIndicators, lineChart, showDividends, chartTheme]);
