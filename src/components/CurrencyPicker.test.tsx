@@ -17,6 +17,7 @@ Object.defineProperty(globalThis, 'localStorage', { value: storageMock, writable
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
 });
 
 beforeEach(() => {
@@ -54,6 +55,40 @@ describe('CurrencyPicker', () => {
     await user.click(screen.getByText('USD'));
     expect(screen.getByPlaceholderText('Search currency...')).toBeInTheDocument();
     expect(screen.getByText('default')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Select currency' })).toHaveAttribute('aria-haspopup', 'listbox');
+    expect(screen.getByRole('listbox', { name: 'Currencies' })).toBeInTheDocument();
+  });
+
+  it('selects a filtered currency using only the keyboard', async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <CurrencyPicker nativeCurrency="USD" value={undefined} onChange={onChange} />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Select currency' }));
+    const search = screen.getByRole('textbox', { name: 'Search currency' });
+    await user.type(search, 'PLN');
+    await user.keyboard('{ArrowDown}{Enter}');
+
+    expect(onChange).toHaveBeenCalledWith('PLN');
+    expect(screen.queryByRole('listbox', { name: 'Currencies' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Select currency' })).toHaveFocus();
+  });
+
+  it('closes on Escape and restores focus to the trigger', async () => {
+    const user = userEvent.setup();
+    render(
+      <CurrencyPicker nativeCurrency="USD" value={undefined} onChange={vi.fn()} />,
+    );
+
+    const trigger = screen.getByRole('button', { name: 'Select currency' });
+    await user.click(trigger);
+    await user.click(screen.getByRole('textbox', { name: 'Search currency' }));
+    await user.keyboard('{Escape}');
+
+    expect(screen.queryByRole('listbox', { name: 'Currencies' })).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
   });
 
   it('calls onChange with currency code on select', async () => {
@@ -100,6 +135,23 @@ describe('CurrencyPicker', () => {
 
     const stored = JSON.parse(storageMock.getItem('recentCurrencies') ?? '[]');
     expect(stored).toContain('GBP');
+  });
+
+  it('still selects a currency when recent storage cannot be written', async () => {
+    const onChange = vi.fn();
+    vi.spyOn(storageMock, 'setItem').mockImplementation(() => {
+      throw new DOMException('Storage full', 'QuotaExceededError');
+    });
+    const user = userEvent.setup();
+    render(
+      <CurrencyPicker nativeCurrency="USD" value={undefined} onChange={onChange} />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Select currency' }));
+    await user.type(screen.getByRole('textbox', { name: 'Search currency' }), 'EUR');
+    await user.keyboard('{ArrowDown}{Enter}');
+
+    expect(onChange).toHaveBeenCalledWith('EUR');
   });
 
   it('shows recent currencies in dropdown', async () => {

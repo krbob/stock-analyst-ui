@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useId, type KeyboardEvent } from 'react';
 import { CURRENCIES, getCurrencyName } from '../data/currencies';
 import { addRecentItem, loadRecentItems, removeRecentItem } from '../lib/recents';
 
@@ -39,8 +39,11 @@ export default function CurrencyPicker({ nativeCurrency, value, onChange }: Curr
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [recents, setRecents] = useState(loadRecents);
+  const listboxId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const listboxRef = useRef<HTMLDivElement>(null);
   const focusFrameRef = useRef<number | null>(null);
 
   const displayCode = value ?? nativeCurrency ?? 'Currency';
@@ -67,15 +70,62 @@ export default function CurrencyPicker({ nativeCurrency, value, onChange }: Curr
     }
   }, [isOpen, handleClickOutside]);
 
+  const closePicker = (restoreFocus = false) => {
+    setIsOpen(false);
+    if (restoreFocus) triggerRef.current?.focus();
+  };
+
   const select = (code: string) => {
     const normalizedCode = normalizeCurrencyCode(code);
     if (nativeCurrency && normalizedCode === nativeCurrency.toUpperCase()) {
       onChange(undefined);
     } else {
       onChange(normalizedCode);
-      setRecents(addRecent(normalizedCode));
+      try {
+        setRecents(addRecent(normalizedCode));
+      } catch {
+        // Storage can be unavailable or full; selection must still succeed.
+      }
     }
-    setIsOpen(false);
+    closePicker(true);
+  };
+
+  const selectableOptions = (): HTMLButtonElement[] =>
+    Array.from(listboxRef.current?.querySelectorAll<HTMLButtonElement>('[role="option"]') ?? []);
+
+  const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    const options = selectableOptions();
+    if (event.key === 'ArrowDown' && options.length > 0) {
+      event.preventDefault();
+      options[0].focus();
+    } else if (event.key === 'ArrowUp' && options.length > 0) {
+      event.preventDefault();
+      options.at(-1)?.focus();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      closePicker(true);
+    }
+  };
+
+  const handleOptionKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    const options = selectableOptions();
+    const currentIndex = options.indexOf(event.currentTarget);
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closePicker(true);
+      return;
+    }
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Home' || event.key === 'End') {
+      event.preventDefault();
+      const nextIndex = event.key === 'Home'
+        ? 0
+        : event.key === 'End'
+          ? options.length - 1
+          : event.key === 'ArrowDown'
+            ? (currentIndex + 1) % options.length
+            : (currentIndex - 1 + options.length) % options.length;
+      options[nextIndex]?.focus();
+    }
   };
 
   const toggleOpen = () => {
@@ -102,10 +152,12 @@ export default function CurrencyPicker({ nativeCurrency, value, onChange }: Curr
   return (
     <div ref={containerRef} className="relative">
       <button
+        ref={triggerRef}
         type="button"
         onClick={toggleOpen}
         aria-expanded={isOpen}
-        aria-haspopup="dialog"
+        aria-haspopup="listbox"
+        aria-controls={isOpen ? listboxId : undefined}
         aria-label="Select currency"
         className="inline-flex h-8 shrink-0 items-center rounded-md border border-border-strong bg-surface-raised px-2.5 text-sm text-secondary transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
@@ -122,36 +174,46 @@ export default function CurrencyPicker({ nativeCurrency, value, onChange }: Curr
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search currency..."
               aria-label="Search currency"
+              aria-controls={listboxId}
+              onKeyDown={handleSearchKeyDown}
               className="w-full rounded border border-border-strong bg-surface px-2 py-1 text-sm text-primary placeholder-muted focus:border-accent focus:outline-none"
             />
           </div>
 
-          <div className="max-h-64 overflow-y-auto">
+          <div ref={listboxRef} id={listboxId} role="listbox" aria-label="Currencies" className="max-h-64 overflow-y-auto">
             {/* Native currency — always on top */}
             {nativeCurrency && (!query || nativeCurrency.toLowerCase().includes(query) || getCurrencyName(nativeCurrency).toLowerCase().includes(query)) && (
-              <div
-                onMouseDown={(e) => { e.preventDefault(); select(nativeCurrency); }}
+              <button
+                type="button"
+                role="option"
+                aria-selected={!value}
+                onClick={() => select(nativeCurrency)}
+                onKeyDown={handleOptionKeyDown}
                 className={`flex cursor-pointer items-center justify-between px-3 py-2 text-sm hover:bg-surface ${
                   !value ? 'bg-surface/70 text-primary' : 'text-secondary'
-                }`}
+                } w-full text-left`}
               >
                 <span>
                   <span className="font-bold text-primary">{nativeCurrency}</span>
                   <span className="ml-2 text-secondary">{getCurrencyName(nativeCurrency)}</span>
                 </span>
                 <span className="text-xs text-accent">default</span>
-              </div>
+              </button>
             )}
             {/* No conversion option — when no native currency */}
             {!nativeCurrency && (
-              <div
-                onMouseDown={(e) => { e.preventDefault(); onChange(undefined); setIsOpen(false); }}
+              <button
+                type="button"
+                role="option"
+                aria-selected={!value}
+                onClick={() => { onChange(undefined); closePicker(true); }}
+                onKeyDown={handleOptionKeyDown}
                 className={`flex cursor-pointer items-center justify-between px-3 py-2 text-sm hover:bg-surface ${
                   !value ? 'bg-surface/70 text-primary' : 'text-secondary'
-                }`}
+                } w-full text-left`}
               >
                 <span className="text-secondary">No conversion</span>
-              </div>
+              </button>
             )}
 
             {/* Recent currencies */}
@@ -159,23 +221,31 @@ export default function CurrencyPicker({ nativeCurrency, value, onChange }: Curr
               <>
                 <div className="border-t border-border/70 px-3 py-1 text-xs text-muted">Recent</div>
                 {recentCurrencies.map((code) => (
-                  <div
-                    key={`recent-${code}`}
-                    onMouseDown={(e) => { e.preventDefault(); select(code); }}
-                    className={`flex cursor-pointer items-center justify-between px-3 py-1.5 text-sm hover:bg-surface ${
-                      value === code ? 'bg-surface/70 text-primary' : 'text-secondary'
-                    }`}
-                  >
-                    <div className="min-w-0 truncate">
-                      <span className="font-medium">{code}</span>
-                      <span className="ml-2 text-secondary">{getCurrencyName(code)}</span>
-                    </div>
+                  <div key={`recent-${code}`} className="flex items-center">
                     <button
                       type="button"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
+                      role="option"
+                      aria-selected={value === code}
+                      onClick={() => select(code)}
+                      onKeyDown={handleOptionKeyDown}
+                      className={`flex cursor-pointer items-center justify-between px-3 py-1.5 text-sm hover:bg-surface ${
+                        value === code ? 'bg-surface/70 text-primary' : 'text-secondary'
+                      } min-w-0 grow text-left`}
+                    >
+                      <div className="min-w-0 truncate">
+                        <span className="font-medium">{code}</span>
+                        <span className="ml-2 text-secondary">{getCurrencyName(code)}</span>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
                         e.stopPropagation();
-                        setRecents(removeRecent(code));
+                        try {
+                          setRecents(removeRecent(code));
+                        } catch {
+                          // Keep the picker usable when storage cannot be written.
+                        }
                       }}
                       className="ml-1 shrink-0 rounded p-0.5 text-muted hover:bg-border hover:text-primary"
                       aria-label={`Remove ${code}`}
@@ -195,16 +265,20 @@ export default function CurrencyPicker({ nativeCurrency, value, onChange }: Curr
               <div className="px-3 py-2 text-sm text-muted">No currencies found</div>
             )}
             {filtered.map((c) => (
-              <div
+              <button
+                type="button"
+                role="option"
+                aria-selected={value === c.code || (!value && c.code === nativeCurrency)}
                 key={c.code}
-                onMouseDown={(e) => { e.preventDefault(); select(c.code); }}
+                onClick={() => select(c.code)}
+                onKeyDown={handleOptionKeyDown}
                 className={`flex cursor-pointer items-center px-3 py-1.5 text-sm hover:bg-surface ${
                   (value === c.code || (!value && c.code === nativeCurrency)) ? 'bg-surface/70 text-primary' : 'text-secondary'
-                }`}
+                } w-full text-left`}
               >
                 <span className="font-medium">{c.code}</span>
                 <span className="ml-2 truncate text-secondary">{c.name}</span>
-              </div>
+              </button>
             ))}
           </div>
         </div>
