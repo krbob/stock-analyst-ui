@@ -40,7 +40,7 @@ Interactive stock analysis dashboard built with React and [lightweight-charts](h
 - Side-by-side comparison of up to 6 stocks
 - Normalized percentage overlay chart
 - Comparison table with fundamental and performance metrics
-- Best-in-group highlighting
+- Neutral valuation/size/income comparison, with highlights limited to the highest same-period return
 
 **Other**
 - Currency conversion (150+ currencies via the API)

@@ -9,6 +9,43 @@ vi.mock('../api/queries', () => ({
   useStockHistory: vi.fn(),
 }));
 
+function makeComparisonQuote(symbol: string, lastPrice: number, dailyGain: number): Quote {
+  return {
+    symbol,
+    name: `${symbol} Inc.`,
+    date: '2026-07-10',
+    currency: 'USD',
+    lastPrice,
+    marketCap: lastPrice * 100_000_000,
+    peRatio: lastPrice / 10,
+    pbRatio: lastPrice / 50,
+    eps: lastPrice / 20,
+    roe: lastPrice / 1_000,
+    beta: 1,
+    dividendYield: lastPrice / 10_000,
+    dividendGrowth: lastPrice / 20_000,
+    gain: {
+      daily: dailyGain,
+      weekly: null,
+      monthly: null,
+      quarterly: null,
+      halfYearly: null,
+      ytd: null,
+      yearly: null,
+      fiveYear: null,
+    },
+    provenance: {
+      source: 'YAHOO_FINANCE',
+      retrievedAt: '2026-07-12T10:00:00Z',
+      marketDate: '2026-07-10',
+      currency: 'USD',
+      unitScale: 1,
+      adjustment: 'SPLIT_ADJUSTED',
+      status: 'FRESH',
+    },
+  } as Quote;
+}
+
 describe('CompareView rendering', () => {
   afterEach(() => {
     cleanup();
@@ -102,5 +139,41 @@ describe('CompareView rendering', () => {
     expect(screen.getByRole('row', { name: 'As of 2026-07-10' })).toBeInTheDocument();
     expect(screen.getByRole('row', { name: 'Forward P/E 25.00' })).toBeInTheDocument();
     expect(screen.queryByText('P/E')).not.toBeInTheDocument();
+  });
+
+  it('keeps descriptive metrics neutral and highlights only the highest comparable return', () => {
+    vi.mocked(useStockHistory).mockReturnValue({
+      data: undefined,
+      error: null,
+      isFetching: false,
+    } as ReturnType<typeof useStockHistory>);
+    vi.mocked(useCompare).mockReturnValue({
+      data: [
+        { symbol: 'AAPL', data: makeComparisonQuote('AAPL', 100, 0.01), error: null },
+        { symbol: 'MSFT', data: makeComparisonQuote('MSFT', 200, 0.02), error: null },
+      ],
+      error: null,
+      isLoading: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useCompare>);
+
+    render(<CompareView symbols={['AAPL', 'MSFT']} period="1y" />);
+
+    expect(screen.getByText(/highlights mark only the highest return/i)).toBeInTheDocument();
+    for (const label of ['Price', 'Market Cap', 'Forward P/E', 'P/B', 'EPS', 'ROE', 'Div Yield', 'Div Growth']) {
+      const row = screen.getByRole('row', { name: new RegExp(`^${label}`) });
+      for (const cell of within(row).getAllByRole('cell').slice(1)) {
+        expect(cell).not.toHaveClass('text-highlight');
+        expect(cell).not.toHaveAttribute('title');
+      }
+    }
+
+    const dailyRow = screen.getByRole('row', { name: /^Daily/ });
+    expect(within(dailyRow).getByText('+1.00%')).not.toHaveClass('text-highlight');
+    expect(within(dailyRow).getByText('+2.00%')).toHaveClass('text-highlight', 'font-semibold');
+    expect(within(dailyRow).getByText('+2.00%')).toHaveAttribute(
+      'title',
+      'Highest period return in this comparison',
+    );
   });
 });

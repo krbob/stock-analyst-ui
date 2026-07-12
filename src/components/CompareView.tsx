@@ -22,26 +22,26 @@ interface Metric {
   label: string;
   get: MetricFn;
   fmt: (v: number | string | null | undefined) => string;
-  best?: 'max' | 'min';
+  highlightHighestReturn?: boolean;
   gain?: boolean;
 }
 
 const METRICS: Metric[] = [
   { label: 'As of', get: (q) => q.date, fmt: (v) => v != null ? String(v) : '—' },
-  { label: 'Price', get: (q) => q.lastPrice, fmt: (v) => formatNumber(v as number | null), best: 'max' },
-  { label: 'Market Cap', get: (q) => q.marketCap, fmt: (v) => formatMarketCap(v as number | null), best: 'max' },
-  { label: 'Forward P/E', get: (q) => q.peRatio, fmt: (v) => formatNumber(v as number | null), best: 'min' },
-  { label: 'P/B', get: (q) => q.pbRatio, fmt: (v) => formatNumber(v as number | null), best: 'min' },
-  { label: 'EPS', get: (q) => q.eps, fmt: (v) => formatNumber(v as number | null), best: 'max' },
-  { label: 'ROE', get: (q) => q.roe, fmt: (v) => formatRatioPercent(v as number | null), best: 'max' },
+  { label: 'Price', get: (q) => q.lastPrice, fmt: (v) => formatNumber(v as number | null) },
+  { label: 'Market Cap', get: (q) => q.marketCap, fmt: (v) => formatMarketCap(v as number | null) },
+  { label: 'Forward P/E', get: (q) => q.peRatio, fmt: (v) => formatNumber(v as number | null) },
+  { label: 'P/B', get: (q) => q.pbRatio, fmt: (v) => formatNumber(v as number | null) },
+  { label: 'EPS', get: (q) => q.eps, fmt: (v) => formatNumber(v as number | null) },
+  { label: 'ROE', get: (q) => q.roe, fmt: (v) => formatRatioPercent(v as number | null) },
   { label: 'Beta', get: (q) => q.beta, fmt: (v) => formatNumber(v as number | null) },
-  { label: 'Div Yield', get: (q) => q.dividendYield, fmt: (v) => formatRatioPercent(v as number | null), best: 'max' },
-  { label: 'Div Growth', get: (q) => q.dividendGrowth, fmt: (v) => formatRatioPercent(v as number | null), best: 'max' },
-  { label: 'Daily', get: (q) => q.gain.daily, fmt: (v) => formatGain(v as number | null), best: 'max', gain: true },
-  { label: 'Monthly', get: (q) => q.gain.monthly, fmt: (v) => formatGain(v as number | null), best: 'max', gain: true },
-  { label: 'YTD', get: (q) => q.gain.ytd, fmt: (v) => formatGain(v as number | null), best: 'max', gain: true },
-  { label: '1Y', get: (q) => q.gain.yearly, fmt: (v) => formatGain(v as number | null), best: 'max', gain: true },
-  { label: '5Y', get: (q) => q.gain.fiveYear, fmt: (v) => formatGain(v as number | null), best: 'max', gain: true },
+  { label: 'Div Yield', get: (q) => q.dividendYield, fmt: (v) => formatRatioPercent(v as number | null) },
+  { label: 'Div Growth', get: (q) => q.dividendGrowth, fmt: (v) => formatRatioPercent(v as number | null) },
+  { label: 'Daily', get: (q) => q.gain.daily, fmt: (v) => formatGain(v as number | null), highlightHighestReturn: true, gain: true },
+  { label: 'Monthly', get: (q) => q.gain.monthly, fmt: (v) => formatGain(v as number | null), highlightHighestReturn: true, gain: true },
+  { label: 'YTD', get: (q) => q.gain.ytd, fmt: (v) => formatGain(v as number | null), highlightHighestReturn: true, gain: true },
+  { label: '1Y', get: (q) => q.gain.yearly, fmt: (v) => formatGain(v as number | null), highlightHighestReturn: true, gain: true },
+  { label: '5Y', get: (q) => q.gain.fiveYear, fmt: (v) => formatGain(v as number | null), highlightHighestReturn: true, gain: true },
   { label: '52W High', get: (q) => q.fiftyTwoWeekHigh, fmt: (v) => formatNumber(v as number | null) },
   { label: '52W Low', get: (q) => q.fiftyTwoWeekLow, fmt: (v) => formatNumber(v as number | null) },
   { label: 'Sector', get: (q) => q.sector, fmt: (v) => v != null ? String(v) : '—' },
@@ -303,6 +303,9 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
         </div>
       ) : quotes.length > 0 ? (
         <div role="region" aria-label="Scrollable stock comparison table" tabIndex={0} className="overflow-x-auto rounded-xl border border-border bg-surface-raised shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-accent">
+          <div className="border-b border-border px-3 py-2 text-xs text-muted">
+            Highlights mark only the highest return for each performance period; valuation, size and income metrics remain neutral.
+          </div>
           <table className="w-full text-sm tabular-nums">
             <thead>
               <tr className="border-b border-border bg-surface/60">
@@ -332,16 +335,22 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
             <tbody>
               {METRICS.map((m) => {
                 const values = quotes.map((q) => m.get(q));
-                const bestIdx = m.best ? findBestIdx(values, m.best) : -1;
+                const highestReturnIdx = m.highlightHighestReturn && quotes.length > 1
+                  ? findBestIdx(values, 'max')
+                  : -1;
                 return (
                   <tr key={m.label} className="border-b border-border/60 hover:bg-surface/60">
                     <td className="sticky left-0 z-10 bg-surface-raised px-3 py-1.5 text-muted">{m.label}</td>
                     {values.map((v, i) => {
                       const formatted = m.fmt(v);
-                      const isBest = i === bestIdx;
+                      const isHighestReturn = i === highestReturnIdx;
                       const gainColor = m.gain && typeof v === 'number' && Number.isFinite(v) ? (v >= 0 ? 'text-up' : 'text-down') : 'text-secondary';
                       return (
-                        <td key={i} className={`whitespace-nowrap px-3 py-1.5 text-right ${isBest ? 'bg-highlight/10 font-semibold text-highlight' : gainColor}`}>
+                        <td
+                          key={i}
+                          title={isHighestReturn ? 'Highest period return in this comparison' : undefined}
+                          className={`whitespace-nowrap px-3 py-1.5 text-right ${isHighestReturn ? 'bg-highlight/10 font-semibold text-highlight' : gainColor}`}
+                        >
                           {formatted}
                         </td>
                       );
