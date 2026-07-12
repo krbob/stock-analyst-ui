@@ -27,8 +27,8 @@ describe('chart accessibility descriptions', () => {
   });
 
   it('states comparison coverage and normalization baseline', () => {
-    expect(describeComparisonChart(['AAPL', 'MSFT'], 1, '5y')).toContain(
-      '1 of 2 series loaded',
-    );
+    const description = describeComparisonChart(['AAPL', 'MSFT'], 1, '5y');
+    expect(description).toContain('1 of 2 series loaded');
+    expect(description).toContain('fixed zero-percent baseline');
   });
 });

@@ -41,5 +41,5 @@ export function describeComparisonChart(
   const names = symbols.map((symbol) => symbol.toUpperCase()).join(', ');
   return `Percentage comparison chart for ${names} over ${period}. ` +
     `${loadedSeries} of ${symbols.length} series loaded. ` +
-    'Each series uses its first available point in the selected period as the zero-percent baseline.';
+    'Each series keeps its first available point in the selected period as a fixed zero-percent baseline while zooming or panning.';
 }

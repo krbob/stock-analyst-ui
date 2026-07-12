@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { createChart, LineSeries, type IChartApi, type ISeriesApi, type SeriesType, type Time } from 'lightweight-charts';
+import { createChart, LineSeries, type IChartApi } from 'lightweight-charts';
 import { useStockHistory, useCompare } from '../api/queries';
-import type { CompareResult, HistoricalPrice, Period, Quote } from '../api/types';
+import type { CompareResult, Period, Quote } from '../api/types';
 import { createHistoryRequest, matchesHistoryRequest } from '../api/history-utils';
 import { buildChartOptions, COMPARE_COLORS } from '../lib/chart-theme';
 import { useChartTheme } from '../hooks/useChartTheme';
@@ -136,7 +136,6 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
     chartRef.current = chart;
 
     const seriesMap = new Map<string, Map<string, number>>();
-    const stored: { symbol: string; prices: HistoricalPrice[]; series: ISeriesApi<SeriesType> }[] = [];
     const cleanups: (() => void)[] = [];
     let prevSize = { width: initialWidth, height: initialHeight };
 
@@ -153,7 +152,6 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
         priceFormat: { type: 'custom', formatter: (v: number) => v.toFixed(2) + '%' },
       });
       series.setData(normalized);
-      stored.push({ symbol: sym, prices: data.prices, series });
       cleanups.push(() => chart.removeSeries(series));
 
       // Build lookup for crosshair
@@ -174,28 +172,6 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
         if (v != null) vals.set(sym, v);
       }
       setLegendValues(vals);
-    });
-
-    // Re-normalize percentages based on the first visible data point when panning/zooming
-    let renormGuard = false;
-    let lastBaseTime: Time | null = null;
-    chart.timeScale().subscribeVisibleTimeRangeChange((range) => {
-      if (!range || renormGuard) return;
-      const baseTime = range.from;
-      if (baseTime === lastBaseTime) return;
-      lastBaseTime = baseTime;
-
-      renormGuard = true;
-      for (const { symbol, prices, series } of stored) {
-        const newData = normalizeFromTime(prices, baseTime);
-        if (newData.length === 0) continue;
-        series.setData(newData);
-
-        const lookup = new Map<string, number>();
-        for (const pt of newData) lookup.set(String(pt.time), pt.value);
-        seriesMap.set(symbol, lookup);
-      }
-      renormGuard = false;
     });
 
     chart.timeScale().fitContent();
@@ -258,6 +234,7 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
               </span>
             );
           })}
+          <span className="text-muted">Base: first point in selected period</span>
         </div>
         <div
           ref={containerRef}
