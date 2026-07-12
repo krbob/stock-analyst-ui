@@ -1,4 +1,4 @@
-import { ColorType } from 'lightweight-charts';
+import type { ColorType } from 'lightweight-charts';
 import { THEME_CHANGE_EVENT } from './theme';
 
 // ---------------------------------------------------------------------------
@@ -82,7 +82,7 @@ export function subscribeChartTheme(onChange: () => void): () => void {
 export function buildChartOptions(theme: ChartTheme = readChartTheme()) {
   return {
     layout: {
-      background: { type: ColorType.Solid as const, color: theme.background },
+      background: { type: 'solid' as ColorType.Solid, color: theme.background },
       textColor: theme.text,
       attributionLogo: false,
       panes: {

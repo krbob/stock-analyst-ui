@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import PriceChart from './components/PriceChart';
-import StockDetails from './components/StockDetails';
-import CompareView from './components/CompareView';
+import { LazyCompareView, LazyPriceChart, LazyStockDetails } from './components/LazyAnalysisViews';
 import TickerSearch from './components/TickerSearch';
 import CurrencyPicker from './components/CurrencyPicker';
 import SegmentedControl, { type SegmentedOption } from './components/SegmentedControl';
@@ -373,7 +371,7 @@ export default function App() {
               </div>
               <SegmentedControl options={PERIODS} value={period} onChange={handlePeriod} ariaLabel="Time period" className="max-w-full overflow-x-auto" />
             </div>
-            <CompareView symbols={compareSymbols} period={period} currency={currency} />
+            <LazyCompareView symbols={compareSymbols} period={period} currency={currency} />
           </>
         )}
 
@@ -439,12 +437,12 @@ export default function App() {
 
             {/* Chart card */}
             <div className="overflow-hidden rounded-xl border border-border bg-chart-bg shadow-sm">
-              <PriceChart symbol={symbol} period={period} interval={interval} lineChart={lineChart} logScale={logScale} indicators={indicatorArray} activeIndicators={indicators} currency={currency} dividends={dividendsParam} showDividends={showDividends} onZoomChange={setChartZoomed} resetRef={resetViewRef} />
+              <LazyPriceChart symbol={symbol} period={period} interval={interval} lineChart={lineChart} logScale={logScale} indicators={indicatorArray} activeIndicators={indicators} currency={currency} dividends={dividendsParam} showDividends={showDividends} onZoomChange={setChartZoomed} resetRef={resetViewRef} />
             </div>
             </section>
 
             <aside className={`min-w-0 xl:sticky xl:top-[4.25rem] xl:max-h-[calc(100vh-5.25rem)] xl:overflow-y-auto xl:pb-2 ${showDetails ? '' : 'xl:hidden'}`}>
-              <StockDetails symbol={symbol} currency={currency} prices={currencyHistory?.prices ?? nativeHistory?.prices} indicators={currencyHistory?.indicators ?? nativeHistory?.indicators} interval={activeInterval} showDividends={showDividends} />
+              <LazyStockDetails symbol={symbol} currency={currency} prices={currencyHistory?.prices ?? nativeHistory?.prices} indicators={currencyHistory?.indicators ?? nativeHistory?.indicators} interval={activeInterval} showDividends={showDividends} />
             </aside>
           </div>
         ) : (

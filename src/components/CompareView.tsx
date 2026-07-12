@@ -54,7 +54,7 @@ function fallbackChartHeight(): number {
 // Component
 // ---------------------------------------------------------------------------
 
-interface CompareViewProps {
+export interface CompareViewProps {
   symbols: string[];
   period: Period;
   currency?: string;

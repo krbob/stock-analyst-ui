@@ -93,7 +93,7 @@ function rebalancePanes(chart: IChartApi, indicatorPanes: IndicatorPaneKind[]): 
 // Component
 // ---------------------------------------------------------------------------
 
-interface PriceChartProps {
+export interface PriceChartProps {
   symbol: string;
   period?: Period;
   interval?: Interval;

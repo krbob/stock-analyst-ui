@@ -185,7 +185,7 @@ function windowDescription(length: number, interval: Interval): string {
   return `${length}-bar (${amount}-${unit} candles)`;
 }
 
-interface StockDetailsProps {
+export interface StockDetailsProps {
   symbol: string;
   currency?: string;
   prices?: HistoricalPrice[];
