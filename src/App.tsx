@@ -442,7 +442,7 @@ export default function App() {
             </section>
 
             <aside className={`min-w-0 xl:sticky xl:top-[4.25rem] xl:max-h-[calc(100vh-5.25rem)] xl:overflow-y-auto xl:pb-2 ${showDetails ? '' : 'xl:hidden'}`}>
-              <StockDetails symbol={symbol} currency={currency} prices={currencyHistory?.prices ?? nativeHistory?.prices} indicators={currencyHistory?.indicators ?? nativeHistory?.indicators} showDividends={showDividends} />
+              <StockDetails symbol={symbol} currency={currency} prices={currencyHistory?.prices ?? nativeHistory?.prices} indicators={currencyHistory?.indicators ?? nativeHistory?.indicators} interval={activeInterval} showDividends={showDividends} />
             </aside>
           </div>
         ) : !inCompareMode && (

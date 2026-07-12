@@ -151,4 +151,25 @@ describe('StockDetails', () => {
     expect(tooltip).toHaveAttribute('role', 'tooltip');
     expect(tooltip).toHaveTextContent(/Price-to-Earnings ratio/);
   });
+
+  it('describes technical indicator windows using the selected candle interval', () => {
+    vi.mocked(useQuote).mockReturnValue({
+      data: makeQuote(),
+      isLoading: false,
+      error: null,
+    } as ReturnType<typeof useQuote>);
+
+    render(
+      <StockDetails
+        symbol="AAPL"
+        interval="15m"
+        indicators={{ sma50: [{ date: '2026-07-03', value: 150 }] }}
+      />,
+    );
+
+    const label = screen.getByText('SMA 50 · 15m');
+    const tooltip = document.getElementById(label.getAttribute('aria-describedby')!);
+    expect(tooltip).toHaveTextContent('50-bar (15-minute candles)');
+    expect(tooltip).not.toHaveTextContent('50-day');
+  });
 });

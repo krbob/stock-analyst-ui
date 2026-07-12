@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import { useQuote } from '../api/queries';
-import type { HistoricalPrice, Indicators } from '../api/types';
+import type { HistoricalPrice, Indicators, Interval } from '../api/types';
 import { formatMarketCap, formatNumber, formatRatioPercent, rangeFraction } from '../lib/format';
 import { formatRecommendation, RECOMMENDATION_COLORS } from '../lib/recommendation';
 
@@ -175,7 +175,26 @@ function lastValue(arr?: { value: number }[]): number | undefined {
   return arr && arr.length > 0 ? arr[arr.length - 1].value : undefined;
 }
 
-export default function StockDetails({ symbol, currency, prices, indicators, showDividends }: { symbol: string; currency?: string; prices?: HistoricalPrice[]; indicators?: Indicators; showDividends?: boolean }) {
+function windowDescription(length: number, interval: Interval): string {
+  if (interval === '1d') return `${length}-day`;
+  if (interval === '1wk') return `${length}-week`;
+  if (interval === '1mo') return `${length}-month`;
+
+  const unit = interval === '1h' ? 'hour' : 'minute';
+  const amount = interval === '1h' ? '1' : interval.slice(0, -1);
+  return `${length}-bar (${amount}-${unit} candles)`;
+}
+
+interface StockDetailsProps {
+  symbol: string;
+  currency?: string;
+  prices?: HistoricalPrice[];
+  indicators?: Indicators;
+  interval?: Interval;
+  showDividends?: boolean;
+}
+
+export default function StockDetails({ symbol, currency, prices, indicators, interval = '1d', showDividends }: StockDetailsProps) {
   const { data, isLoading, error } = useQuote(symbol, currency);
   const dividends = showDividends ? extractDividends(prices) : [];
   const dividendKey = dividends.length > 0 ? `${symbol}:${dividends[0].date}:${dividends.length}` : `${symbol}:empty`;
@@ -248,13 +267,13 @@ export default function StockDetails({ symbol, currency, prices, indicators, sho
             <Item label="Signal" value={formatNumber(macdSignal)} tooltip="MACD Signal Line (9-period EMA of MACD). Acts as a trigger for buy/sell signals when crossed by the MACD line." />
             <Item label="Histogram" value={formatNumber(macdHist)} tooltip="MACD Histogram (MACD minus Signal). Positive and growing = strengthening bullish momentum. Negative and growing = strengthening bearish momentum." />
             <div />
-            <Item label="SMA 50" value={formatNumber(sma50)} tooltip="50-day Simple Moving Average. Average closing price over the last 50 days. Price above SMA50 = short-term uptrend." />
-            <Item label="SMA 200" value={formatNumber(sma200)} tooltip="200-day Simple Moving Average. Key long-term trend indicator. Price above SMA200 = long-term uptrend. SMA50 crossing SMA200 produces golden/death cross signals." />
-            <Item label="EMA 50" value={formatNumber(ema50)} tooltip="50-day Exponential Moving Average. Like SMA50 but gives more weight to recent prices, reacting faster to changes." />
-            <Item label="EMA 200" value={formatNumber(ema200)} tooltip="200-day Exponential Moving Average. Long-term trend with faster reaction than SMA200." />
-            <Item label="BB Upper" value={formatNumber(bbUpper)} tooltip="Bollinger Band Upper (20-day SMA + 2 std dev). Price touching or exceeding this band suggests the stock may be overbought." />
-            <Item label="BB Mid" value={formatNumber(bbMiddle)} tooltip="Bollinger Band Middle (20-day SMA). Acts as a dynamic support/resistance level." />
-            <Item label="BB Lower" value={formatNumber(bbLower)} tooltip="Bollinger Band Lower (20-day SMA − 2 std dev). Price touching or going below suggests the stock may be oversold." />
+            <Item label={`SMA 50 · ${interval}`} value={formatNumber(sma50)} tooltip={`${windowDescription(50, interval)} Simple Moving Average. It averages the last 50 closing-price candles at the selected interval.`} />
+            <Item label={`SMA 200 · ${interval}`} value={formatNumber(sma200)} tooltip={`${windowDescription(200, interval)} Simple Moving Average. It describes 200 candles at the selected interval, not necessarily 200 trading days.`} />
+            <Item label={`EMA 50 · ${interval}`} value={formatNumber(ema50)} tooltip={`${windowDescription(50, interval)} Exponential Moving Average. It gives more weight to recent candles at the selected interval.`} />
+            <Item label={`EMA 200 · ${interval}`} value={formatNumber(ema200)} tooltip={`${windowDescription(200, interval)} Exponential Moving Average. It describes 200 candles at the selected interval.`} />
+            <Item label={`BB Upper · ${interval}`} value={formatNumber(bbUpper)} tooltip={`Upper Bollinger Band based on a ${windowDescription(20, interval)} moving average plus two standard deviations.`} />
+            <Item label={`BB Mid · ${interval}`} value={formatNumber(bbMiddle)} tooltip={`Middle Bollinger Band: the ${windowDescription(20, interval)} moving average.`} />
+            <Item label={`BB Lower · ${interval}`} value={formatNumber(bbLower)} tooltip={`Lower Bollinger Band based on a ${windowDescription(20, interval)} moving average minus two standard deviations.`} />
           </div>
         </div>
       </div>
