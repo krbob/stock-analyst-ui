@@ -48,6 +48,7 @@ export interface HistoricalPrice {
   volume: number;
   dividend: number;
   timestamp?: number;
+  splitRatio?: number | null;
 }
 
 export interface SingleValue {
@@ -97,6 +98,7 @@ export interface StockHistory {
   period: string;
   interval: Interval;
   prices: HistoricalPrice[];
+  adjustment?: 'split-adjusted';
   indicators?: Indicators;
   currency?: string | null;
   request?: HistoryRequest;

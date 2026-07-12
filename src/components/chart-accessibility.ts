@@ -11,6 +11,7 @@ export function describePriceChart(
   prices: HistoricalPrice[],
   interval: Interval | undefined,
   currency: string | undefined,
+  adjustment?: 'split-adjusted',
 ): string {
   const valid = finitePrices(prices);
   const intervalLabel = interval ?? '1d';
@@ -28,9 +29,13 @@ export function describePriceChart(
     : `, ${change >= 0 ? 'up' : 'down'} ${Math.abs(change).toFixed(2)} percent from the first close`;
   const currencyText = currency ? ` ${currency}` : '';
 
+  const adjustmentText = adjustment === 'split-adjusted'
+    ? ' Prices use the latest split-adjusted share basis and are not adjusted for dividends.'
+    : '';
+
   return `${symbol.toUpperCase()} price chart with ${valid.length} ${intervalLabel} candles from ${first.date} to ${last.date}. ` +
     `Latest close ${last.close.toFixed(2)}${currencyText}${changeText}. ` +
-    `Observed low ${low.toFixed(2)} and high ${high.toFixed(2)}${currencyText}.`;
+    `Observed low ${low.toFixed(2)} and high ${high.toFixed(2)}${currencyText}.${adjustmentText}`;
 }
 
 export function describeComparisonChart(

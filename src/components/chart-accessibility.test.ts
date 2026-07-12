@@ -13,11 +13,13 @@ describe('chart accessibility descriptions', () => {
       [price('2026-07-01', 100, 98, 102), price('2026-07-02', 110, 105, 112)],
       '15m',
       'USD',
+      'split-adjusted',
     );
 
     expect(description).toContain('AAPL price chart with 2 15m candles');
     expect(description).toContain('Latest close 110.00 USD, up 10.00 percent');
     expect(description).toContain('Observed low 98.00 and high 112.00 USD');
+    expect(description).toContain('latest split-adjusted share basis');
   });
 
   it('describes an empty chart without exposing NaN values', () => {

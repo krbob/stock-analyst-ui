@@ -500,6 +500,7 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
     currentData?.prices ?? [],
     currentData?.interval ?? interval,
     currentData?.currency ?? currency,
+    currentData?.adjustment,
   );
 
   return (
@@ -520,6 +521,14 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
           {indLegend?.rsi != null && <span>RSI <span style={{ color: INDICATOR_COLORS.rsi }}>{indLegend.rsi.toFixed(0)}</span></span>}
           {indLegend?.macd != null && <span style={{ color: INDICATOR_COLORS.macd }}>MACD <span>{indLegend.macd.macd.toFixed(2)} / {indLegend.macd.signal.toFixed(2)} / {indLegend.macd.histogram.toFixed(2)}</span></span>}
         </div>
+      )}
+      {currentData?.adjustment === 'split-adjusted' && (
+        <span
+          title="Historical prices use the latest split-adjusted share basis and are not adjusted for dividends"
+          className="absolute right-2 top-2 z-20 rounded border border-border bg-surface-raised/85 px-2 py-1 text-[10px] font-medium text-muted shadow-sm backdrop-blur"
+        >
+          Split-adjusted
+        </span>
       )}
       <div
         ref={containerRef}
