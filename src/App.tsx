@@ -9,7 +9,7 @@ import ThemeToggle from './components/ThemeToggle';
 import IndicatorsPopover from './components/IndicatorsPopover';
 import MarketDataDate from './components/MarketDataDate';
 import { useQuote, useStockHistory } from './api/queries';
-import type { Interval, Period } from './api/types';
+import type { Interval, Period, Quote } from './api/types';
 import { parseUrlParams, buildUrlParams } from './url-state';
 import { createHistoryRequest, matchesHistoryRequest } from './api/history-utils';
 import { COMPARE_COLORS } from './lib/chart-theme';
@@ -161,15 +161,20 @@ function GainChip({ label, value }: { label: string; value: number | null }) {
   );
 }
 
-function StockInfo({ symbol, currency, livePrice, hideGain }: {
+interface QuoteState {
+  data: Quote | undefined;
+  error: Error | null;
+  isLoading: boolean;
+}
+
+function StockInfo({ symbol, currency, livePrice, hideGain, nativeQuote, convertedQuote }: {
   symbol: string;
   currency?: string;
   livePrice?: number;
   hideGain?: boolean;
+  nativeQuote: QuoteState;
+  convertedQuote: QuoteState;
 }) {
-  const nativeQuote = useQuote(symbol);
-  const convertedQuote = useQuote(symbol, currency);
-
   if (!symbol) return null;
 
   const data = currency ? convertedQuote.data : nativeQuote.data;
@@ -245,8 +250,11 @@ export default function App() {
   }, [symbol, period, interval, lineChart, logScale, indicators, showDividends, currency, compareSymbols]);
 
   const inCompareMode = compareSymbols.length > 0;
+  // Empty symbols disable every single-stock observer while compare is active;
+  // React Query can then abort an in-flight request once its final observer is gone.
+  const singleSymbol = inCompareMode ? '' : symbol;
 
-  // Always fetch all indicators — StockDetails derives technicals from the last data point,
+  // The active single-stock view fetches all indicators — StockDetails derives technicals from the last data point,
   // and the chart shows only the ones toggled on via `activeIndicators`.
   const indicatorArray = ALL_INDICATOR_KEYS;
 
@@ -254,14 +262,18 @@ export default function App() {
   const nativeHistoryRequest = createHistoryRequest(symbol, period, interval, indicatorArray, undefined, dividendsParam);
   const convertedHistoryRequest = createHistoryRequest(symbol, period, interval, indicatorArray, currency, dividendsParam);
 
-  // Native history for interval detection & intraday live price — not blocked by conversion errors.
-  const { data: historyData } = useStockHistory(symbol, period, interval, indicatorArray, undefined, dividendsParam);
-  // Currency-converted history — shares cache with PriceChart's query.
-  const { data: convertedHistory } = useStockHistory(symbol, period, interval, indicatorArray, currency, dividendsParam);
-  // Native quote for the header currency picker (shares its cache with StockInfo).
-  const { data: headerQuote } = useQuote(inCompareMode ? '' : symbol);
-  const nativeHistory = matchesHistoryRequest(historyData, nativeHistoryRequest) ? historyData : undefined;
-  const currencyHistory = matchesHistoryRequest(convertedHistory, convertedHistoryRequest) ? convertedHistory : undefined;
+  // App owns single-stock queries and passes their state down to avoid duplicate observers in
+  // StockInfo, PriceChart and StockDetails. Native data is not blocked by conversion errors.
+  const nativeHistoryQuery = useStockHistory(singleSymbol, period, interval, indicatorArray, undefined, dividendsParam);
+  const convertedHistoryQuery = useStockHistory(currency ? singleSymbol : '', period, interval, indicatorArray, currency, dividendsParam);
+  const nativeQuoteQuery = useQuote(singleSymbol);
+  const convertedQuoteQuery = useQuote(currency ? singleSymbol : '', currency);
+  const activeHistoryQuery = currency ? convertedHistoryQuery : nativeHistoryQuery;
+  const activeQuoteQuery = currency ? convertedQuoteQuery : nativeQuoteQuery;
+  const nativeHistory = matchesHistoryRequest(nativeHistoryQuery.data, nativeHistoryRequest) ? nativeHistoryQuery.data : undefined;
+  const currencyHistory = currency && matchesHistoryRequest(convertedHistoryQuery.data, convertedHistoryRequest)
+    ? convertedHistoryQuery.data
+    : undefined;
   const activeInterval = interval ?? (
     nativeHistory?.symbol.toLowerCase() === symbol.toLowerCase()
       ? nativeHistory.interval
@@ -327,7 +339,7 @@ export default function App() {
             <TickerSearch onSelect={handleSelect} className="min-w-0 flex-1 sm:flex-none" />
             {(symbol || inCompareMode) && (
               <CurrencyPicker
-                nativeCurrency={inCompareMode ? null : headerQuote?.currency ?? null}
+                nativeCurrency={inCompareMode ? null : nativeQuoteQuery.data?.currency ?? null}
                 value={currency}
                 onChange={setCurrency}
               />
@@ -384,7 +396,14 @@ export default function App() {
           <div className={showDetails ? 'xl:grid xl:grid-cols-[minmax(0,1fr)_380px] xl:items-start xl:gap-6' : ''}>
             <section className="min-w-0">
             <div className="mb-4">
-              <StockInfo symbol={symbol} currency={currency} livePrice={isIntradayPeriod && !currency ? nativeHistory?.prices.at(-1)?.close : undefined} hideGain={isIntradayPeriod} />
+              <StockInfo
+                symbol={symbol}
+                currency={currency}
+                livePrice={isIntradayPeriod && !currency ? nativeHistory?.prices.at(-1)?.close : undefined}
+                hideGain={isIntradayPeriod}
+                nativeQuote={nativeQuoteQuery}
+                convertedQuote={convertedQuoteQuery}
+              />
             </div>
 
             {/* Toolbar: wrapping controls on the left, non-wrapping Reset/Details anchor pinned top-right */}
@@ -441,12 +460,12 @@ export default function App() {
 
             {/* Chart card */}
             <div className="overflow-hidden rounded-xl border border-border bg-chart-bg shadow-sm">
-              <LazyPriceChart symbol={symbol} period={period} interval={interval} lineChart={lineChart} logScale={logScale} indicators={indicatorArray} activeIndicators={indicators} currency={currency} dividends={dividendsParam} showDividends={showDividends} onZoomChange={setChartZoomed} resetRef={resetViewRef} />
+              <LazyPriceChart symbol={symbol} period={period} interval={interval} lineChart={lineChart} logScale={logScale} indicators={indicatorArray} activeIndicators={indicators} currency={currency} dividends={dividendsParam} showDividends={showDividends} onZoomChange={setChartZoomed} resetRef={resetViewRef} historyState={activeHistoryQuery} />
             </div>
             </section>
 
             <aside className={`min-w-0 xl:sticky xl:top-[4.25rem] xl:max-h-[calc(100vh-5.25rem)] xl:overflow-y-auto xl:pb-2 ${showDetails ? '' : 'xl:hidden'}`}>
-              <LazyStockDetails symbol={symbol} currency={currency} prices={currencyHistory?.prices ?? nativeHistory?.prices} indicators={currencyHistory?.indicators ?? nativeHistory?.indicators} interval={activeInterval} showDividends={showDividends} />
+              <LazyStockDetails symbol={symbol} currency={currency} prices={currencyHistory?.prices ?? nativeHistory?.prices} indicators={currencyHistory?.indicators ?? nativeHistory?.indicators} interval={activeInterval} showDividends={showDividends} quoteState={activeQuoteQuery} />
             </aside>
           </div>
         ) : (

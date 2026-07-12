@@ -19,8 +19,8 @@ export function useStockHistory(symbol: string, period: Period = '1y', interval?
 
   return useQuery({
     queryKey: ['history', request.symbol, request.period, request.interval ?? null, indicatorsKey, request.currency, request.dividends],
-    queryFn: async () => {
-      const result = await getHistory(request.symbol, request.period, request.interval, indicators, request.currency ?? undefined, request.dividends);
+    queryFn: async ({ signal }) => {
+      const result = await getHistory(request.symbol, request.period, request.interval, indicators, request.currency ?? undefined, request.dividends, signal);
       const snapshot = buildHistorySnapshotKey(result.prices);
       if (snapshot === prevSnapshotRef.current) {
         staleCountRef.current++;
@@ -40,7 +40,7 @@ export function useStockHistory(symbol: string, period: Period = '1y', interval?
 export function useQuote(symbol: string, currency?: string) {
   return useQuery({
     queryKey: ['quote', symbol, currency],
-    queryFn: () => getQuote(symbol, currency),
+    queryFn: ({ signal }) => getQuote(symbol, currency, signal),
     enabled: symbol.length > 0,
   });
 }
@@ -48,7 +48,7 @@ export function useQuote(symbol: string, currency?: string) {
 export function useCompare(symbols: string[], currency?: string) {
   return useQuery({
     queryKey: ['compare', ...symbols, currency],
-    queryFn: () => compareStocks(symbols, currency),
+    queryFn: ({ signal }) => compareStocks(symbols, currency, signal),
     enabled: symbols.length > 0,
   });
 }
@@ -56,7 +56,7 @@ export function useCompare(symbols: string[], currency?: string) {
 export function useTickerSearch(query: string) {
   return useQuery({
     queryKey: ['search', query],
-    queryFn: () => searchTickers(query),
+    queryFn: ({ signal }) => searchTickers(query, signal),
     enabled: query.length >= 1,
     staleTime: 5 * 60 * 1000,
     placeholderData: keepPreviousData,

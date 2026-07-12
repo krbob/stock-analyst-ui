@@ -4,8 +4,10 @@ import { ApiError, parseRetryAfterSeconds } from './errors';
 
 const API_URL = '/api';
 
-async function fetchApi<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`);
+async function fetchApi<T>(path: string, signal?: AbortSignal): Promise<T> {
+  const response = signal
+    ? await fetch(`${API_URL}${path}`, { signal })
+    : await fetch(`${API_URL}${path}`);
   if (!response.ok) {
     const text = await response.text();
     let message = `${response.status} ${response.statusText}`;
@@ -24,7 +26,7 @@ async function fetchApi<T>(path: string): Promise<T> {
   return response.json();
 }
 
-export function getHistory(symbol: string, period: Period = '1y', interval?: Interval, indicators?: string[], currency?: string, dividends?: boolean): Promise<StockHistory> {
+export function getHistory(symbol: string, period: Period = '1y', interval?: Interval, indicators?: string[], currency?: string, dividends?: boolean, signal?: AbortSignal): Promise<StockHistory> {
   const request = createHistoryRequest(symbol, period, interval, indicators, currency, dividends);
   let url = `/history/${encodeURIComponent(request.symbol)}?period=${request.period}`;
   if (request.interval) url += `&interval=${request.interval}`;
@@ -32,21 +34,21 @@ export function getHistory(symbol: string, period: Period = '1y', interval?: Int
   if (request.currency) url += `&currency=${encodeURIComponent(request.currency)}`;
   if (request.dividends) url += '&dividends=true';
 
-  return fetchApi<StockHistory>(url).then((history) => attachHistoryRequest(history, request));
+  return fetchApi<StockHistory>(url, signal).then((history) => attachHistoryRequest(history, request));
 }
 
-export function getQuote(symbol: string, currency?: string): Promise<Quote> {
+export function getQuote(symbol: string, currency?: string, signal?: AbortSignal): Promise<Quote> {
   let url = `/quote/${encodeURIComponent(symbol)}`;
   if (currency) url += `?currency=${encodeURIComponent(currency)}`;
-  return fetchApi(url);
+  return fetchApi(url, signal);
 }
 
-export function compareStocks(symbols: string[], currency?: string): Promise<CompareResult[]> {
+export function compareStocks(symbols: string[], currency?: string, signal?: AbortSignal): Promise<CompareResult[]> {
   let url = `/compare?symbols=${symbols.map(encodeURIComponent).join(',')}`;
   if (currency) url += `&currency=${encodeURIComponent(currency)}`;
-  return fetchApi(url);
+  return fetchApi(url, signal);
 }
 
-export function searchTickers(query: string): Promise<SearchResult[]> {
-  return fetchApi(`/search/${encodeURIComponent(query)}`);
+export function searchTickers(query: string, signal?: AbortSignal): Promise<SearchResult[]> {
+  return fetchApi(`/search/${encodeURIComponent(query)}`, signal);
 }

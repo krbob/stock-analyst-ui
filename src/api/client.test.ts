@@ -66,6 +66,18 @@ describe('getHistory', () => {
     expect(mockFetch).toHaveBeenCalledWith('/api/history/AAPL?period=1y&dividends=true');
   });
 
+  it('forwards an AbortSignal without changing the request URL', async () => {
+    const controller = new AbortController();
+    mockFetch.mockReturnValue(jsonResponse({ prices: [] }));
+
+    await getHistory('AAPL', '1y', undefined, undefined, undefined, false, controller.signal);
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/api/history/AAPL?period=1y',
+      { signal: controller.signal },
+    );
+  });
+
   it('builds full URL with all params', async () => {
     mockFetch.mockReturnValue(jsonResponse({ prices: [] }));
     await getHistory('AAPL', '5y', '1wk', ['sma50', 'bb'], 'GBP', true);
@@ -115,6 +127,15 @@ describe('getQuote', () => {
     mockFetch.mockReturnValue(jsonResponse({}));
     await getQuote('AAPL', 'EUR');
     expect(mockFetch).toHaveBeenCalledWith('/api/quote/AAPL?currency=EUR');
+  });
+
+  it('forwards an AbortSignal', async () => {
+    const controller = new AbortController();
+    mockFetch.mockReturnValue(jsonResponse({}));
+
+    await getQuote('AAPL', undefined, controller.signal);
+
+    expect(mockFetch).toHaveBeenCalledWith('/api/quote/AAPL', { signal: controller.signal });
   });
 });
 

@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import { useQuote } from '../api/queries';
-import type { HistoricalPrice, Indicators, Interval } from '../api/types';
+import type { HistoricalPrice, Indicators, Interval, Quote } from '../api/types';
 import { formatMarketCap, formatNumber, formatRatioPercent, rangeFraction } from '../lib/format';
 import { formatRecommendation, RECOMMENDATION_COLORS } from '../lib/recommendation';
 
@@ -192,10 +192,16 @@ export interface StockDetailsProps {
   indicators?: Indicators;
   interval?: Interval;
   showDividends?: boolean;
+  quoteState?: {
+    data: Quote | undefined;
+    isLoading: boolean;
+    error: Error | null;
+  };
 }
 
-export default function StockDetails({ symbol, currency, prices, indicators, interval = '1d', showDividends }: StockDetailsProps) {
-  const { data, isLoading, error } = useQuote(symbol, currency);
+export default function StockDetails({ symbol, currency, prices, indicators, interval = '1d', showDividends, quoteState }: StockDetailsProps) {
+  const fallbackQuote = useQuote(quoteState ? '' : symbol, currency);
+  const { data, isLoading, error } = quoteState ?? fallbackQuote;
   const dividends = showDividends ? extractDividends(prices) : [];
   const dividendKey = dividends.length > 0 ? `${symbol}:${dividends[0].date}:${dividends.length}` : `${symbol}:empty`;
 

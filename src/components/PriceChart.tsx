@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { createChart, createSeriesMarkers, CandlestickSeries, LineSeries, HistogramSeries, PriceScaleMode, type IChartApi, type ISeriesApi, type SeriesType, type Time, type UTCTimestamp } from 'lightweight-charts';
-import type { HistoricalPrice, Indicators } from '../api/types';
+import type { HistoricalPrice, Indicators, StockHistory } from '../api/types';
 import { useStockHistory } from '../api/queries';
 import type { Interval, Period } from '../api/types';
 import { createHistoryRequest, matchesHistoryRequest } from '../api/history-utils';
@@ -106,9 +106,14 @@ export interface PriceChartProps {
   showDividends?: boolean;
   onZoomChange?: (zoomed: boolean) => void;
   resetRef?: React.MutableRefObject<(() => void) | null>;
+  historyState?: {
+    data: StockHistory | undefined;
+    isFetching: boolean;
+    error: Error | null;
+  };
 }
 
-export default function PriceChart({ symbol, period = '1y', interval, lineChart, logScale, indicators, activeIndicators, currency, dividends, showDividends, onZoomChange, resetRef }: PriceChartProps) {
+export default function PriceChart({ symbol, period = '1y', interval, lineChart, logScale, indicators, activeIndicators, currency, dividends, showDividends, onZoomChange, resetRef, historyState }: PriceChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const pricesRef = useRef<Map<string, HistoricalPrice>>(new Map());
@@ -122,7 +127,8 @@ export default function PriceChart({ symbol, period = '1y', interval, lineChart,
   const chartTheme = useChartTheme();
   const accessibleDescriptionId = useId();
 
-  const { data, isFetching, error } = useStockHistory(symbol, period, interval, indicators, currency, dividends);
+  const fallbackHistory = useStockHistory(historyState ? '' : symbol, period, interval, indicators, currency, dividends);
+  const { data, isFetching, error } = historyState ?? fallbackHistory;
   const request = createHistoryRequest(symbol, period, interval, indicators, currency, dividends);
   const currentData = matchesHistoryRequest(data, request) ? data : undefined;
   const prevDataRef = useRef(currentData);

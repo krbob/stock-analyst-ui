@@ -76,6 +76,25 @@ describe('StockDetails', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
+  it('uses shared quote state without subscribing to the same symbol again', () => {
+    vi.mocked(useQuote).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: null,
+    } as ReturnType<typeof useQuote>);
+
+    render(
+      <StockDetails
+        symbol="AAPL"
+        quoteState={{ data: makeQuote(), isLoading: false, error: null }}
+      />,
+    );
+
+    expect(useQuote).toHaveBeenCalledWith('', undefined);
+    expect(screen.getByText('Forward P/E')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
   it('renders the 52-week range meter positioned by the last price', () => {
     vi.mocked(useQuote).mockReturnValue({
       data: makeQuote(),
