@@ -46,6 +46,7 @@ Interactive stock analysis dashboard built with React and [lightweight-charts](h
 - Shareable URLs — full chart state encoded in query parameters
 - Ticker search with autocomplete and recent history
 - Dark theme, fully responsive
+- Quote/history/compare provenance bars with represented market dates and explicit metadata gaps
 
 ## Quick start
 
@@ -94,6 +95,8 @@ docker compose up
 Requires the [stock-analyst](https://github.com/krbob/stock-analyst) API running on port 8080 (Vite proxies `/api/*` to it automatically).
 
 The UI expects intraday `timestamp` values from the API to be standard UTC epoch seconds and surfaces backend error messages directly, including `422` responses when currency conversion is unavailable for a symbol. History responses are matched against the current request before rendering so quick symbol/currency changes do not flash stale chart or indicator data.
+
+The current API contract provides quote market dates and represented history points, but not provider, retrieval timestamp or a freshness classification. The UI therefore shows the actual quote/history range and explicitly marks those metadata fields as not reported. Optional `source`, `retrievedAt` and `status` fields are forward-compatible; the UI displays them when a future API version supplies them and never infers a provider or a fresh/stale status from implementation details.
 
 ```bash
 npm install

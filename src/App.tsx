@@ -8,13 +8,14 @@ import ToggleButton from './components/ToggleButton';
 import ThemeToggle from './components/ThemeToggle';
 import AppSwitcher from './components/AppSwitcher';
 import IndicatorsPopover from './components/IndicatorsPopover';
-import MarketDataDate from './components/MarketDataDate';
+import DataProvenanceBar from './components/DataProvenanceBar';
 import { useQuote, useStockHistory } from './api/queries';
 import type { Interval, Period, Quote } from './api/types';
 import { parseUrlParams, buildUrlParams } from './url-state';
 import { createHistoryRequest, matchesHistoryRequest } from './api/history-utils';
 import { formatGain } from './lib/format';
 import { useChartTheme } from './hooks/useChartTheme';
+import { historyProvenance, quoteProvenance } from './lib/data-provenance';
 
 const URL_INIT = parseUrlParams(window.location.search);
 
@@ -212,7 +213,6 @@ function StockInfo({ symbol, currency, livePrice, hideGain, nativeQuote, convert
         {data && GAIN_PERIODS.map((p) => (
           <GainChip key={p.key} label={p.label} value={data.gain[p.key]} />
         ))}
-        {data && <MarketDataDate date={data.date} />}
       </div>
     </div>
   );
@@ -276,6 +276,14 @@ export default function App() {
   const currencyHistory = currency && matchesHistoryRequest(convertedHistoryQuery.data, convertedHistoryRequest)
     ? convertedHistoryQuery.data
     : undefined;
+  const activeHistory = currency ? currencyHistory : nativeHistory;
+  const activeQuote = activeQuoteQuery.data?.symbol.toLowerCase() === symbol.toLowerCase()
+    ? activeQuoteQuery.data
+    : undefined;
+  const provenanceItems = [
+    activeQuote ? quoteProvenance(activeQuote) : null,
+    activeHistory ? historyProvenance(activeHistory) : null,
+  ].filter((item) => item != null);
   const activeInterval = interval ?? (
     nativeHistory?.symbol.toLowerCase() === symbol.toLowerCase()
       ? nativeHistory.interval
@@ -407,6 +415,13 @@ export default function App() {
                 nativeQuote={nativeQuoteQuery}
                 convertedQuote={convertedQuoteQuery}
               />
+              <div className="mt-2">
+                <DataProvenanceBar
+                  items={provenanceItems}
+                  ariaLabel={`${symbol.toUpperCase()} market data provenance`}
+                  isRefreshing={activeQuoteQuery.isFetching || activeHistoryQuery.isFetching}
+                />
+              </div>
             </div>
 
             {/* Toolbar: wrapping controls on the left, non-wrapping Reset/Details anchor pinned top-right */}

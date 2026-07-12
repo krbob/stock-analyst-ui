@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import CompareView from './CompareView';
 import { useCompare, useStockHistory } from '../api/queries';
 import type { Quote } from '../api/types';
@@ -83,7 +83,9 @@ describe('CompareView rendering', () => {
     expect(tableRegion.querySelector('table')).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Metric' })).toHaveClass('sticky', 'left-0');
     expect(screen.getByText('As of')).toHaveClass('sticky', 'left-0');
-    expect(screen.getByText('2026-07-10')).toHaveClass('whitespace-nowrap');
+    expect(within(tableRegion).getByText('2026-07-10')).toHaveClass('whitespace-nowrap');
+    expect(screen.getByRole('region', { name: 'Comparison market data provenance' }))
+      .toHaveTextContent('AAPL quote: 2026-07-10');
     expect(screen.getByRole('columnheader', { name: 'AAPL Apple Inc.' })).toBeInTheDocument();
     expect(screen.getByText('Apple Inc.')).toHaveClass('hidden', 'sm:block');
     expect(screen.getByText('Apple Inc.')).toHaveAttribute('aria-hidden', 'true');

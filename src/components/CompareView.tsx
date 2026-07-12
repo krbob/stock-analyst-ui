@@ -9,6 +9,8 @@ import { formatGain, formatMarketCap, formatNumber, formatRatioPercent } from '.
 import { formatRecommendation } from '../lib/recommendation';
 import { normalizeFromTime, findBestIdx } from './compare-utils';
 import { describeComparisonChart } from './chart-accessibility';
+import DataProvenanceBar from './DataProvenanceBar';
+import { historyProvenance, quoteProvenance } from '../lib/data-provenance';
 
 // ---------------------------------------------------------------------------
 // Table helpers
@@ -80,6 +82,7 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
     data: compareData,
     error: compareError,
     isLoading: compareLoading,
+    isFetching: compareFetching,
     refetch: refetchCompare,
   } = useCompare(symbols, currency);
 
@@ -101,6 +104,10 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
 
   // Extract successful quotes from compare results
   const quotes = compareData?.filter((r): r is CompareResult & { data: Quote } => r.data != null).map((r) => r.data) ?? [];
+  const provenanceItems = [
+    ...quotes.map((quote) => quoteProvenance(quote, `${quote.symbol.toUpperCase()} quote`)),
+    ...chartSeries.map((source) => historyProvenance(source.data!, `${source.symbol.toUpperCase()} history`)),
+  ];
   const statusMessages = new Map<string, string>();
   for (const result of compareData?.filter((r) => r.error != null) ?? []) {
     statusMessages.set(result.symbol.toUpperCase(), result.error ?? 'Failed to load quote');
@@ -257,6 +264,13 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
         )}
         <p id={accessibleDescriptionId} className="sr-only">{accessibleChartDescription}</p>
       </div>
+
+      <DataProvenanceBar
+        items={provenanceItems}
+        ariaLabel="Comparison market data provenance"
+        coverageLabel={`${quotes.length}/${symbols.length} quotes · ${chartSeries.length}/${symbols.length} histories`}
+        isRefreshing={compareFetching || isFetching}
+      />
 
       {/* Error badges for failed symbols */}
       {errors.length > 0 && (

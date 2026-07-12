@@ -9,7 +9,14 @@ export interface Gain {
   fiveYear: number | null;
 }
 
-export interface Quote {
+/** Optional forward-compatible metadata. Current API versions may omit it. */
+export interface DataProvenance {
+  source?: string | null;
+  retrievedAt?: string | null;
+  status?: string | null;
+}
+
+export interface Quote extends DataProvenance {
   symbol: string;
   name: string;
   currency: string | null;
@@ -92,7 +99,7 @@ export interface Indicators {
   macd?: MacdValue[];
 }
 
-export interface StockHistory {
+export interface StockHistory extends DataProvenance {
   symbol: string;
   name: string;
   period: string;

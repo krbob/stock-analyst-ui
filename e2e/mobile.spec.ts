@@ -92,6 +92,7 @@ for (const width of [320, 375]) {
     const theme = page.getByRole('button', { name: /theme active/i });
     const chart = page.getByRole('img', { name: `Percentage comparison chart for ${SYMBOLS.join(', ')}` });
     const tableRegion = page.getByRole('region', { name: 'Scrollable stock comparison table' });
+    const provenance = page.getByRole('region', { name: 'Comparison market data provenance' });
 
     await expect(heading).toBeVisible();
     await expect(ticker).toBeVisible();
@@ -101,6 +102,8 @@ for (const width of [320, 375]) {
     await expect(theme).toBeVisible();
     await expect(chart).toBeVisible();
     await expect(tableRegion).toBeVisible();
+    await expect(provenance).toContainText('6/6 quotes · 6/6 histories');
+    await expect(provenance).toContainText('Source: not reported by API');
 
     const layout = await page.evaluate(() => {
       const headerElement = document.querySelector('header');
