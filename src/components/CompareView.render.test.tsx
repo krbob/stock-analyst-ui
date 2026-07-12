@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import CompareView from './CompareView';
 import { useCompare, useStockHistory } from '../api/queries';
+import type { Quote } from '../api/types';
 
 vi.mock('../api/queries', () => ({
   useCompare: vi.fn(),
@@ -41,5 +42,44 @@ describe('CompareView rendering', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Retry comparison' }));
     expect(refetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows each quote market date and labels forward valuation consistently', () => {
+    vi.mocked(useStockHistory).mockReturnValue({
+      data: undefined,
+      error: null,
+      isFetching: false,
+    } as ReturnType<typeof useStockHistory>);
+    vi.mocked(useCompare).mockReturnValue({
+      data: [{
+        symbol: 'AAPL',
+        data: {
+          symbol: 'AAPL',
+          name: 'Apple Inc.',
+          date: '2026-07-10',
+          peRatio: 25,
+          gain: {
+            daily: null,
+            weekly: null,
+            monthly: null,
+            quarterly: null,
+            halfYearly: null,
+            ytd: null,
+            yearly: null,
+            fiveYear: null,
+          },
+        } as Quote,
+        error: null,
+      }],
+      error: null,
+      isLoading: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useCompare>);
+
+    render(<CompareView symbols={['AAPL']} period="1y" />);
+
+    expect(screen.getByRole('row', { name: 'As of 2026-07-10' })).toBeInTheDocument();
+    expect(screen.getByRole('row', { name: 'Forward P/E 25.00' })).toBeInTheDocument();
+    expect(screen.queryByText('P/E')).not.toBeInTheDocument();
   });
 });

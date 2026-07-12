@@ -9,6 +9,7 @@ import EmptyState from './components/EmptyState';
 import ToggleButton from './components/ToggleButton';
 import ThemeToggle from './components/ThemeToggle';
 import IndicatorsPopover from './components/IndicatorsPopover';
+import MarketDataDate from './components/MarketDataDate';
 import { useQuote, useStockHistory } from './api/queries';
 import type { Interval, Period } from './api/types';
 import { parseUrlParams, buildUrlParams } from './url-state';
@@ -203,10 +204,11 @@ function StockInfo({ symbol, currency, livePrice, hideGain }: {
         )}
       </div>
       <p className="h-5 text-sm text-muted">{data?.name ?? ' '}</p>
-      <div className="mt-1 flex min-h-5 flex-wrap gap-3">
+      <div className="mt-1 flex min-h-5 flex-wrap items-center gap-3">
         {data && GAIN_PERIODS.map((p) => (
           <GainChip key={p.key} label={p.label} value={data.gain[p.key]} />
         ))}
+        {data && <MarketDataDate date={data.date} />}
       </div>
     </div>
   );

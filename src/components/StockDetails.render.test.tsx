@@ -143,13 +143,13 @@ describe('StockDetails', () => {
 
     render(<StockDetails symbol="AAPL" />);
 
-    const label = screen.getByText('P/E');
+    const label = screen.getByText('Forward P/E');
     const describedBy = label.getAttribute('aria-describedby');
     expect(describedBy).toBeTruthy();
     const tooltip = document.getElementById(describedBy!);
     expect(tooltip).not.toBeNull();
     expect(tooltip).toHaveAttribute('role', 'tooltip');
-    expect(tooltip).toHaveTextContent(/Price-to-Earnings ratio/);
+    expect(tooltip).toHaveTextContent(/estimated future earnings/);
   });
 
   it('describes technical indicator windows using the selected candle interval', () => {

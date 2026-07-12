@@ -235,7 +235,7 @@ export default function StockDetails({ symbol, currency, prices, indicators, int
         <div className="rounded-xl border border-border bg-surface-raised px-4 py-3 shadow-sm">
           <h3 className="mb-2 text-sm font-medium text-muted">Fundamentals</h3>
           <div className="grid grid-cols-2 gap-x-6 text-sm tabular-nums">
-            <Item label="P/E" value={formatNumber(data.peRatio)} tooltip="Price-to-Earnings ratio. Compares stock price to earnings per share. Lower P/E may indicate undervaluation; higher P/E suggests growth expectations. Compare within the same sector." />
+            <Item label="Forward P/E" value={formatNumber(data.peRatio)} tooltip="Forward Price-to-Earnings ratio. Compares stock price to analysts' estimated future earnings per share. Lower P/E may indicate undervaluation; higher P/E suggests growth expectations. Compare within the same sector." />
             <Item label="EPS" value={formatNumber(data.eps)} tooltip="Earnings Per Share. Company's net profit divided by shares outstanding. Higher is better. Negative EPS means the company is losing money." />
             <Item label="P/B" value={formatNumber(data.pbRatio)} tooltip="Price-to-Book ratio. Compares stock price to book value (assets minus liabilities). Below 1.0 may indicate undervaluation; above 3.0 is typical for growth stocks." />
             <Item label="Mkt Cap" value={formatMarketCap(data.marketCap)} tooltip="Market Capitalization. Total market value of all shares. Mega cap: >$200B, Large: $10–200B, Mid: $2–10B, Small: <$2B." />

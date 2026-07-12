@@ -25,9 +25,10 @@ interface Metric {
 }
 
 const METRICS: Metric[] = [
+  { label: 'As of', get: (q) => q.date, fmt: (v) => v != null ? String(v) : '—' },
   { label: 'Price', get: (q) => q.lastPrice, fmt: (v) => formatNumber(v as number | null), best: 'max' },
   { label: 'Market Cap', get: (q) => q.marketCap, fmt: (v) => formatMarketCap(v as number | null), best: 'max' },
-  { label: 'P/E', get: (q) => q.peRatio, fmt: (v) => formatNumber(v as number | null), best: 'min' },
+  { label: 'Forward P/E', get: (q) => q.peRatio, fmt: (v) => formatNumber(v as number | null), best: 'min' },
   { label: 'P/B', get: (q) => q.pbRatio, fmt: (v) => formatNumber(v as number | null), best: 'min' },
   { label: 'EPS', get: (q) => q.eps, fmt: (v) => formatNumber(v as number | null), best: 'max' },
   { label: 'ROE', get: (q) => q.roe, fmt: (v) => formatRatioPercent(v as number | null), best: 'max' },
