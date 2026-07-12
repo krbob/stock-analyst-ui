@@ -1,16 +1,31 @@
-const CACHE_NAME = 'stock-analyst-v2';
+const CACHE_NAME = 'stock-analyst-v3';
 const SHELL_ASSETS = [
   '/',
   '/manifest.webmanifest',
   '/favicon.svg',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
+  '/theme-init.js',
 ];
+
+async function buildAssets() {
+  const response = await fetch('/asset-manifest.json', { cache: 'no-store' });
+  if (!response.ok) throw new Error(`Asset manifest request failed: ${response.status}`);
+
+  const manifest = await response.json();
+  if (!Array.isArray(manifest.assets) || !manifest.assets.every(
+    (asset) => typeof asset === 'string' && /^\/assets\/[A-Za-z0-9._/-]+$/.test(asset),
+  )) {
+    throw new Error('Asset manifest is invalid');
+  }
+  return manifest.assets;
+}
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(SHELL_ASSETS))
+    buildAssets()
+      .then((assets) => caches.open(CACHE_NAME)
+        .then((cache) => cache.addAll([...SHELL_ASSETS, ...assets])))
       .then(() => self.skipWaiting())
   );
 });

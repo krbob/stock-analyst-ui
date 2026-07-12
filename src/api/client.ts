@@ -43,8 +43,20 @@ function errorText(value: unknown): string | null {
   return null;
 }
 
+function hasJsonMediaType(response: Response): boolean {
+  const mediaType = response.headers.get('Content-Type')?.split(';', 1)[0]?.trim().toLowerCase();
+  return mediaType === 'application/json' || Boolean(mediaType?.endsWith('+json'));
+}
+
 function unwrapResult<T>({ data, error, response }: GeneratedResult<T>): T {
-  if (data !== undefined) return data;
+  if (data !== undefined) {
+    // Generated clients trust a successful response shape. A proxy can still
+    // return the SPA's HTML with 200, which must never reach typed UI state.
+    if (response && !hasJsonMediaType(response)) {
+      throw new ApiError('API returned an unexpected non-JSON response.', 502);
+    }
+    return data;
+  }
 
   // Fetch/network failures have no HTTP response. Keep the original Error so
   // React Query can distinguish transport failures from classified API errors.

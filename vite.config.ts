@@ -1,5 +1,5 @@
 /// <reference types="vitest/config" />
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { readFileSync } from 'node:fs'
@@ -19,8 +19,27 @@ const coverageBaseline = JSON.parse(
   readFileSync(new URL('./coverage-baseline.json', import.meta.url), 'utf8'),
 ) as CoverageBaseline
 
+function offlineAssetManifest(): Plugin {
+  return {
+    name: 'offline-asset-manifest',
+    apply: 'build',
+    generateBundle(_options, bundle) {
+      const assets = Object.keys(bundle)
+        .filter((fileName) => fileName.startsWith('assets/'))
+        .sort()
+        .map((fileName) => `/${fileName}`)
+
+      this.emitFile({
+        type: 'asset',
+        fileName: 'asset-manifest.json',
+        source: `${JSON.stringify({ version: 1, assets }, null, 2)}\n`,
+      })
+    },
+  }
+}
+
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), offlineAssetManifest()],
   server: {
     proxy: {
       '/api': {

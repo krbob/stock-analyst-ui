@@ -185,6 +185,17 @@ describe('generated ApiError adaptation', () => {
     await expect(getQuote('AAPL')).rejects.toThrow('502 Bad Gateway');
   });
 
+  it('rejects a successful HTML proxy response before it reaches typed UI state', async () => {
+    mockFetch.mockReturnValue(response('<html>SPA fallback</html>'));
+
+    await expect(getQuote('AAPL')).rejects.toMatchObject({
+      name: 'ApiError',
+      message: 'API returned an unexpected non-JSON response.',
+      status: 502,
+      retryable: true,
+    });
+  });
+
   it('preserves transport errors without misclassifying them as API responses', async () => {
     const networkError = new TypeError('fetch failed');
     mockFetch.mockRejectedValue(networkError);
