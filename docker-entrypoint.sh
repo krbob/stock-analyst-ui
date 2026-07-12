@@ -16,9 +16,18 @@ case "${SHOW_CHART_ATTRIBUTION:-}" in
     ;;
 esac
 
+# Encode the optional cross-application URL so arbitrary environment content
+# can never break out of the generated JavaScript string literal.
+portfolio_url_base64=$(printf '%s' "${PORTFOLIO_URL:-}" | base64 | tr -d '\n')
+portfolio_url_expression="undefined"
+if [ -n "${portfolio_url_base64}" ]; then
+  portfolio_url_expression="atob('${portfolio_url_base64}')"
+fi
+
 cat > /usr/share/nginx/html/runtime-config.js <<EOF
 window.__STOCK_ANALYST_CONFIG__ = {
   showChartAttribution: ${show_chart_attribution},
+  portfolioUrl: ${portfolio_url_expression},
 };
 EOF
 

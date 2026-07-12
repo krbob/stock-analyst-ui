@@ -65,6 +65,8 @@ services:
       - API_URL=http://stock-analyst:8080
       # Optional: hide the chart attribution footer on a private local stack.
       - SHOW_CHART_ATTRIBUTION=${SHOW_CHART_ATTRIBUTION:-true}
+      # Optional: enable the Portfolio app switcher without rebuilding the UI.
+      - PORTFOLIO_URL=${PORTFOLIO_URL:-}
     restart: unless-stopped
 
   stock-analyst:
@@ -100,6 +102,7 @@ npm run dev
 ```
 
 For a private local Vite session, create `.env.local` with `VITE_SHOW_CHART_ATTRIBUTION=false` to hide the chart attribution footer.
+Set `VITE_PORTFOLIO_URL` there to a root-relative or absolute HTTP(S) URL to enable the local Portfolio app switcher.
 
 ## URL parameters
 
@@ -184,6 +187,7 @@ docker run -p 3001:8080 -e API_URL=http://your-api:8080 stock-analyst-ui
 
 The `API_URL` environment variable is required and is substituted into the Nginx config at container startup.
 Set `SHOW_CHART_ATTRIBUTION=false` on a private local container if you want to hide the chart attribution footer without rebuilding the image.
+Set optional `PORTFOLIO_URL` at container startup to enable the Portfolio app switcher. Invalid, executable-scheme, protocol-relative and credential-bearing URLs are not rendered. The link carries only `uiTheme` and canonical `uiLocale` preferences; it never forwards the selected symbol or other market data.
 
 ## CI/CD
 

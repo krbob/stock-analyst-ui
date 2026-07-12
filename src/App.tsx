@@ -6,6 +6,7 @@ import SegmentedControl, { type SegmentedOption } from './components/SegmentedCo
 import EmptyState from './components/EmptyState';
 import ToggleButton from './components/ToggleButton';
 import ThemeToggle from './components/ThemeToggle';
+import AppSwitcher from './components/AppSwitcher';
 import IndicatorsPopover from './components/IndicatorsPopover';
 import MarketDataDate from './components/MarketDataDate';
 import { useQuote, useStockHistory } from './api/queries';
@@ -333,7 +334,8 @@ export default function App() {
       <header className="sticky top-0 z-40 border-b border-border bg-surface-raised/90 backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-2 gap-y-2 px-3 py-2 sm:gap-x-4 sm:px-6 sm:py-2.5">
           <h1 className="order-1 text-lg font-bold tracking-tight sm:text-xl">Stock Analyst</h1>
-          <div className="order-2 ml-auto sm:order-3 sm:ml-0">
+          <div className="order-2 ml-auto flex items-center gap-2 sm:order-3 sm:ml-0">
+            <AppSwitcher />
             <ThemeToggle />
           </div>
           <div className="order-3 flex w-full min-w-0 items-center justify-end gap-2 sm:order-2 sm:ml-auto sm:w-auto">
