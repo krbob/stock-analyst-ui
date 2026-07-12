@@ -174,4 +174,23 @@ describe('fetchApi error handling', () => {
     );
     await expect(getQuote('AAPL')).rejects.toThrow('503 Service Unavailable');
   });
+
+  it('preserves rate limit metadata and presents retry guidance', async () => {
+    mockFetch.mockReturnValue(
+      Promise.resolve({
+        ok: false,
+        status: 429,
+        statusText: 'Too Many Requests',
+        headers: { get: (name: string) => name === 'Retry-After' ? '60' : null },
+        text: () => Promise.resolve(JSON.stringify({ error: 'Upstream rate limit' })),
+      }),
+    );
+
+    await expect(getQuote('AAPL')).rejects.toMatchObject({
+      name: 'ApiError',
+      status: 429,
+      retryAfterSeconds: 60,
+      message: 'Upstream rate limit Try again in 60 seconds.',
+    });
+  });
 });

@@ -1,5 +1,6 @@
 import type { CompareResult, Interval, Period, Quote, SearchResult, StockHistory } from './types';
 import { attachHistoryRequest, createHistoryRequest } from './history-utils';
+import { ApiError, parseRetryAfterSeconds } from './errors';
 
 const API_URL = '/api';
 
@@ -14,7 +15,11 @@ async function fetchApi<T>(path: string): Promise<T> {
     } catch {
       if (text && !text.trimStart().startsWith('<')) message = text;
     }
-    throw new Error(message);
+    const retryAfterSeconds = parseRetryAfterSeconds(response.headers?.get?.('Retry-After'));
+    if (response.status === 429 && retryAfterSeconds != null) {
+      message += ` Try again in ${retryAfterSeconds} seconds.`;
+    }
+    throw new ApiError(message, response.status, retryAfterSeconds);
   }
   return response.json();
 }
