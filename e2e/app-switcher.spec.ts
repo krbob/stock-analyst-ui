@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+test.use({ locale: 'pl-PL' });
+
 test('exposes a keyboard-safe Portfolio hand-off without leaking analysis state', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await page.addInitScript(() => {
@@ -16,7 +18,7 @@ test('exposes a keyboard-safe Portfolio hand-off without leaking analysis state'
   await expect(switcher).toContainText('Portfolio');
   await expect(switcher).toHaveAttribute(
     'href',
-    'https://portfolio.example/app?tenant=personal&uiTheme=dark&uiLocale=en',
+    'https://portfolio.example/app?tenant=personal&uiTheme=dark&uiLocale=pl-PL',
   );
   await expect(switcher).not.toHaveAttribute('href', /AAPL|PLN|5y/);
 
@@ -26,7 +28,7 @@ test('exposes a keyboard-safe Portfolio hand-off without leaking analysis state'
   await page.getByRole('button', { name: /dark theme active/i }).click();
   await expect(switcher).toHaveAttribute(
     'href',
-    'https://portfolio.example/app?tenant=personal&uiTheme=system&uiLocale=en',
+    'https://portfolio.example/app?tenant=personal&uiTheme=system&uiLocale=pl-PL',
   );
 
   const layout = await page.evaluate(() => ({

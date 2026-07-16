@@ -53,16 +53,28 @@ describe('buildPortfolioHref', () => {
 
 describe('app-link preferences and configuration', () => {
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
     window.__STOCK_ANALYST_CONFIG__ = undefined;
     document.documentElement.lang = 'en';
   });
 
-  it('reads the current document locale and persisted theme without sharing domain state', () => {
-    document.documentElement.lang = 'pl-PL';
+  it('uses the preferred browser locale ahead of the static document language', () => {
+    document.documentElement.lang = 'en';
+    vi.spyOn(window.navigator, 'languages', 'get').mockReturnValue(['pl-PL', 'en-US']);
+    vi.spyOn(window.navigator, 'language', 'get').mockReturnValue('pl-PL');
     vi.stubGlobal('localStorage', { getItem: () => 'dark' });
 
     expect(currentAppLinkPreferences()).toEqual({ theme: 'dark', locale: 'pl-PL' });
+  });
+
+  it('falls back to the document language when the browser exposes no locale', () => {
+    document.documentElement.lang = 'pl-PL';
+    vi.spyOn(window.navigator, 'languages', 'get').mockReturnValue([]);
+    vi.spyOn(window.navigator, 'language', 'get').mockReturnValue('');
+    vi.stubGlobal('localStorage', { getItem: () => null });
+
+    expect(currentAppLinkPreferences()).toEqual({ theme: 'system', locale: 'pl-PL' });
   });
 
   it('uses runtime configuration when present', () => {

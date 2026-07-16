@@ -215,7 +215,7 @@ docker run -p 3001:8080 -e API_URL=http://your-api:8080 stock-analyst-ui
 
 The `API_URL` environment variable is required and is substituted into the Nginx config at container startup.
 Set `SHOW_CHART_ATTRIBUTION=false` on a private local container if you want to hide the chart attribution footer without rebuilding the image.
-Set optional `PORTFOLIO_URL` at container startup to enable the Portfolio app switcher. Invalid, executable-scheme, protocol-relative and credential-bearing URLs are not rendered. The link carries only `uiTheme` and canonical `uiLocale` preferences; it never forwards the selected symbol or other market data.
+Set optional `PORTFOLIO_URL` at container startup to enable the Portfolio app switcher. Invalid, executable-scheme, protocol-relative and credential-bearing URLs are not rendered. The link carries only `uiTheme` and a canonical `uiLocale` navigation hint; it never forwards the selected symbol or other market data. The destination may apply `uiLocale` for that navigation, but must not treat an automatic handoff as a durable language choice.
 
 ## CI/CD
 

@@ -19,11 +19,14 @@ function createStorageMock(initialTheme?: string): Storage {
 describe('AppSwitcher', () => {
   beforeEach(() => {
     vi.stubGlobal('localStorage', createStorageMock('dark'));
-    document.documentElement.lang = 'pl-PL';
+    document.documentElement.lang = 'en';
+    vi.spyOn(window.navigator, 'languages', 'get').mockReturnValue(['pl-PL', 'en-US']);
+    vi.spyOn(window.navigator, 'language', 'get').mockReturnValue('pl-PL');
   });
 
   afterEach(() => {
     cleanup();
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
     document.documentElement.lang = 'en';
   });

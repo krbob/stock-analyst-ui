@@ -14,7 +14,10 @@ function canonicalLocale(locale: string): string {
 }
 
 export function currentAppLinkPreferences(): AppLinkPreferences {
-  const locale = document.documentElement.lang.trim() || navigator.language || 'en';
+  const locale = navigator.languages?.find((candidate) => candidate.trim())
+    || navigator.language.trim()
+    || document.documentElement.lang.trim()
+    || 'en';
   return {
     theme: loadThemePreference(),
     locale: canonicalLocale(locale),
