@@ -101,13 +101,16 @@ details-panel preference are stored locally.
 
 ```bash
 npm run lint
+npm run docs:check
 npm test
 npm run test:coverage
 npm run build
 ```
 
-`npm run build` also verifies the pinned supply-chain policy, OpenAPI client and design-token manifest. Browser tests
-need the production container and a `BASE_URL`; see [development documentation](docs/DEVELOPMENT.md#browser-tests).
+`docs:check` verifies repository-relative links and keeps documented runtime/build-time settings aligned with their
+sources. `npm run build` also verifies the pinned supply-chain policy, OpenAPI client and design-token manifest.
+Browser tests need the production container and a `BASE_URL`; see
+[development documentation](docs/DEVELOPMENT.md#browser-tests).
 CI currently automates Chromium. Chrome on Windows and Safari on macOS remain explicit release-check targets until
 WebKit is added to the pipeline.
 

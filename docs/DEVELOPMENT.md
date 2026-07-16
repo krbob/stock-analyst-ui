@@ -61,6 +61,7 @@ Generated files under `src/api/generated` must not be edited manually.
 | `npm run dev` | Start Vite on port 5173. |
 | `npm run build` | Supply-chain, OpenAPI and token checks, TypeScript build and production bundle. |
 | `npm run preview` | Serve an existing production bundle. |
+| `npm run docs:check` | Verify relative documentation links and documented configuration contracts. |
 | `npm run lint` | Run ESLint over the repository. |
 | `npm test` | Run the Node contract test, token check and Vitest suite. |
 | `npm run test:watch` | Run Vitest in watch mode. |
@@ -170,9 +171,9 @@ reviewed from the public semantic/component inventory and contract version.
 
 ## Continuous integration
 
-`.github/workflows/ci-build.yml` is the source of truth. It gates dependency advisories, deterministic contracts,
-types, lint, all-source coverage, container lint, image SBOM, actionable HIGH/CRITICAL image findings and the
-Chromium browser suite. A successful push to `main` publishes multi-platform `linux/amd64` and `linux/arm64` images
-with provenance and SBOM attestations.
+`.github/workflows/ci-build.yml` is the source of truth. It gates documentation links/configuration, dependency
+advisories, deterministic contracts, types, lint, all-source coverage, container lint, image SBOM, actionable
+HIGH/CRITICAL image findings and the Chromium browser suite. A successful push to `main` publishes multi-platform
+`linux/amd64` and `linux/arm64` images with provenance and SBOM attestations.
 
 Renovate behavior belongs in `renovate.json`; do not duplicate its exact schedule or grouping rules in prose.

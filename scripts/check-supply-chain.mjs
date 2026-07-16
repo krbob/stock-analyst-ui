@@ -63,6 +63,7 @@ for (const [, reference, annotation] of actionReferences) {
 }
 
 requireInvariant(workflow.includes("node-version-file: '.node-version'"), 'CI must consume .node-version')
+requireInvariant(workflow.includes('run: npm run docs:check'), 'CI must gate documentation contracts')
 requireInvariant(workflow.includes('npm ci --ignore-scripts'), 'CI dependency install must disable package lifecycle scripts')
 requireInvariant(workflow.includes('npm audit --audit-level=high'), 'CI must gate HIGH and CRITICAL npm advisories')
 requireInvariant(workflow.includes('anchore/sbom-action@'), 'CI must generate an image SBOM')
