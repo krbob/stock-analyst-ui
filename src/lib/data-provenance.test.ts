@@ -47,7 +47,7 @@ describe('data provenance adapters', () => {
 
     expect(quoteProvenance(quote)).toEqual({
       ...quote.provenance,
-      label: 'Quote',
+      label: 'Quote inputs',
       marketFrom: '2021-07-12',
       marketTo: '2026-07-10',
     });
@@ -79,7 +79,7 @@ describe('data provenance adapters', () => {
     const summary = summarizeDataProvenance([
       {
         ...provenance,
-        label: 'AAPL quote',
+        label: 'AAPL quote inputs',
         marketFrom: '2021-07-12',
         marketTo: '2026-07-10',
         marketTimestamp: '2026-07-10T20:00:00Z',
@@ -109,14 +109,14 @@ describe('data provenance adapters', () => {
 
   it('groups identical market scopes without losing dataset labels', () => {
     const summary = summarizeDataProvenance([
-      { ...provenance, label: 'AAPL quote', marketFrom: '2026-07-10', marketTo: '2026-07-10' },
-      { ...provenance, label: 'MSFT quote', marketFrom: '2026-07-10', marketTo: '2026-07-10' },
+      { ...provenance, label: 'AAPL quote inputs', marketFrom: '2026-07-10', marketTo: '2026-07-10' },
+      { ...provenance, label: 'MSFT quote inputs', marketFrom: '2026-07-10', marketTo: '2026-07-10' },
     ]);
 
     expect(summary.marketScopes).toEqual([{
       from: '2026-07-10',
       to: '2026-07-10',
-      labels: ['AAPL quote', 'MSFT quote'],
+      labels: ['AAPL quote inputs', 'MSFT quote inputs'],
     }]);
   });
 });

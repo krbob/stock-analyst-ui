@@ -105,7 +105,7 @@ export default function CompareView({ symbols, period, currency }: CompareViewPr
   // Extract successful quotes from compare results
   const quotes = compareData?.filter((r): r is CompareResult & { data: Quote } => r.data != null).map((r) => r.data) ?? [];
   const provenanceItems = [
-    ...quotes.map((quote) => quoteProvenance(quote, `${quote.symbol.toUpperCase()} quote`)),
+    ...quotes.map((quote) => quoteProvenance(quote, `${quote.symbol.toUpperCase()} quote inputs`)),
     ...chartSeries.map((source) => historyProvenance(source.data!, `${source.symbol.toUpperCase()} history`)),
   ];
   const statusMessages = new Map<string, string>();

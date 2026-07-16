@@ -95,7 +95,7 @@ test('keeps request fan-out scoped to the active analysis view', async ({ page }
   await expect(page.getByRole('region', { name: 'Scrollable stock comparison table' })).toBeVisible();
   const compareProvenance = page.getByRole('region', { name: 'Comparison market data provenance' });
   await expect(compareProvenance).toContainText('1/1 quotes · 1/1 histories');
-  await expect(compareProvenance).toContainText('AAPL quote: 2026-07-10');
+  await expect(compareProvenance).toContainText('AAPL quote inputs: 2026-07-10');
   await expect(compareProvenance).toContainText('AAPL history: 2026-07-09–2026-07-10');
   await expect(compareProvenance).toContainText('Source: Yahoo Finance');
   await expect.poll(() => calls.filter((call) => call.startsWith('/api/v1/history/')).length).toBe(1);
@@ -106,7 +106,7 @@ test('keeps request fan-out scoped to the active analysis view', async ({ page }
   await page.getByRole('button', { name: 'Exit comparison mode' }).click();
   await expect(page.getByRole('img', { name: 'AAPL price chart' })).toBeVisible();
   const singleProvenance = page.getByRole('region', { name: 'AAPL market data provenance' });
-  await expect(singleProvenance).toContainText('Quote: 2026-07-10');
+  await expect(singleProvenance).toContainText('Quote inputs: 2026-07-10');
   await expect(singleProvenance).toContainText('History: 2026-07-09–2026-07-10');
   await expect(singleProvenance).toContainText('Market status: Fresh');
   await expect(singleProvenance).toContainText('Adjustment: Split Adjusted');

@@ -132,7 +132,7 @@ describe('CompareView rendering', () => {
     expect(screen.getByText('As of')).toHaveClass('sticky', 'left-0');
     expect(within(tableRegion).getByText('2026-07-10')).toHaveClass('whitespace-nowrap');
     expect(screen.getByRole('region', { name: 'Comparison market data provenance' }))
-      .toHaveTextContent('AAPL quote: 2026-07-10');
+      .toHaveTextContent('AAPL quote inputs: 2026-07-10');
     expect(screen.getByRole('columnheader', { name: 'AAPL Apple Inc.' })).toBeInTheDocument();
     expect(screen.getByText('Apple Inc.')).toHaveClass('hidden', 'sm:block');
     expect(screen.getByText('Apple Inc.')).toHaveAttribute('aria-hidden', 'true');

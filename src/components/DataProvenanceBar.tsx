@@ -28,23 +28,26 @@ function humanizeContractValue(value: string): string {
 function formatInstant(value: string): string {
   const parsed = Date.parse(value);
   if (!Number.isFinite(parsed)) return value;
-  return new Date(parsed).toISOString()
-    .replace('T', ' ')
-    .replace('.000Z', ' UTC')
-    .replace('Z', ' UTC');
+  return `${new Date(parsed).toISOString().slice(0, 19).replace('T', ' ')} UTC`;
 }
 
 function InstantValues({ values }: { values: string[] }) {
-  const visible = values.slice(0, 3);
+  const uniqueByVisibleSecond = new Map<string, string>();
+  for (const value of values) {
+    const formatted = formatInstant(value);
+    if (!uniqueByVisibleSecond.has(formatted)) uniqueByVisibleSecond.set(formatted, value);
+  }
+  const instants = [...uniqueByVisibleSecond].map(([formatted, value]) => ({ formatted, value }));
+  const visible = instants.slice(0, 3);
   return (
     <>
-      {visible.map((value, index) => (
-        <Fragment key={value}>
+      {visible.map(({ formatted, value }, index) => (
+        <Fragment key={formatted}>
           {index > 0 && ', '}
-          <time dateTime={value}>{formatInstant(value)}</time>
+          <time dateTime={value}>{formatted}</time>
         </Fragment>
       ))}
-      {values.length > visible.length && ` +${values.length - visible.length} more`}
+      {instants.length > visible.length && ` +${instants.length - visible.length} more`}
     </>
   );
 }
@@ -57,13 +60,18 @@ function statusClass(statuses: string[]): string {
 }
 
 function MarketScopeLabel({ scope }: { scope: MarketScope }) {
-  const labelKinds = scope.labels.map((label) => label.split(' ').at(-1)?.toLowerCase());
+  const labelKinds = scope.labels.map((label) => {
+    const normalized = label.toLowerCase();
+    return normalized.endsWith('quote inputs') ? 'quote inputs' : normalized.split(' ').at(-1);
+  });
   const sharedKind = labelKinds.length > 1 && labelKinds.every((kind) => kind === labelKinds[0])
     ? labelKinds[0]
     : null;
   const label = scope.labels.length === 1
     ? scope.labels[0]
-    : sharedKind === 'quote'
+    : sharedKind === 'quote inputs'
+      ? `${scope.labels.length} quote inputs`
+      : sharedKind === 'quote'
       ? `${scope.labels.length} quotes`
       : sharedKind === 'history'
         ? `${scope.labels.length} histories`

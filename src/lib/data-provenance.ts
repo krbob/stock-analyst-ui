@@ -40,7 +40,7 @@ function appendUnique<T>(items: T[], value: T): void {
   if (!items.includes(value)) items.push(value);
 }
 
-export function quoteProvenance(quote: Quote, label = 'Quote'): DataProvenanceItem {
+export function quoteProvenance(quote: Quote, label = 'Quote inputs'): DataProvenanceItem {
   const { provenance } = quote;
   const marketDate = cleanDate(provenance.marketDate) ?? cleanDate(quote.date);
   return {
