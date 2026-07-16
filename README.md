@@ -1,246 +1,134 @@
 # Stock Analyst UI
 
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/krbob/stock-analyst-ui/ci-build.yml)
+[![CI/CD](https://img.shields.io/github/actions/workflow/status/krbob/stock-analyst-ui/ci-build.yml?branch=main&label=CI%2FCD)](https://github.com/krbob/stock-analyst-ui/actions/workflows/ci-build.yml)
 
-Interactive stock analysis dashboard built with React and [lightweight-charts](https://github.com/nicosommi/lightweight-charts). Connects to the [stock-analyst](https://github.com/krbob/stock-analyst) API backend.
+Responsive stock-analysis frontend built with React and the official
+[TradingView Lightweight Charts](https://github.com/tradingview/lightweight-charts) library. It consumes the
+[Stock Analyst API](https://github.com/krbob/stock-analyst) through a same-origin `/api` proxy.
 
-<p>
-  <a href="docs/screenshot-main.png"><img src="docs/screenshot-main.png" width="270" alt="Stock Analyst UI"></a>
-  <a href="docs/screenshot-indicators.png"><img src="docs/screenshot-indicators.png" width="270" alt="Technical Indicators"></a>
-  <a href="docs/screenshot-compare.png"><img src="docs/screenshot-compare.png" width="270" alt="Compare Mode"></a>
-  <a href="docs/screenshot-dividends.png"><img src="docs/screenshot-dividends.png" width="270" alt="Dividend Markers"></a>
-  <a href="docs/screenshot-light.png"><img src="docs/screenshot-light.png" width="270" alt="Light Theme"></a>
-</p>
+Live deployment: [stock.bobinski.net](https://stock.bobinski.net)
 
-## Features
+Market data may be delayed or incomplete. The UI displays the backend-provided source, coverage, retrieval time,
+market-observation time, adjustment basis, unit scale and freshness status instead of inferring freshness in the
+browser.
 
-**Charting**
-- Candlestick and line chart modes
-- Logarithmic scale
-- 8 time periods (1D to Max) with automatic intraday/daily interval selection
-- Manual interval override (1m, 5m, 15m, 30m, 1h / 1D, 1W, 1M)
-- Live intraday updates (auto-refresh every 30s)
-- Dividend markers on chart
+## What it provides
 
-**Technical indicators**
-- Moving averages: SMA 50/200, EMA 50/200
-- Bollinger Bands (upper, middle, lower)
-- RSI (14-period) in a separate pane with 70/30 reference lines
-- MACD (line, signal, histogram) in a separate pane
-- History requests compute only indicators enabled in the active view; the details panel reuses the same cached result
-
-**Fundamentals & technicals panel**
-- P/E, EPS, P/B, Market Cap, ROE, Beta, Dividend Yield/Growth
-- RSI (daily/weekly/monthly), MACD, Bollinger Bands, Moving Averages, ATR
-- 52-week high/low, sector, industry, next earnings date
-- Analyst consensus rating with count
-- Tooltips explaining each metric
-
-**Compare mode**
-- Side-by-side comparison of up to 6 stocks
-- Normalized percentage overlay chart
-- Comparison table with fundamental and performance metrics
-- Neutral valuation/size/income comparison, with highlights limited to the highest same-period return
-
-**Other**
-- Currency conversion (150+ currencies via the API)
-- Shareable URLs — full chart state encoded in query parameters
-- Ticker search with autocomplete, recent history and distinct empty/error feedback with retry
-- Dark theme, fully responsive
-- Quote/history/compare provenance bars with source, coverage, market freshness and unit semantics
+- Candlestick and line charts, logarithmic scale, dividends and adaptive intraday refresh.
+- SMA, EMA, Bollinger Bands, RSI and MACD overlays or panes.
+- Fundamentals, technical metrics and analyst-consensus context.
+- Comparison of up to six symbols with normalized returns and neutral descriptive metrics.
+- Currency conversion when the backend has the required FX data.
+- Shareable analysis URLs, ticker search and recent symbols.
+- Light, dark and system themes; keyboard workflows; responsive layouts from 320 px.
+- Optional Portfolio application hand-off with transient theme and browser-locale hints.
+- Installable production shell that can open offline; market-data requests still require the API.
 
 ## Quick start
 
-### Docker Compose (with backend)
-
-The easiest way to run the full stack:
-
-```yaml
-services:
-  stock-analyst-ui:
-    image: ghcr.io/krbob/stock-analyst-ui:latest
-    ports:
-      - "3001:8080"
-    depends_on:
-      - stock-analyst
-    environment:
-      - API_URL=http://stock-analyst:8080
-      # Optional: hide the chart attribution footer on a private local stack.
-      - SHOW_CHART_ATTRIBUTION=${SHOW_CHART_ATTRIBUTION:-true}
-      # Optional: enable the Portfolio app switcher without rebuilding the UI.
-      - PORTFOLIO_URL=${PORTFOLIO_URL:-}
-    restart: unless-stopped
-
-  stock-analyst:
-    image: ghcr.io/krbob/stock-analyst:main
-    ports:
-      - "8080:8080"
-    depends_on:
-      - stock-analyst-backend-yfinance
-    environment:
-      - BACKEND_URL=http://stock-analyst-backend-yfinance:8081
-    restart: unless-stopped
-
-  stock-analyst-backend-yfinance:
-    image: ghcr.io/krbob/stock-analyst-backend-yfinance:main
-    restart: unless-stopped
-```
-
-```bash
-docker compose up
-# Open http://localhost:3001
-```
-
-### Development
-
-Requires the [stock-analyst](https://github.com/krbob/stock-analyst) API running on port 8080 (Vite proxies `/api/*` to it automatically). Runtime market-data calls use only the canonical `/v1` API paths.
-
-The UI expects intraday `timestamp` values from the API to be standard UTC epoch seconds and surfaces backend error messages directly, including `422` responses when currency conversion is unavailable for a symbol. History responses are matched against the current request before rendering so quick symbol/currency changes do not flash stale chart or indicator data.
-
-Every quote and history response carries the generated, nested `DataProvenance` contract. The UI displays its provider, actual coverage, retrieval time, optional market timestamp, response currency, adjustment basis, unit scale and market-observation status. `retrievedAt` describes when the API obtained the response; `status` is the backend's cadence-aware assessment of the latest market observation, so the UI keeps the two concepts separate and never infers freshness locally.
-
-This repository pins Node.js 24.18 and npm 11.16. Use the version from `.node-version` and install the lockfile without dependency lifecycle scripts:
+Node.js 24.18 and npm 11.16 are required. Start the Stock Analyst API on `http://localhost:8080`, then run:
 
 ```bash
 npm ci --ignore-scripts
 npm run dev
-# Open http://localhost:5173
 ```
 
-For a private local Vite session, create `.env.local` with `VITE_SHOW_CHART_ATTRIBUTION=false` to hide the chart attribution footer.
-Set `VITE_PORTFOLIO_URL` there to a root-relative or absolute HTTP(S) URL to enable the local Portfolio app switcher.
+Open <http://localhost:5173>. Vite proxies `/api/*` to the local backend and removes the `/api` prefix. There is no
+client-side API-origin setting.
 
-## URL parameters
+To exercise the production container locally without a mutable registry tag:
 
-Chart state is encoded in the URL for sharing:
+```bash
+docker build -t stock-analyst-ui:local .
+docker run --rm -p 3001:8080 \
+  -e API_URL=http://host.docker.internal:8080 \
+  stock-analyst-ui:local
+```
 
-| Parameter | Example           | Description                              |
-|-----------|-------------------|------------------------------------------|
-| `s`       | `AAPL`            | Stock symbol                             |
-| `p`       | `1y`              | Period (1d, 5d, 1mo, 6mo, ytd, 1y, 5y, max) |
-| `i`       | `1wk`             | Interval override                        |
-| `line`    | `1`               | Line chart mode                          |
-| `log`     | `1`               | Logarithmic scale                        |
-| `div`     | `1`               | Show dividends                           |
-| `ind`     | `sma50,sma200,rsi`| Active indicators (comma-separated)      |
-| `cur`     | `EUR`             | Currency conversion                      |
-| `cmp`     | `AAPL,MSFT,GOOG`  | Compare mode symbols (comma-separated)   |
+Open <http://localhost:3001>. Linux hosts may need a Docker-network hostname instead of `host.docker.internal`.
+
+## Configuration
+
+| Setting | Scope | Default | Meaning |
+|---|---|---|---|
+| `API_URL` | Container runtime | required | Trusted Nginx upstream base, normally `http://stock-analyst:8080`. The browser still calls same-origin `/api`. |
+| `SHOW_CHART_ATTRIBUTION` | Container runtime | `true` | Set to `false`, `0`, `no` or `off` to hide the footer. |
+| `PORTFOLIO_URL` | Container runtime | unset | Root-relative or absolute HTTP(S) destination shown in the application switcher. |
+| `VITE_SHOW_CHART_ATTRIBUTION` | Local/build time | enabled | Build-time fallback for source or Vite-preview sessions. Runtime container configuration takes precedence. |
+| `VITE_PORTFOLIO_URL` | Local/build time | unset | Build-time fallback for the Portfolio switcher. Runtime container configuration takes precedence. |
+
+Copy `.env.example` to `.env.local` for local Vite overrides. Never put secrets in `VITE_*` variables: Vite embeds
+them in browser assets.
+
+`PORTFOLIO_URL` rejects executable schemes, protocol-relative URLs, control characters and embedded credentials.
+The generated link carries only `uiTheme` and `uiLocale`; it never forwards the selected symbol, currency or chart
+state.
+
+## Locale, freshness and offline behavior
+
+Stock Analyst UI currently renders English copy and declares `lang="en"`. The Portfolio link derives a canonical,
+navigation-only locale hint from the first non-empty `navigator.languages` value, then `navigator.language`, then
+the document language. The hint does not change this UI and must not become a durable language choice in the
+destination application.
+
+Intraday history normally refreshes every 30 seconds. After three unchanged snapshots it backs off to five minutes
+until data changes or the request identity changes. The displayed market status is the backend's cadence-aware
+assessment. `Retrieved` means when the API obtained a response; it is not the observation time.
+
+Production builds register a service worker that caches the application shell and hashed assets. It deliberately
+bypasses `/api/*`, so an offline reload can open the UI but cannot fetch or update market data.
+
+## Shareable URL parameters
+
+| Parameter | Example | Meaning |
+|---|---|---|
+| `s` | `AAPL` | Primary symbol. |
+| `p` | `1y` | Period: `1d`, `5d`, `1mo`, `3mo`, `6mo`, `1y`, `2y`, `5y`, `10y`, `ytd`, `max`. The toolbar exposes the common eight. |
+| `i` | `1wk` | Interval override: `1m`, `5m`, `15m`, `30m`, `1h`, `1d`, `1wk`, `1mo`. |
+| `line` | `1` | Line-chart mode. |
+| `log` | `1` | Logarithmic scale. |
+| `div` | `1` | Dividend markers. |
+| `ind` | `sma50,sma200,rsi` | Enabled indicators. |
+| `cur` | `EUR` | Requested response currency. |
+| `cmp` | `AAPL,MSFT,GOOG` | Comparison symbols, deduplicated and limited to six. |
 
 Example: `?s=AAPL&p=5y&log=1&ind=sma50,sma200&cmp=AAPL,MSFT`
 
+These parameters preserve analysis controls, not every visual preference. Chart zoom is transient; theme and the
+details-panel preference are stored locally.
+
+## Verification
+
+```bash
+npm run lint
+npm test
+npm run test:coverage
+npm run build
+```
+
+`npm run build` also verifies the pinned supply-chain policy, OpenAPI client and design-token manifest. Browser tests
+need the production container and a `BASE_URL`; see [development documentation](docs/DEVELOPMENT.md#browser-tests).
+CI currently automates Chromium. Chrome on Windows and Safari on macOS remain explicit release-check targets until
+WebKit is added to the pipeline.
+
 ## Architecture
 
-```
-Browser → Nginx (:8080) → /api/* → stock-analyst API (:8080)
-                       → /*    → React SPA (index.html)
-```
-
-### Project structure
-
-```
-src/
-├── api/            Generated OpenAPI client, UI adapters and React Query hooks
-├── components/     UI components
-│   ├── PriceChart      Interactive chart (lightweight-charts)
-│   ├── StockDetails    Fundamentals & technicals panels
-│   ├── CompareView     Multi-stock comparison
-│   ├── TickerSearch    Search with autocomplete
-│   └── CurrencyPicker  Currency selector dropdown
-├── data/           Currency definitions (Intl API)
-├── hooks/          Custom hooks (useDebounce)
-├── styles/         Versioned, framework-neutral design-token contract
-├── url-state.ts    URL ↔ state serialization
-├── App.tsx         Main layout and state management
-└── main.tsx        Entry point
+```text
+Browser -> Nginx (:8080) -> /api/* -> Stock Analyst API
+                         -> /*     -> React application
 ```
 
-### Design-token contract
+This is the container-owned proxy topology. A reverse proxy may instead route `/api/*` directly to the backend;
+the prefix must be removed exactly once. Both supported layouts are described in the deployment guide.
 
-`src/styles/tokens.css` is the portable UI contract shared at CSS custom-property level. It separates raw `primitive` values from the stable `semantic` API and chart-specific `component` roles, with light, dark and system-theme mappings. The Tailwind aliases in `src/index.css` are an adapter only; another application can consume the public `--ui-*` semantic/component tokens without using Tailwind or React.
+The container's `/healthz` endpoint is Nginx/static-shell liveness only. It does not prove that the API or its market
+data provider is ready.
 
-`src/styles/tokens.manifest.json` records the contract version, SHA-256 digest and complete layer inventory. Run `npm run tokens:check` after any token change; intentional contract changes require updating the manifest version and digest. Consumers should pin a compatible manifest version and must not depend on private `--ui-ref-*` primitives.
+## Further documentation
 
-### OpenAPI client contract
+- [Development, tests, API contract and design tokens](docs/DEVELOPMENT.md)
+- [Container configuration, immutable deployment and rollback](docs/DEPLOYMENT.md)
+- [Pinned OpenAPI snapshot](openapi/manifest.json)
+- [Versioned design-token manifest](src/styles/tokens.manifest.json)
 
-`openapi/stock-analyst-v1.json` is a pinned snapshot of the Stock Analyst API contract from the commit recorded in `openapi/manifest.json`. The manifest contains both the snapshot SHA-256 and a deterministic hash of every file under `src/api/generated`. Runtime types and operation functions are generated by the exactly pinned `@hey-api/openapi-ts` version; `src/api/client.ts` only adapts the generated response into UI request identity and the local `ApiError` class.
-
-The checked-in snapshot makes generation independent of a sibling checkout and network access:
-
-```bash
-npm run contract:generate  # regenerate SDK/types and update their tree hash
-npm run contract:check     # regenerate in a temp directory and fail on any drift
-npm run contract:test      # Node contract test used by npm test
-```
-
-When the backend contract changes, intentionally replace the snapshot, update its source commit and SHA-256 in the manifest, then run `contract:generate`. Never edit `src/api/generated` by hand.
-
-### Key dependencies
-
-| Library | Purpose |
-|---------|---------|
-| [lightweight-charts](https://github.com/nicosommi/lightweight-charts) | Financial charting (TradingView) |
-| [TanStack Query](https://tanstack.com/query) | Server state, caching, auto-refetch |
-| [Hey API](https://heyapi.dev/) | Deterministic OpenAPI types and Fetch SDK |
-| [Tailwind CSS](https://tailwindcss.com) | Styling |
-| React 19 | UI framework |
-
-## Scripts
-
-```bash
-npm run dev          # Start dev server (port 5173)
-npm run build        # Type check + production build
-npm run lint         # ESLint
-npm test             # Run tests (Vitest)
-npm run test:watch   # Tests in watch mode
-npm run test:coverage # All owned src files + fixed regression floors and reports
-npm run test:e2e:ci # Production-browser smoke, keyboard and axe WCAG A/AA checks
-npm run contract:check     # Verify OpenAPI snapshot/client drift
-npm run contract:generate  # Regenerate the pinned API client
-npm run supply-chain:check # Verify immutable CI/container/toolchain policy
-```
-
-Coverage is deliberately all-source rather than limited to modules imported by tests. The versioned scope and non-auto-updating floors live in `coverage-baseline.json`; generated API code, tests and declarations are the only exclusions. CI publishes the exact covered/total counts and percentages to the workflow summary, while retaining text, JSON, LCOV and HTML reports under `coverage/`.
-
-## Docker
-
-Multi-stage build: Node 24.18.0 with npm 11.16 for compilation, and unprivileged Nginx 1.31.2 Alpine for serving. Both base images use explicit tags and immutable multi-architecture digests; dependency lifecycle scripts are disabled during installation.
-
-```bash
-# Build
-docker build -t stock-analyst-ui .
-
-# Run
-docker run -p 3001:8080 -e API_URL=http://your-api:8080 stock-analyst-ui
-```
-
-The `API_URL` environment variable is required and is substituted into the Nginx config at container startup.
-Set `SHOW_CHART_ATTRIBUTION=false` on a private local container if you want to hide the chart attribution footer without rebuilding the image.
-Set optional `PORTFOLIO_URL` at container startup to enable the Portfolio app switcher. Invalid, executable-scheme, protocol-relative and credential-bearing URLs are not rendered. The link carries only `uiTheme` and a canonical `uiLocale` navigation hint; it never forwards the selected symbol or other market data. The destination may apply `uiLocale` for that navigation, but must not treat an automatic handoff as a durable language choice.
-
-## CI/CD
-
-GitHub Actions pipeline (`.github/workflows/ci-build.yml`):
-
-1. **Supply-chain policy** — exact Node/npm toolchain, immutable Action and Docker pins, lifecycle-script restrictions
-2. **Dependency audit** — fail on HIGH or CRITICAL npm advisories
-3. **Contract check** — pinned OpenAPI snapshot and generated SDK drift
-4. **Type check and lint** — TypeScript and ESLint
-5. **Test/coverage** — Node contract test plus all-source Vitest floors, retained reports and workflow summary
-6. **Docker build and security** — SPDX JSON SBOM artifact plus an actionable HIGH/CRITICAL Trivy gate
-7. **Browser/a11y smoke** — production container, canonical `/v1` requests, keyboard flows, axe WCAG A/AA, 320/375 px and offline shell
-8. **Publish** (main only) — multi-platform GHCR image with BuildKit provenance and SBOM attestations
-
-All third-party Actions use full commit SHAs with human-readable release comments. Renovate runs in a bounded weekly window, waits seven days after releases, groups only low-risk patch/digest maintenance and never automerges; security alerts may run outside the weekly window but still require manual review.
-
-## Tech stack
-
-| Component | Technology |
-|-----------|------------|
-| Framework | React 19, TypeScript 6 |
-| Build | Vite 8 |
-| Styling | Tailwind CSS 4 |
-| Charts | lightweight-charts 5 |
-| State | TanStack Query 5 |
-| Testing | Vitest, React Testing Library |
-| CI/CD | GitHub Actions |
-| Deployment | Docker (Nginx Alpine), GHCR |
+The main stack is React 19, TypeScript 6, Vite 8, Tailwind CSS 4, TanStack Query 5 and Lightweight Charts 5.
