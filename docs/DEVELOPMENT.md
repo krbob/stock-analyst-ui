@@ -115,8 +115,9 @@ is a documented gap, not a claim of automated cross-browser coverage.
 
 ### Screenshots
 
-The README embeds `docs/screenshot-main.png`. Its AAPL history, fundamentals, provenance and SMA50/SMA200 series
-come from a deterministic Playwright fixture, so regenerating the main view does not contact the market-data API.
+The README embeds `docs/screenshot-main.png`. Its clearly labelled DEMO history, fundamentals, provenance and
+SMA50/SMA200 series come from a deterministic Playwright fixture, so regenerating the main view does not contact
+the market-data API or present generated values as a real instrument.
 Run that scenario against a local production build and inspect the resulting image before committing it:
 
 ```bash

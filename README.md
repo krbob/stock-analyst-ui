@@ -10,7 +10,7 @@ Market data may be delayed or incomplete. The UI displays the backend-provided s
 market-observation time, adjustment basis, unit scale and freshness status instead of inferring freshness in the
 browser.
 
-![Stock Analyst UI showing a synthetic AAPL analysis in dark mode](docs/screenshot-main.png)
+![Stock Analyst UI showing a clearly labelled synthetic DEMO analysis in dark mode](docs/screenshot-main.png)
 
 ## What it provides
 

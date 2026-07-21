@@ -86,7 +86,7 @@ function movingAverage(prices: MockPrice[], window: number) {
 
 function provenance(coverageFrom: string, coverageTo: string) {
   return {
-    source: 'YAHOO_FINANCE',
+    source: 'SYNTHETIC_FIXTURE',
     retrievedAt: '2026-07-17T20:05:00Z',
     marketTimestamp: '2026-07-17T20:00:00Z',
     marketDate: MARKET_DATE,
@@ -101,9 +101,10 @@ function provenance(coverageFrom: string, coverageTo: string) {
 
 function quote(symbol: string) {
   const isMicrosoft = symbol === 'MSFT';
+  const isDemo = symbol === 'DEMO';
   return {
     symbol,
-    name: isMicrosoft ? 'Microsoft Corporation' : 'Apple Inc.',
+    name: isMicrosoft ? 'Microsoft Corporation' : isDemo ? 'Synthetic Demo Corp.' : 'Apple Inc.',
     currency: 'USD',
     date: MARKET_DATE,
     lastPrice: isMicrosoft ? 510 : 308.63,

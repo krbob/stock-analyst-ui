@@ -31,9 +31,9 @@ async function waitForChart(page: Page) {
 
 test.describe.serial('generate README screenshots', () => {
 
-  test('main view — AAPL 1Y with SMA', async ({ page }) => {
+  test('main view — DEMO 1Y with SMA', async ({ page }) => {
     await mockMarketData(page);
-    await page.goto('/?s=AAPL&p=1y&ind=sma50,sma200');
+    await page.goto('/?s=DEMO&p=1y&ind=sma50,sma200');
     await waitForChart(page);
     const resetView = page.getByRole('button', { name: 'Reset' });
     if (await resetView.isVisible()) {
