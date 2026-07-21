@@ -73,17 +73,38 @@ requireInvariant(workflow.includes('ignore-unfixed: true'), 'Image vulnerability
 requireInvariant(workflow.includes('severity: HIGH,CRITICAL'), 'Image vulnerability gate must cover HIGH and CRITICAL findings')
 requireInvariant(workflow.includes('timeout: 15m'), 'Image vulnerability gate must tolerate a cold vulnerability database download')
 
-requireInvariant(renovate.automerge === false, 'Renovate must not automerge globally')
-requireInvariant(renovate.platformAutomerge === false, 'Platform automerge must remain disabled')
-requireInvariant(renovate.updateNotScheduled === false, 'Renovate updates must respect the maintenance window')
+requireInvariant(renovate.branchPrefix === 'renovate/', 'Renovate branch prefix must remain explicit')
+requireInvariant(renovate.prCreation === 'immediate', 'Renovate must create pull requests for dependency branches')
+requireInvariant(renovate.timezone === 'Europe/Warsaw', 'Renovate must use the ecosystem timezone')
 requireInvariant(
-  Number.isInteger(renovate.prConcurrentLimit) && renovate.prConcurrentLimit > 0,
-  'Renovate PR concurrency must be explicitly bounded',
+  JSON.stringify(renovate.schedule) === JSON.stringify(['* 0-8 * * 1']),
+  'Renovate must create dependency pull requests in the weekly maintenance window',
 )
+requireInvariant(renovate.automerge === true, 'Every Renovate update must be eligible for automerge')
+requireInvariant(renovate.automergeType === 'pr', 'Renovate must merge through pull requests')
+requireInvariant(renovate.automergeStrategy === 'squash', 'Renovate must squash dependency pull requests')
+requireInvariant(renovate.platformAutomerge === false, 'Platform automerge must stay disabled to enforce the monthly window')
+requireInvariant(renovate.ignoreTests === false, 'Renovate automerge must require passing tests')
 requireInvariant(
-  Number.isInteger(renovate.prHourlyLimit) && renovate.prHourlyLimit > 0,
-  'Renovate hourly PR creation must be explicitly bounded',
+  JSON.stringify(renovate.automergeSchedule) === JSON.stringify(['* * 1-3 * *']),
+  'Renovate may automerge only during the first three days of each month',
 )
+requireInvariant(renovate.rebaseWhen === 'behind-base-branch', 'Renovate branches must stay current before merge')
+requireInvariant(renovate.updateNotScheduled === true, 'Existing Renovate branches must update outside the creation window')
+requireInvariant(renovate.minimumReleaseAge === '7 days', 'Renovate updates must retain a seven-day maturity delay')
+requireInvariant(
+  renovate.minimumReleaseAgeBehaviour === 'timestamp-optional',
+  'Renovate updates without release timestamps must remain eligible',
+)
+requireInvariant(renovate.lockFileMaintenance?.automerge === true, 'Lockfile maintenance must follow the automerge policy')
+requireInvariant(renovate.vulnerabilityAlerts?.automerge === true, 'Security updates must follow the automerge policy')
+requireInvariant(
+  !renovate.packageRules?.some((rule) => rule.automerge === false),
+  'Package rules must not disable automerge for selected dependencies',
+)
+requireInvariant(renovate.prConcurrentLimit === 10, 'Renovate must retain the shared open-PR limit')
+requireInvariant(renovate.branchConcurrentLimit === 10, 'Renovate must retain the shared branch limit')
+requireInvariant(renovate.prHourlyLimit === 2, 'Renovate must retain the shared hourly PR limit')
 requireInvariant(
   renovate.extends?.includes('helpers:pinGitHubActionDigests'),
   'Renovate must preserve immutable GitHub Action pins',

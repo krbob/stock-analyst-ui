@@ -182,4 +182,6 @@ advisories, deterministic contracts, types, lint, all-source coverage, container
 HIGH/CRITICAL image findings and the Chromium browser suite. A successful push to `main` publishes multi-platform
 `linux/amd64` and `linux/arm64` images with provenance and SBOM attestations.
 
-Renovate behavior belongs in `renovate.json`; do not duplicate its exact schedule or grouping rules in prose.
+Renovate behavior belongs in `renovate.json`; do not duplicate its exact schedule or grouping rules in prose. All
+dependency pull requests use the same green-CI automerge policy and the same monthly merge window as the other
+ecosystem repositories.
