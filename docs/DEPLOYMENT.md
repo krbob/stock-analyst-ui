@@ -35,6 +35,10 @@ docker buildx imagetools inspect ghcr.io/krbob/stock-analyst-ui:sha-<short-commi
 
 Retain the previous digest in deployment history so rollback is a one-line image change.
 
+The repository's root [Compose stack](../docker-compose.yml) intentionally uses moving tags to make a disposable
+three-service evaluation possible with one command. It is not a production template. Durable installations should
+override all three image variables with mutually compatible digest references and keep the same readiness chain.
+
 ## Runtime configuration
 
 The image is built once and configured when the container starts.

@@ -10,6 +10,8 @@ Market data may be delayed or incomplete. The UI displays the backend-provided s
 market-observation time, adjustment basis, unit scale and freshness status instead of inferring freshness in the
 browser.
 
+![Stock Analyst UI showing a synthetic AAPL analysis in dark mode](docs/screenshot-main.png)
+
 ## What it provides
 
 - Candlestick and line charts, logarithmic scale, dividends and adaptive intraday refresh.
@@ -24,6 +26,26 @@ browser.
 
 ## Quick start
 
+### Complete Docker stack
+
+The bundled [Compose file](docker-compose.yml) starts the UI, Stock Analyst API and its private yfinance adapter:
+
+```bash
+docker compose up --detach --pull always --wait
+
+curl --fail http://127.0.0.1:3001/healthz
+curl --fail http://127.0.0.1:3001/api/v1/quote/AAPL >/dev/null
+```
+
+Open <http://127.0.0.1:3001>. The API is also available directly at <http://127.0.0.1:8080>; the yfinance adapter
+is deliberately not published on the host. Stop and remove the test stack with `docker compose down`.
+
+The defaults use the moving `main` and `latest` image tags for a convenient local evaluation only. Override the
+three `*_IMAGE` variables with reviewed immutable digest references for any durable deployment; see the
+[deployment guide](docs/DEPLOYMENT.md).
+
+### Frontend development
+
 Node.js 24.18 and npm 11.16 are required. Start the Stock Analyst API on `http://localhost:8080`, then run:
 
 ```bash
@@ -34,7 +56,7 @@ npm run dev
 Open <http://localhost:5173>. Vite proxies `/api/*` to the local backend and removes the `/api` prefix. There is no
 client-side API-origin setting.
 
-To exercise the production container locally without a mutable registry tag:
+To exercise a locally built UI container against an already running API:
 
 ```bash
 docker build -t stock-analyst-ui:local .

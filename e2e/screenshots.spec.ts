@@ -1,4 +1,5 @@
 import { test, type Page } from '@playwright/test';
+import { mockMarketData } from './support/market-data';
 
 test.use({
   viewport: { width: 1440, height: 900 },
@@ -31,8 +32,14 @@ async function waitForChart(page: Page) {
 test.describe.serial('generate README screenshots', () => {
 
   test('main view — AAPL 1Y with SMA', async ({ page }) => {
+    await mockMarketData(page);
     await page.goto('/?s=AAPL&p=1y&ind=sma50,sma200');
     await waitForChart(page);
+    const resetView = page.getByRole('button', { name: 'Reset' });
+    if (await resetView.isVisible()) {
+      await resetView.click();
+      await page.waitForTimeout(250);
+    }
     await page.screenshot({ path: `${SCREENSHOT_DIR}/screenshot-main.png`, fullPage: false });
   });
 

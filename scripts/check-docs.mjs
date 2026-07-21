@@ -102,10 +102,32 @@ for (const sourcePath of markdownFiles) {
 const readme = read('README.md');
 const development = read('docs/DEVELOPMENT.md');
 const deployment = read('docs/DEPLOYMENT.md');
+const compose = read('docker-compose.yml');
 const envExample = read('.env.example');
 const entrypoint = read('docker-entrypoint.sh');
 const sourceFiles = filesUnder('src', '.ts').concat(filesUnder('src', '.tsx'));
 const sourceText = sourceFiles.map((path) => readFileSync(path, 'utf8')).join('\n');
+
+if (/\bbobinski\.net\b/i.test(compose)) {
+  fail('docker-compose.yml must not reference private deployment domains');
+}
+for (const service of ['stock-analyst-ui', 'stock-analyst', 'stock-analyst-backend-yfinance']) {
+  if (!new RegExp(`^  ${service}:`, 'm').test(compose)) {
+    fail(`docker-compose.yml is missing quick-start service ${service}`);
+  }
+}
+for (const probe of ['/healthz', '/readyz', '/health']) {
+  if (!compose.includes(probe)) fail(`docker-compose.yml is missing readiness probe ${probe}`);
+}
+if (!compose.includes('API_URL: http://stock-analyst:8080')) {
+  fail('docker-compose.yml does not connect the UI proxy to Stock Analyst API');
+}
+if (!readme.includes('](docker-compose.yml)')) {
+  fail('README.md does not link to the complete quick-start Compose stack');
+}
+if (!readme.includes('](docs/screenshot-main.png)')) {
+  fail('README.md does not embed the maintained main screenshot');
+}
 
 if (/^\s*#?\s*VITE_API_URL\s*=/m.test(envExample)) {
   fail('.env.example must not advertise the unsupported VITE_API_URL setting');

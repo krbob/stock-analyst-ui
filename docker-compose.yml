@@ -1,0 +1,58 @@
+name: stock-analyst-quickstart
+
+services:
+  stock-analyst-ui:
+    image: ${STOCK_ANALYST_UI_IMAGE:-ghcr.io/krbob/stock-analyst-ui:latest}
+    depends_on:
+      stock-analyst:
+        condition: service_healthy
+    environment:
+      API_URL: http://stock-analyst:8080
+      SHOW_CHART_ATTRIBUTION: "true"
+    ports:
+      - "127.0.0.1:${STOCK_ANALYST_UI_PORT:-3001}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    networks:
+      - frontend
+    restart: unless-stopped
+
+  stock-analyst:
+    image: ${STOCK_ANALYST_IMAGE:-ghcr.io/krbob/stock-analyst:main}
+    depends_on:
+      stock-analyst-backend-yfinance:
+        condition: service_healthy
+    environment:
+      BACKEND_URL: http://stock-analyst-backend-yfinance:8081
+    ports:
+      - "127.0.0.1:${STOCK_ANALYST_API_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/readyz"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    networks:
+      - frontend
+      - provider
+    restart: unless-stopped
+
+  stock-analyst-backend-yfinance:
+    image: ${STOCK_ANALYST_BACKEND_YFINANCE_IMAGE:-ghcr.io/krbob/stock-analyst-backend-yfinance:main}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8081/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    networks:
+      - provider
+    restart: unless-stopped
+
+networks:
+  frontend:
+  provider:

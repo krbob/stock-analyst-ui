@@ -115,13 +115,19 @@ is a documented gap, not a claim of automated cross-browser coverage.
 
 ### Screenshots
 
-The files named `docs/screenshot-*.png` were generated before the current provenance, app-switcher and
-active-indicator behavior. They are deliberately not embedded in the README.
+The README embeds `docs/screenshot-main.png`. Its AAPL history, fundamentals, provenance and SMA50/SMA200 series
+come from a deterministic Playwright fixture, so regenerating the main view does not contact the market-data API.
+Run that scenario against a local production build and inspect the resulting image before committing it:
 
-`npm run screenshots` is a legacy maintainer command that currently reads mutable market data from a running API.
-Do not point it at production and do not use it as a release check. Before publishing a new gallery, change
-`e2e/screenshots.spec.ts` to reuse deterministic local fixtures, run it against a local production build, review all
-themes and viewport sizes, and commit the images with the behavior change.
+```bash
+BASE_URL=http://127.0.0.1:3000 \
+npx playwright test e2e/screenshots.spec.ts --grep "main view"
+```
+
+The remaining gallery scenarios still read mutable market data from the configured API and are not embedded in the
+README. Do not point the screenshot suite at production or use the mutable gallery as a release check. Convert a
+scenario to deterministic fixtures before publishing another image, then review all affected themes and viewport
+sizes with the behavior change.
 
 Avoid an unqualified `npx playwright test`: it also discovers the screenshot-writing spec. Use the named npm script
 for the blocking suite.
