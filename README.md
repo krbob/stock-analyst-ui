@@ -6,8 +6,6 @@ Responsive stock-analysis frontend built with React and the official
 [TradingView Lightweight Charts](https://github.com/tradingview/lightweight-charts) library. It consumes the
 [Stock Analyst API](https://github.com/krbob/stock-analyst) through a same-origin `/api` proxy.
 
-Live deployment: [stock.bobinski.net](https://stock.bobinski.net)
-
 Market data may be delayed or incomplete. The UI displays the backend-provided source, coverage, retrieval time,
 market-observation time, adjustment basis, unit scale and freshness status instead of inferring freshness in the
 browser.

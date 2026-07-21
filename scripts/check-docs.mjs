@@ -65,6 +65,10 @@ for (const sourcePath of markdownFiles) {
   const source = readFileSync(sourcePath, 'utf8');
   const sourceLabel = relative(root, sourcePath);
 
+  if (/\bbobinski\.net\b/i.test(source)) {
+    fail(`${sourceLabel}: public documentation must not reference private deployment domains`);
+  }
+
   for (const match of source.matchAll(/!?\[[^\]]*\]\(([^)]+)\)/g)) {
     const rawTarget = match[1].trim().replace(/^<|>$/g, '').split(/\s+["']/u, 1)[0];
     if (!rawTarget || /^[a-z][a-z0-9+.-]*:/i.test(rawTarget) || rawTarget.startsWith('//')) continue;
