@@ -77,8 +77,8 @@ requireInvariant(renovate.branchPrefix === 'renovate/', 'Renovate branch prefix 
 requireInvariant(renovate.prCreation === 'immediate', 'Renovate must create pull requests for dependency branches')
 requireInvariant(renovate.timezone === 'Europe/Warsaw', 'Renovate must use the ecosystem timezone')
 requireInvariant(
-  JSON.stringify(renovate.schedule) === JSON.stringify(['* 0-8 * * 1']),
-  'Renovate must create dependency pull requests in the weekly maintenance window',
+  JSON.stringify(renovate.schedule) === JSON.stringify(['at any time']),
+  'Renovate must create mature dependency pull requests continuously',
 )
 requireInvariant(renovate.automerge === true, 'Every Renovate update must be eligible for automerge')
 requireInvariant(renovate.automergeType === 'pr', 'Renovate must merge through pull requests')
@@ -102,9 +102,10 @@ requireInvariant(
   !renovate.packageRules?.some((rule) => rule.automerge === false),
   'Package rules must not disable automerge for selected dependencies',
 )
-requireInvariant(renovate.prConcurrentLimit === 10, 'Renovate must retain the shared open-PR limit')
-requireInvariant(renovate.branchConcurrentLimit === 10, 'Renovate must retain the shared branch limit')
-requireInvariant(renovate.prHourlyLimit === 2, 'Renovate must retain the shared hourly PR limit')
+requireInvariant(renovate.commitHourlyLimit === 0, 'Renovate commits must not be rate-limited')
+requireInvariant(renovate.prConcurrentLimit === 0, 'Renovate pull requests must not have a concurrent limit')
+requireInvariant(renovate.branchConcurrentLimit === 0, 'Renovate branches must not have a concurrent limit')
+requireInvariant(renovate.prHourlyLimit === 0, 'Renovate pull requests must not have an hourly limit')
 requireInvariant(
   renovate.extends?.includes('helpers:pinGitHubActionDigests'),
   'Renovate must preserve immutable GitHub Action pins',
