@@ -178,10 +178,10 @@ reviewed from the public semantic/component inventory and contract version.
 
 ## Continuous integration
 
-`.github/workflows/ci-build.yml` is the source of truth. It gates documentation links/configuration, dependency
-advisories, deterministic contracts, types, lint, all-source coverage, container lint, image SBOM, actionable
-HIGH/CRITICAL image findings and the Chromium browser suite. A successful push to `main` publishes multi-platform
-`linux/amd64` and `linux/arm64` images with provenance and SBOM attestations.
+`.github/workflows/ci-build.yml` is the source of truth. It gates documentation links/configuration, deterministic
+contracts, types, lint, all-source coverage, container lint and the Chromium browser suite. Vulnerability databases
+and image scanners are not pull-request gates. A successful push to `main` publishes multi-platform `linux/amd64`
+and `linux/arm64` images with provenance and SBOM attestations.
 
 Renovate behavior belongs in `renovate.json`; do not duplicate its exact schedule or grouping rules in prose. All
 dependency pull requests use the same green-CI automerge policy and the same monthly merge window as the other

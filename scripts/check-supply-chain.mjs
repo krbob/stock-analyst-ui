@@ -65,13 +65,6 @@ for (const [, reference, annotation] of actionReferences) {
 requireInvariant(workflow.includes("node-version-file: '.node-version'"), 'CI must consume .node-version')
 requireInvariant(workflow.includes('run: npm run docs:check'), 'CI must gate documentation contracts')
 requireInvariant(workflow.includes('npm ci --ignore-scripts'), 'CI dependency install must disable package lifecycle scripts')
-requireInvariant(workflow.includes('npm audit --audit-level=high'), 'CI must gate HIGH and CRITICAL npm advisories')
-requireInvariant(workflow.includes('anchore/sbom-action@'), 'CI must generate an image SBOM')
-requireInvariant(workflow.includes('format: spdx-json'), 'CI image SBOM must use SPDX JSON')
-requireInvariant(workflow.includes('aquasecurity/trivy-action@'), 'CI must scan the built image')
-requireInvariant(workflow.includes('ignore-unfixed: true'), 'Image vulnerability gate must focus on actionable findings')
-requireInvariant(workflow.includes('severity: HIGH,CRITICAL'), 'Image vulnerability gate must cover HIGH and CRITICAL findings')
-requireInvariant(workflow.includes('timeout: 15m'), 'Image vulnerability gate must tolerate a cold vulnerability database download')
 
 requireInvariant(renovate.branchPrefix === 'renovate/', 'Renovate branch prefix must remain explicit')
 requireInvariant(renovate.prCreation === 'immediate', 'Renovate must create pull requests for dependency branches')

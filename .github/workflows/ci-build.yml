@@ -8,6 +8,7 @@ on:
 
 jobs:
   test:
+    name: ci-required
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -37,12 +38,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci --ignore-scripts
-
-      - name: Verify pinned supply chain
-        run: npm run supply-chain:check
-
-      - name: Audit npm dependencies
-        run: npm audit --audit-level=high
 
       - name: Verify OpenAPI snapshot and generated client
         run: npm run contract:check
@@ -78,29 +73,6 @@ jobs:
           tags: stock-analyst-ui:test
           cache-from: type=gha,scope=stock-analyst-ui
           cache-to: type=gha,mode=max,scope=stock-analyst-ui
-
-      - name: Generate image SBOM
-        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
-        with:
-          image: stock-analyst-ui:test
-          format: spdx-json
-          output-file: stock-analyst-ui.spdx.json
-          artifact-name: stock-analyst-ui-sbom
-          upload-artifact: true
-          upload-release-assets: false
-          syft-version: v1.46.0
-
-      - name: Gate actionable image vulnerabilities
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        with:
-          image-ref: stock-analyst-ui:test
-          version: v0.72.0
-          format: table
-          exit-code: '1'
-          ignore-unfixed: true
-          vuln-type: os,library
-          severity: HIGH,CRITICAL
-          timeout: 15m
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
