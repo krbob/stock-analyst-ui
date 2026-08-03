@@ -9,10 +9,9 @@ FROM nginxinc/nginx-unprivileged:1.31.2-alpine@sha256:6320020c7da8714feab524e02c
 
 USER root
 
-RUN apk add --no-cache \
-    'c-ares=1.34.8-r0' \
-    'curl=8.20.0-r0' \
-    'libcurl=8.20.0-r0'
+# Resolve these packages from the selected base image's Alpine repository so a
+# base-image update cannot be blocked by repository revision churn.
+RUN apk add --no-cache c-ares curl libcurl
 
 COPY --chown=101:101 nginx.conf /etc/nginx/conf.d/default.conf.template
 COPY --chown=101:101 docker-entrypoint.sh /docker-entrypoint.sh
