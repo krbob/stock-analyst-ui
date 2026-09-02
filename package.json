@@ -33,7 +33,7 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@axe-core/playwright": "4.12.1",
+    "@axe-core/playwright": "4.13.0",
     "@eslint/js": "^10.0.0",
     "@hey-api/openapi-ts": "0.99.0",
     "@playwright/test": "^1.59.1",
