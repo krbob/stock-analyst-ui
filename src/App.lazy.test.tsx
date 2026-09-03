@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -101,6 +101,7 @@ describe('App lazy analysis modes', () => {
     expect(lifecycle.detailsUnmount).toHaveBeenCalledTimes(1);
     expect(lifecycle.compareMount).toHaveBeenCalledTimes(1);
 
+    await user.click(screen.getByRole('radio', { name: '5D' }));
     await user.click(screen.getByRole('button', { name: 'Exit comparison mode' }));
 
     expect(await screen.findByTestId('price-chart-module')).toBeInTheDocument();
@@ -109,5 +110,12 @@ describe('App lazy analysis modes', () => {
     expect(lifecycle.compareUnmount).toHaveBeenCalledTimes(1);
     expect(lifecycle.priceMount).toHaveBeenCalledTimes(2);
     expect(lifecycle.detailsMount).toHaveBeenCalledTimes(2);
+    expect(screen.getByRole('radio', { name: '15m' })).toHaveAttribute('aria-checked', 'true');
+    await waitFor(() => {
+      const params = new URLSearchParams(window.location.search);
+      expect(params.get('p')).toBe('5d');
+      expect(params.get('i')).toBe('15m');
+      expect(params.has('cmp')).toBe(false);
+    });
   });
 });

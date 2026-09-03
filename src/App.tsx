@@ -63,6 +63,13 @@ const DEFAULT_INTRADAY: Record<string, Interval> = {
   '5d': '15m',
 };
 
+function intervalForSingleStock(period: Period, selectedInterval: Interval | undefined): Interval | undefined {
+  const options = period === '1d' || period === '5d' ? INTRADAY_INTERVALS : DAILY_INTERVALS;
+  return selectedInterval && options.some((option) => option.value === selectedInterval)
+    ? selectedInterval
+    : DEFAULT_INTRADAY[period];
+}
+
 const INDICATORS = [
   { label: 'SMA 50/200', keys: ['sma50', 'sma200'] },
   { label: 'EMA 50/200', keys: ['ema50', 'ema200'] },
@@ -328,11 +335,17 @@ export default function App() {
   };
 
   const exitCompare = () => {
+    setSelectedInterval(intervalForSingleStock(period, interval));
     setCompareSymbols([]);
   };
 
   const removeFromCompare = (sym: string) => {
-    setCompareSymbols(prev => prev.filter(s => s.toLowerCase() !== sym.toLowerCase()));
+    const remainingSymbols = compareSymbols.filter(s => s.toLowerCase() !== sym.toLowerCase());
+    if (remainingSymbols.length === 0) {
+      exitCompare();
+      return;
+    }
+    setCompareSymbols(remainingSymbols);
   };
 
   const intervalOptions = isIntradayPeriod ? INTRADAY_INTERVALS : DAILY_INTERVALS;
