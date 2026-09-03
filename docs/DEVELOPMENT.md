@@ -183,6 +183,6 @@ contracts, types, lint, all-source coverage, container lint and the Chromium bro
 and image scanners are not pull-request gates. A successful push to `main` publishes multi-platform `linux/amd64`
 and `linux/arm64` images with provenance and SBOM attestations.
 
-Renovate behavior belongs in `renovate.json`; do not duplicate its exact schedule or grouping rules in prose. All
-dependency pull requests use the same green-CI automerge policy and the same monthly merge window as the other
-ecosystem repositories.
+Renovate behavior belongs in `renovate.json`; do not duplicate its exact schedule or grouping rules in prose. The
+repository extends the shared monthly ecosystem preset, while local rules retain frontend-specific grouping. All
+dependency pull requests remain eligible for platform automerge after required CI succeeds.

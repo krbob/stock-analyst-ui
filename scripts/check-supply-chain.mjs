@@ -66,42 +66,13 @@ requireInvariant(workflow.includes("node-version-file: '.node-version'"), 'CI mu
 requireInvariant(workflow.includes('run: npm run docs:check'), 'CI must gate documentation contracts')
 requireInvariant(workflow.includes('npm ci --ignore-scripts'), 'CI dependency install must disable package lifecycle scripts')
 
-requireInvariant(renovate.branchPrefix === 'renovate/', 'Renovate branch prefix must remain explicit')
-requireInvariant(renovate.prCreation === 'immediate', 'Renovate must create pull requests for dependency branches')
-requireInvariant(renovate.timezone === 'Europe/Warsaw', 'Renovate must use the ecosystem timezone')
 requireInvariant(
-  JSON.stringify(renovate.schedule) === JSON.stringify(['at any time']),
-  'Renovate must create mature dependency pull requests continuously',
+  JSON.stringify(renovate.extends) === JSON.stringify(['github>krbob/renovate-config:monthly']),
+  'Renovate must inherit the shared monthly update policy',
 )
-requireInvariant(renovate.automerge === true, 'Every Renovate update must be eligible for automerge')
-requireInvariant(renovate.automergeType === 'pr', 'Renovate must merge through pull requests')
-requireInvariant(renovate.automergeStrategy === 'squash', 'Renovate must squash dependency pull requests')
-requireInvariant(renovate.platformAutomerge === false, 'Platform automerge must stay disabled to enforce the monthly window')
-requireInvariant(renovate.ignoreTests === false, 'Renovate automerge must require passing tests')
-requireInvariant(
-  JSON.stringify(renovate.automergeSchedule) === JSON.stringify(['* * 1-3 * *']),
-  'Renovate may automerge only during the first three days of each month',
-)
-requireInvariant(renovate.rebaseWhen === 'behind-base-branch', 'Renovate branches must stay current before merge')
-requireInvariant(renovate.updateNotScheduled === true, 'Existing Renovate branches must update outside the creation window')
-requireInvariant(renovate.minimumReleaseAge === '7 days', 'Renovate updates must retain a seven-day maturity delay')
-requireInvariant(
-  renovate.minimumReleaseAgeBehaviour === 'timestamp-optional',
-  'Renovate updates without release timestamps must remain eligible',
-)
-requireInvariant(renovate.lockFileMaintenance?.automerge === true, 'Lockfile maintenance must follow the automerge policy')
-requireInvariant(renovate.vulnerabilityAlerts?.automerge === true, 'Security updates must follow the automerge policy')
 requireInvariant(
   !renovate.packageRules?.some((rule) => rule.automerge === false),
   'Package rules must not disable automerge for selected dependencies',
-)
-requireInvariant(renovate.commitHourlyLimit === 0, 'Renovate commits must not be rate-limited')
-requireInvariant(renovate.prConcurrentLimit === 0, 'Renovate pull requests must not have a concurrent limit')
-requireInvariant(renovate.branchConcurrentLimit === 0, 'Renovate branches must not have a concurrent limit')
-requireInvariant(renovate.prHourlyLimit === 0, 'Renovate pull requests must not have an hourly limit')
-requireInvariant(
-  renovate.extends?.includes('helpers:pinGitHubActionDigests'),
-  'Renovate must preserve immutable GitHub Action pins',
 )
 
 if (failures.length > 0) {
