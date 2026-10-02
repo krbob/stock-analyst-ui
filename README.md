@@ -46,9 +46,11 @@ three `*_IMAGE` variables with reviewed immutable digest references for any dura
 
 ### Frontend development
 
-Node.js 24.18 and npm 11.16 are required. Start the Stock Analyst API on `http://localhost:8080`, then run:
+Use the Node.js version from [`.node-version`](.node-version) and the npm version pinned by `packageManager` in
+[`package.json`](package.json). Start the Stock Analyst API on `http://localhost:8080`, then run:
 
 ```bash
+corepack enable npm
 npm ci --ignore-scripts
 npm run dev
 ```

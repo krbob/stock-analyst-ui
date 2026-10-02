@@ -23,6 +23,10 @@ requireInvariant(
 )
 requireInvariant(Boolean(packageManagerMatch), 'packageManager must pin an exact npm version')
 requireInvariant(
+  /^npm\/(\S+)/.exec(process.env.npm_config_user_agent ?? '')?.[1] === packageManagerMatch?.[1],
+  'Run supply-chain checks with the exact npm version from packageManager (corepack enable npm)',
+)
+requireInvariant(
   packageManagerMatch && packageJson.engines?.npm === `${packageManagerMatch[1].split('.').slice(0, 2).join('.')}.x`,
   'package.json engines.npm must match the pinned npm major/minor version',
 )
@@ -40,6 +44,16 @@ requireInvariant(
   'Docker build stage must use the version from .node-version',
 )
 requireInvariant(dockerfile.includes('RUN npm ci --ignore-scripts'), 'Docker dependency install must use npm ci --ignore-scripts')
+requireInvariant(
+  dockerfile.includes('COPY package.json package-lock.json .npmrc ./'),
+  'Docker dependency install must use the repository npm configuration',
+)
+for (const [label, source] of [['Docker', dockerfile], ['CI', workflow]]) {
+  const activation = source.indexOf('corepack enable npm')
+  const install = source.indexOf('npm ci --ignore-scripts')
+  requireInvariant(activation >= 0 && activation < install, `${label} must activate pinned npm before installing dependencies`)
+}
+requireInvariant(/^engine-strict=true$/m.test(read('.npmrc')), 'npm must reject unsupported toolchain versions')
 requireInvariant(
   dockerignore.includes('!.github/workflows/ci-build.yml'),
   'Docker build context must retain the workflow used by the supply-chain check',

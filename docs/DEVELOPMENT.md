@@ -5,8 +5,8 @@ UI. Deployment-specific behavior is documented in [DEPLOYMENT.md](DEPLOYMENT.md)
 
 ## Prerequisites
 
-- Node.js `24.18.0` from `.node-version`.
-- npm `11.16.x` as declared in `package.json`.
+- Node.js at the exact version in `.node-version`.
+- npm at the exact version pinned by `packageManager` in `package.json` (activated through Corepack).
 - Stock Analyst API listening on `http://localhost:8080` for interactive development.
 - Docker for production-image and container checks.
 - Playwright Chromium for browser tests.
@@ -14,8 +14,12 @@ UI. Deployment-specific behavior is documented in [DEPLOYMENT.md](DEPLOYMENT.md)
 Install exactly from the lockfile without dependency lifecycle scripts:
 
 ```bash
+corepack enable npm
 npm ci --ignore-scripts
 ```
+
+CI and the Docker build activate the same npm pin before installation and verify its exact version. The npm
+configuration rejects unsupported engine versions, and the supply-chain check rejects a different npm version.
 
 ## Local request model
 
