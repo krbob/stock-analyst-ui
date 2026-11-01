@@ -2,10 +2,10 @@
   "name": "stock-analyst-ui",
   "private": true,
   "version": "0.0.0",
-  "packageManager": "npm@12.1.0",
+  "packageManager": "npm@12.2.1",
   "engines": {
     "node": "24.21.x",
-    "npm": "12.1.x"
+    "npm": "12.2.x"
   },
   "type": "module",
   "scripts": {
