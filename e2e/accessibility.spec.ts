@@ -28,7 +28,7 @@ test('single-stock analysis meets WCAG AA and supports a keyboard-only core work
   await expect(page).toHaveURL(/[?&]s=MSFT(?:&|$)/);
   await expect(page.getByRole('img', { name: 'MSFT price chart' })).toBeVisible();
 
-  const currency = page.getByRole('button', { name: 'Select currency' });
+  const currency = page.getByRole('button', { name: /^Select currency:/ });
   await currency.focus();
   await page.keyboard.press('Enter');
   const currencySearch = page.getByRole('textbox', { name: 'Search currency' });

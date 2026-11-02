@@ -55,7 +55,7 @@ describe('CurrencyPicker', () => {
     await user.click(screen.getByText('USD'));
     expect(screen.getByPlaceholderText('Search currency...')).toBeInTheDocument();
     expect(screen.getByText('default')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Select currency' })).toHaveAttribute('aria-haspopup', 'listbox');
+    expect(screen.getByRole('button', { name: /^Select currency:/ })).toHaveAttribute('aria-haspopup', 'listbox');
     const listbox = screen.getByRole('listbox', { name: 'Currencies' });
     expect(listbox).toBeInTheDocument();
     expect(listbox.parentElement).toHaveClass(
@@ -72,14 +72,14 @@ describe('CurrencyPicker', () => {
       <CurrencyPicker nativeCurrency="USD" value={undefined} onChange={onChange} />,
     );
 
-    await user.click(screen.getByRole('button', { name: 'Select currency' }));
+    await user.click(screen.getByRole('button', { name: /^Select currency:/ }));
     const search = screen.getByRole('textbox', { name: 'Search currency' });
     await user.type(search, 'PLN');
     await user.keyboard('{ArrowDown}{Enter}');
 
     expect(onChange).toHaveBeenCalledWith('PLN');
     expect(screen.queryByRole('listbox', { name: 'Currencies' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Select currency' })).toHaveFocus();
+    expect(screen.getByRole('button', { name: /^Select currency:/ })).toHaveFocus();
   });
 
   it('closes on Escape and restores focus to the trigger', async () => {
@@ -88,7 +88,7 @@ describe('CurrencyPicker', () => {
       <CurrencyPicker nativeCurrency="USD" value={undefined} onChange={vi.fn()} />,
     );
 
-    const trigger = screen.getByRole('button', { name: 'Select currency' });
+    const trigger = screen.getByRole('button', { name: /^Select currency:/ });
     await user.click(trigger);
     await user.click(screen.getByRole('textbox', { name: 'Search currency' }));
     await user.keyboard('{Escape}');
@@ -153,7 +153,7 @@ describe('CurrencyPicker', () => {
       <CurrencyPicker nativeCurrency="USD" value={undefined} onChange={onChange} />,
     );
 
-    await user.click(screen.getByRole('button', { name: 'Select currency' }));
+    await user.click(screen.getByRole('button', { name: /^Select currency:/ }));
     await user.type(screen.getByRole('textbox', { name: 'Search currency' }), 'EUR');
     await user.keyboard('{ArrowDown}{Enter}');
 
