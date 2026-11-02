@@ -1,8 +1,8 @@
 FROM node:26.12.1-alpine@sha256:40cd011b55415bc894e45b02fdd5a5dfde056921b7d23a64c74f80497af48797 AS build
 WORKDIR /app
 COPY package.json package-lock.json .npmrc ./
-RUN corepack enable npm \
-    && test "$(npm --version)" = "$(node -p "require('./package.json').packageManager.split('@')[1]")"
+COPY scripts/install-npm.mjs ./scripts/
+RUN node scripts/install-npm.mjs
 RUN npm ci --ignore-scripts
 COPY . .
 RUN npm run build

@@ -33,11 +33,11 @@ jobs:
           check-latest: false
           cache: 'npm'
 
-      - name: Activate pinned npm
-        run: |
-          corepack enable npm
-          expected_npm="$(node -p "require('./package.json').packageManager.split('@')[1]")"
-          test "$(npm --version)" = "$expected_npm"
+      - name: Install pinned npm
+        run: node scripts/install-npm.mjs
+
+      - name: Verify toolchain alignment
+        run: npm run supply-chain:check
 
       - name: Verify documentation contracts
         run: npm run docs:check
