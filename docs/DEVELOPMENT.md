@@ -6,7 +6,7 @@ UI. Deployment-specific behavior is documented in [DEPLOYMENT.md](DEPLOYMENT.md)
 ## Prerequisites
 
 - Node.js at the exact version in `.node-version`.
-- npm at the exact version pinned by `packageManager` in `package.json` (activated through Corepack).
+- npm at the exact version pinned by `packageManager` in `package.json` (installed by `scripts/install-npm.mjs`).
 - Stock Analyst API listening on `http://localhost:8080` for interactive development.
 - Docker for production-image and container checks.
 - Playwright Chromium for browser tests.
@@ -14,11 +14,12 @@ UI. Deployment-specific behavior is documented in [DEPLOYMENT.md](DEPLOYMENT.md)
 Install exactly from the lockfile without dependency lifecycle scripts:
 
 ```bash
-corepack enable npm
+node scripts/install-npm.mjs
 npm ci --ignore-scripts
 ```
 
-CI and the Docker build activate the same npm pin before installation and verify its exact version. The npm
+CI and the Docker build install the same npm pin and verify its exact version. The bootstrap uses the npm
+bundled with Node.js and does not require Corepack. The npm
 configuration rejects unsupported engine versions, and the supply-chain check rejects a different npm version.
 
 ## Local request model

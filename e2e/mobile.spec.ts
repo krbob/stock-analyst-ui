@@ -122,7 +122,7 @@ for (const width of [320, 375]) {
     const heading = page.getByRole('heading', { name: 'Stock Analyst' });
     const ticker = page.getByRole('combobox', { name: 'Search ticker' });
     const go = page.getByRole('button', { name: 'Go', exact: true });
-    const currency = page.getByRole('button', { name: 'Select currency' });
+    const currency = page.getByRole('button', { name: /^Select currency:/ });
     const exitCompare = page.getByRole('button', { name: 'Exit comparison mode' });
     const theme = page.getByRole('button', { name: /theme active/i });
     const chart = page.getByRole('img', { name: `Percentage comparison chart for ${SYMBOLS.join(', ')}` });

@@ -83,7 +83,7 @@ describe('App lazy analysis modes', () => {
     expect(screen.getByRole('heading', { name: 'Stock Analyst' })).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'Search ticker' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Go' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Select currency' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Select currency:/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /theme active/i })).toBeInTheDocument();
     expect(screen.getByTestId('ticker-search')).toHaveClass('min-w-0', 'flex-1', 'sm:flex-none');
     expect(await screen.findByTestId('price-chart-module')).toBeInTheDocument();
@@ -92,7 +92,7 @@ describe('App lazy analysis modes', () => {
     expect(lifecycle.detailsMount).toHaveBeenCalledTimes(1);
     expect(screen.queryByTestId('comparison-module')).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Enter comparison mode' }));
+    await user.click(screen.getByRole('button', { name: 'Compare stocks' }));
 
     expect(await screen.findByTestId('comparison-module')).toBeInTheDocument();
     expect(screen.queryByTestId('price-chart-module')).not.toBeInTheDocument();

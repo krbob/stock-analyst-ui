@@ -50,7 +50,7 @@ Use the Node.js version from [`.node-version`](.node-version) and the npm versio
 [`package.json`](package.json). Start the Stock Analyst API on `http://localhost:8080`, then run:
 
 ```bash
-corepack enable npm
+node scripts/install-npm.mjs
 npm ci --ignore-scripts
 npm run dev
 ```

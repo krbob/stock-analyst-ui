@@ -373,7 +373,7 @@ export default function App() {
                 type="button"
                 onClick={inCompareMode ? exitCompare : enterCompare}
                 aria-pressed={inCompareMode}
-                aria-label={inCompareMode ? 'Exit comparison mode' : 'Enter comparison mode'}
+                aria-label={inCompareMode ? 'Exit comparison mode' : 'Compare stocks'}
                 title={inCompareMode ? 'Exit comparison mode' : 'Compare stocks'}
                 className={`inline-flex h-8 w-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent sm:w-auto sm:px-2.5 ${
                   inCompareMode

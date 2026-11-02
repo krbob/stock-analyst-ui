@@ -21,10 +21,14 @@ requireInvariant(
   packageJson.engines?.node === `${nodeParts[0]}.${nodeParts[1]}.x`,
   'package.json engines.node must match the pinned Node.js major/minor version',
 )
+requireInvariant(
+  new RegExp(`^[~^]?${nodeParts[0]}\\.`).test(packageJson.devDependencies?.['@types/node'] ?? ''),
+  '@types/node must match the pinned Node.js major version',
+)
 requireInvariant(Boolean(packageManagerMatch), 'packageManager must pin an exact npm version')
 requireInvariant(
   /^npm\/(\S+)/.exec(process.env.npm_config_user_agent ?? '')?.[1] === packageManagerMatch?.[1],
-  'Run supply-chain checks with the exact npm version from packageManager (corepack enable npm)',
+  'Run supply-chain checks with the exact npm version from packageManager (node scripts/install-npm.mjs)',
 )
 requireInvariant(
   packageManagerMatch && packageJson.engines?.npm === `${packageManagerMatch[1].split('.').slice(0, 2).join('.')}.x`,
@@ -49,9 +53,9 @@ requireInvariant(
   'Docker dependency install must use the repository npm configuration',
 )
 for (const [label, source] of [['Docker', dockerfile], ['CI', workflow]]) {
-  const activation = source.indexOf('corepack enable npm')
+  const activation = source.indexOf('node scripts/install-npm.mjs')
   const install = source.indexOf('npm ci --ignore-scripts')
-  requireInvariant(activation >= 0 && activation < install, `${label} must activate pinned npm before installing dependencies`)
+  requireInvariant(activation >= 0 && activation < install, `${label} must install pinned npm before installing dependencies`)
 }
 requireInvariant(/^engine-strict=true$/m.test(read('.npmrc')), 'npm must reject unsupported toolchain versions')
 requireInvariant(
