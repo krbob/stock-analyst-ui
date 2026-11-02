@@ -114,6 +114,26 @@
         "digest"
       ],
       "groupName": "Docker digest maintenance"
+    },
+    {
+      "description": "Update Node.js declarations, build image and types in one PR",
+      "matchDepNames": [
+        "node",
+        "@types/node"
+      ],
+      "groupName": "Node.js toolchain",
+      "separateMajorMinor": false
+    },
+    {
+      "description": "Allow coordinated Node.js upgrades in version files and npm engines",
+      "matchDepNames": [
+        "node"
+      ],
+      "matchManagers": [
+        "nodenv",
+        "npm"
+      ],
+      "rangeStrategy": "bump"
     }
   ]
 }

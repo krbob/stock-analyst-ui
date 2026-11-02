@@ -130,7 +130,7 @@ test('keeps request fan-out scoped to the active analysis view', async ({ page }
   expect(calls).toContain('/api/v1/history/MSFT?period=1y&indicators=rsi');
   await expect.poll(() => calls.filter((call) => call.startsWith('/api/v1/quote/MSFT')).length).toBe(1);
 
-  await page.getByRole('button', { name: 'Enter comparison mode' }).click();
+  await page.getByRole('button', { name: 'Compare stocks' }).click();
   await expect(page.getByRole('region', { name: 'Scrollable stock comparison table' })).toBeVisible();
   await expect.poll(() => calls.filter((call) => call.startsWith('/api/v1/history/MSFT')).length).toBe(2);
   await expect.poll(() => calls.filter((call) => call === '/api/v1/compare?symbols=MSFT').length).toBe(1);
