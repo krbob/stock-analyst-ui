@@ -16,7 +16,7 @@ interface SegmentedControlProps<T extends string> {
 }
 
 /**
- * Radiogroup-semantics segmented control with a sliding active pill.
+ * Radiogroup-semantics segmented control with an active pill.
  * Keyboard: arrows move & select (roving tabindex), Home/End jump.
  */
 export default function SegmentedControl<T extends string>({
@@ -96,7 +96,7 @@ export default function SegmentedControl<T extends string>({
       {pill && (
         <span
           aria-hidden="true"
-          className="absolute inset-y-0.5 z-0 rounded-md bg-accent transition-[left,width] duration-200 ease-out motion-reduce:transition-none"
+          className="absolute inset-y-0.5 z-0 rounded-md bg-accent"
           style={{ left: pill.left, width: pill.width }}
         />
       )}
@@ -111,7 +111,7 @@ export default function SegmentedControl<T extends string>({
             aria-label={option.ariaLabel}
             tabIndex={active || (activeIndex < 0 && index === 0) ? 0 : -1}
             onClick={() => onChange(option.value)}
-            className={`relative z-10 inline-flex items-center justify-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium whitespace-nowrap outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent sm:px-2.5 sm:text-sm ${
+            className={`relative z-10 inline-flex items-center justify-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-accent sm:px-2.5 sm:text-sm ${
               active
                 ? `text-accent-foreground ${pill ? '' : 'bg-accent'}`
                 : 'text-muted hover:text-primary'
