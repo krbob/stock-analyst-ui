@@ -199,23 +199,23 @@ function StockInfo({ symbol, currency, livePrice, hideGain, nativeQuote, convert
 
   return (
     <div className="min-w-0">
-      <div className="flex h-8 items-baseline gap-3">
-        <h2 className="text-2xl font-bold text-primary">{symbol.toUpperCase()}</h2>
+      <div className="flex min-h-8 flex-wrap items-baseline gap-x-3 gap-y-1">
+        <h2 className="min-w-0 text-2xl font-bold text-primary [overflow-wrap:anywhere]">{symbol.toUpperCase()}</h2>
         {isLoading && <Spinner />}
-        {error && <span className="text-sm text-danger">{errorMessage}</span>}
+        {error && <span className="w-full min-w-0 text-sm text-danger [overflow-wrap:anywhere]">{errorMessage}</span>}
         {data && (
-          <span className="text-xl text-secondary">
+          <span className="shrink-0 whitespace-nowrap text-xl text-secondary">
             {displayPrice?.toFixed(2)}
             {displayCurrency && <span className="ml-1.5 text-sm text-muted">{displayCurrency}</span>}
           </span>
         )}
         {data && data.gain.daily != null && Number.isFinite(data.gain.daily) && (
-          <span className={`text-lg font-medium transition-opacity duration-300 ${hideGain ? 'opacity-0' : 'opacity-100'} ${data.gain.daily >= 0 ? 'text-up' : 'text-down'}`}>
+          <span className={`shrink-0 whitespace-nowrap text-lg font-medium transition-opacity duration-300 ${hideGain ? 'opacity-0' : 'opacity-100'} ${data.gain.daily >= 0 ? 'text-up' : 'text-down'}`}>
             {formatGain(data.gain.daily)}
           </span>
         )}
       </div>
-      <p className="h-5 text-sm text-muted">{data?.name ?? ' '}</p>
+      <p className="min-h-5 text-sm text-muted [overflow-wrap:anywhere]">{data?.name ?? ' '}</p>
       <div className="mt-1 flex min-h-5 flex-wrap items-center gap-3">
         {data && GAIN_PERIODS.map((p) => (
           <GainChip key={p.key} label={p.label} value={data.gain[p.key]} />

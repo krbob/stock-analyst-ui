@@ -2,6 +2,8 @@ import { expect, test, type Page } from '@playwright/test';
 import { expectNoWcagViolations } from './support/accessibility';
 
 const SYMBOLS = ['AAPL', 'MSFT', 'GOOG', 'AMZN', 'NVDA', 'META'];
+const FUND_SYMBOL = 'ETFPZUCASH.WA';
+const FUND_NAME = 'Pzu Etf Obligacji Skarbowych Zmiennokuponowych Portfelowy Fundusz Inwestycyjny Zamkniety';
 
 const GAINS = {
   daily: 0.0125,
@@ -32,7 +34,7 @@ function provenance(currency: string, coverageFrom: string, coverageTo: string) 
 function quote(symbol: string, index: number) {
   return {
     symbol,
-    name: `${symbol} Corporation with a deliberately long company name`,
+    name: symbol === FUND_SYMBOL ? FUND_NAME : `${symbol} Corporation with a deliberately long company name`,
     currency: 'PLN',
     date: '2026-07-10',
     lastPrice: 100 + index * 17.25,
@@ -63,6 +65,12 @@ async function mockApi(page: Page) {
       await route.fulfill({
         json: SYMBOLS.map((symbol, index) => ({ symbol, data: quote(symbol, index), error: null })),
       });
+      return;
+    }
+
+    if (url.pathname.startsWith('/api/v1/quote/')) {
+      const symbol = decodeURIComponent(url.pathname.split('/').at(-1) ?? 'AAPL').toUpperCase();
+      await route.fulfill({ json: quote(symbol, Math.max(0, SYMBOLS.indexOf(symbol))) });
       return;
     }
 
@@ -110,6 +118,67 @@ async function mockApi(page: Page) {
     }
 
     await route.fulfill({ status: 404, json: { error: 'Unexpected mocked API request' } });
+  });
+}
+
+for (const width of [320, 375, 402, 1280]) {
+  test(`keeps a long instrument name clear of quote gains at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await mockApi(page);
+    await page.goto(`/?s=${FUND_SYMBOL}`);
+
+    const heading = page.getByRole('heading', { name: FUND_SYMBOL, exact: true });
+    const summary = heading.locator('../..');
+    const name = summary.getByText(FUND_NAME, { exact: true });
+    const gains = summary.getByText('+4.75% (1M)', { exact: true }).locator('..');
+    const provenance = page.getByRole('region', { name: `${FUND_SYMBOL} market data provenance` });
+    await expect(name).toBeVisible();
+    await expect(gains).toBeVisible();
+    await expect(provenance).toBeVisible();
+
+    // Measure the actual text, since a fixed-height paragraph can hide its overflowing lines.
+    const nameBox = await name.evaluate((element) => {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      return range.getBoundingClientRect().toJSON();
+    });
+    const quoteBox = (await heading.locator('..').boundingBox())!;
+    const gainsBox = (await gains.boundingBox())!;
+    const provenanceBox = (await provenance.boundingBox())!;
+    expect(nameBox.top).toBeGreaterThanOrEqual(quoteBox.y + quoteBox.height);
+    expect(gainsBox.y).toBeGreaterThanOrEqual(nameBox.bottom);
+    expect(provenanceBox.y).toBeGreaterThanOrEqual(gainsBox.y + gainsBox.height);
+
+    for (const element of [heading, summary, name, gains]) {
+      const box = (await element.boundingBox())!;
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(width);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+  });
+
+  test(`keeps quote errors below the symbol at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await mockApi(page);
+    const symbol = 'PL0000117024';
+    const message = `Unknown symbol: ${symbol}`;
+    await page.route(/\/api\/v1\/(quote|history)\//, (route) => route.fulfill({
+      status: 404,
+      json: { error: message, errorCode: 'SYMBOL_NOT_FOUND', retryable: false, requestId: 'missing-isin' },
+    }));
+    await page.goto(`/?s=${symbol}`);
+
+    const heading = page.getByRole('heading', { name: symbol, exact: true });
+    const summary = heading.locator('../..');
+    const error = summary.getByText(message, { exact: true });
+    await expect(error).toBeVisible();
+    const headingBox = (await heading.boundingBox())!;
+    const errorBox = (await error.boundingBox())!;
+    const summaryBox = (await summary.boundingBox())!;
+    expect(errorBox.y).toBeGreaterThanOrEqual(headingBox.y + headingBox.height);
+    expect(errorBox.y + errorBox.height).toBeLessThanOrEqual(summaryBox.y + summaryBox.height);
+    expect(errorBox.x + errorBox.width).toBeLessThanOrEqual(width);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
   });
 }
 
