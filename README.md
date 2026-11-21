@@ -44,6 +44,21 @@ The defaults use the moving `main` and `latest` image tags for a convenient loca
 three `*_IMAGE` variables with reviewed immutable digest references for any durable deployment; see the
 [deployment guide](docs/DEPLOYMENT.md).
 
+### Apple container on macOS
+
+Start the [Stock Analyst API and adapter on Apple container](https://github.com/krbob/stock-analyst#apple-container-on-macos)
+and wait for `/readyz` to succeed. Attach the UI to the API's frontend network:
+
+```bash
+api_ip=$(container inspect stock-api | jq -er '.[0].status.networks[] | select(.network == "stock-frontend") | .ipv4Address | split("/")[0]')
+container run -d --rm --name stock-ui --network stock-frontend \
+  -e API_URL="http://${api_ip}:8080" -p 127.0.0.1:3001:8080 ghcr.io/krbob/stock-analyst-ui:latest
+curl --fail --retry 20 --retry-all-errors --retry-delay 1 http://127.0.0.1:3001/api/readyz
+```
+
+Open <http://127.0.0.1:3001>. The readiness request goes through the UI's Nginx proxy to the API and adapter.
+Stop the UI with `container stop stock-ui` before removing the API and networks.
+
 ### Frontend development
 
 Use the Node.js version from [`.node-version`](.node-version) and the npm version pinned by `packageManager` in
